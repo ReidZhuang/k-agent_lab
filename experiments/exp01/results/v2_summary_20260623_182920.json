@@ -1,0 +1,285 @@
+{
+  "test": "foundation_v2",
+  "timestamp": "20260623_182920",
+  "model": "deepseek-v4-flash",
+  "n_rounds": 6,
+  "has_final_answer": true,
+  "analyses": [
+    {
+      "total": 7,
+      "matched": 7,
+      "partial": 0,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 3,
+        "related": 4,
+        "unknown": 0
+      },
+      "accuracy": 1.0,
+      "details": [
+        {
+          "content": "储能电池系统营收800亿元，同比增长60.3%，占总营收22.2%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "储能电池全球出货量80GWh，同比增长55%，市占率40%，连续三年全球第一",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "储能系统毛利率35%，高于公司综合毛利率",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "大型储能（电网侧/电源侧）出货48GWh，占比60%；工商业储能出货20GWh，占比25%；户用储能出货12GWh，占比15%",
+          "priority": "related",
+          "status": "matched"
+        },
+        {
+          "content": "公司推出第三代天恒储能系统，采用CTP3.0技术，系统能量密度提升至180Wh/kg，循环寿命超15000次，度电成本降至0.18元/kWh",
+          "priority": "related",
+          "status": "matched"
+        },
+        {
+          "content": "已签海外储能订单合计超50GWh",
+          "priority": "related",
+          "status": "matched"
+        },
+        {
+          "content": "已与阿联酋签署20GWh储能项目合同（全球最大单体储能项目）",
+          "priority": "related",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "total": 8,
+      "matched": 5,
+      "partial": 2,
+      "unmatched": 1,
+      "by_priority": {
+        "critical": 6,
+        "related": 2,
+        "unknown": 0
+      },
+      "accuracy": 0.75,
+      "details": [
+        {
+          "content": "储能业务以不足动力1/3的营收规模，贡献了近1/4的净利润，单位盈利能力更强",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "动力电池营收2400亿元（占比66.7%），增速18.2%，毛利率28%，全球市占率36.8%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "储能电池营收800亿元（占比22.2%），增速60.3%，毛利率35%，全球市占率40%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "据SNE Research数据，2024年全球动力电池装机量约760GWh，宁德时代装机量达280GWh，市占率36.8%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "比亚迪以16.2%市占率排名第二（装机量123GWh）",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "2024年全球储能电池出货约200GWh，宁德时代出货80GWh市占率40%，比亚迪出货22GWh市占率11%",
+          "priority": "critical",
+          "status": "partial"
+        },
+        {
+          "content": "磷酸铁锂占比持续提升，2024年全球磷酸铁锂动力电池装机占比42%，较2023年提升8个百分点",
+          "priority": "related",
+          "status": "partial"
+        },
+        {
+          "content": "行业产能利用率约65%，过剩压力仍在",
+          "priority": "related",
+          "status": "unmatched"
+        }
+      ]
+    },
+    {
+      "total": 10,
+      "matched": 7,
+      "partial": 3,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 7,
+        "related": 3,
+        "unknown": 0
+      },
+      "accuracy": 0.85,
+      "details": [
+        {
+          "content": "宁德时代规模（2.1倍）、盈利（2.8倍）、市占率（36.8% vs 16.2%）上全面领先",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "比亚迪储能增速80%远超宁德时代55%，但绝对规模仅为宁德时代的56%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "2024年全球动力电池装机量约760GWh，宁德时代装机量达280GWh，市占率36.8%，比亚迪123GWh/16.2%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "2024年全球储能电池出货约200GWh，宁德时代80GWh/40%，比亚迪22GWh/11%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "中国企业合计市占率68.5%，前十大企业中中国企业占据六席",
+          "priority": "related",
+          "status": "matched"
+        },
+        {
+          "content": "行业产能利用率约65%，过剩压力仍在",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "电芯价格预计2025年继续下降10%-15%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "机构预计2025年全球动力+储能电池总需求约1800GWh，同比增长25%",
+          "priority": "critical",
+          "status": "partial"
+        },
+        {
+          "content": "宁德时代凭借海外产能爬坡和储能需求爆发双重利好，预计出货增速将高于行业平均",
+          "priority": "related",
+          "status": "partial"
+        },
+        {
+          "content": "中国企业合计市占率65%（宁德40%+比亚迪11%+亿纬6%+国轩5%+其他3%），主导全球储能市场",
+          "priority": "related",
+          "status": "partial"
+        }
+      ]
+    },
+    {
+      "total": 8,
+      "matched": 8,
+      "partial": 0,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 8,
+        "related": 0,
+        "unknown": 0
+      },
+      "accuracy": 1.0,
+      "details": [
+        {
+          "content": "行业集中度略有下降，CR3从2023年的58%降至56%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "中国企业全球市占率合计68.5%，较2023年提升1.6个百分点",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "行业产能利用率约65%，过剩压力仍在",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "动力电池电芯价格下降约15%至约0.4元/Wh，预计2025年继续下降10%-15%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "磷酸铁锂占比持续提升，2024年全球磷酸铁锂动力电池装机占比42%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "宁德时代在固态电池（硫化物路线）、钠离子电池、凝聚态电池（500Wh/kg已量产）全面布局",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "机构一致预期2025年净利润580亿元，同比增长16%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "宁德时代凭借规模效应和成本优势，毛利率仍保持行业最高水平",
+          "priority": "critical",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "total": 8,
+      "matched": 3,
+      "partial": 4,
+      "unmatched": 1,
+      "by_priority": {
+        "critical": 8,
+        "related": 0,
+        "unknown": 0
+      },
+      "accuracy": 0.625,
+      "details": [
+        {
+          "content": "行业集中度略有下降，CR3从2023年的58%降至56%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "行业产能利用率约65%，过剩压力仍在",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "动力电池电芯价格下降约15%至约0.4元/Wh，预计2025年继续下降10%-15%",
+          "priority": "critical",
+          "status": "matched"
+        },
+        {
+          "content": "海外储能需求爆发，美国ITC政策延期、欧盟REPowerEU计划、中东能源转型推动欧美及中东储能项目招标量翻倍增长",
+          "priority": "critical",
+          "status": "partial"
+        },
+        {
+          "content": "预计2025年全球储能出货达300GWh，同比增50%",
+          "priority": "critical",
+          "status": "partial"
+        },
+        {
+          "content": "宁德时代凝聚态电池已实现量产，能量密度达500Wh/kg",
+          "priority": "critical",
+          "status": "partial"
+        },
+        {
+          "content": "第二代钠离子电池能量密度提升至160Wh/kg，预计2025年量产装车",
+          "priority": "critical",
+          "status": "partial"
+        },
+        {
+          "content": "机构一致预期2025年净利润580亿元，同比增长16%",
+          "priority": "critical",
+          "status": "unmatched"
+        }
+      ]
+    }
+  ],
+  "final_answer_preview": "现在我已掌握所有必要信息，下面给出完整的四步研究报告。\n\n---\n\n# 📋 宁德时代深度研究：四步分析报告\n\n---\n\n## 第一步：2024年财报核心数据\n\n**数据来源：** 宁德时代2024年年度报告（东方财富、新浪财经等）\n\n### 总体财务表现\n\n| 指标 | 2024年 | 同比变化 |\n|------|:------:|:-------:|\n| **营业收入** | **3,600亿元** | **+22.1%** |\n| **归母净利润** | **500亿元** | **+15.3%** |\n| 综合毛利率 | 26.5% | -1.2pct |\n| 净利率 | 13.9% | -0.8pct |\n| 经营现金流 | 850亿元 | +30% |\n| 自由现金流 | 430亿元 | — |\n| 加权平均ROE | 18.5% | -2.3pct |\n| 研发投入 | 180亿元 | +25% |\n\n> *\"全年实现营业收入3600亿元，同比增长22.1%；归母净利润500亿元，同比增长15.3%\"*（来源：东方财富）\n\n### 各业务板块收入结构\n\n| 业务板块 | "
+}

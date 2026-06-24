@@ -1,0 +1,41 @@
+{
+  "round": 6,
+  "query": "固态电池 量产 时间表 2025 2026 宁德时代 丰田 竞争 欧美 关税 电池 去中国化",
+  "key_findings_used": [
+    {
+      "content": "行业集中度略有下降，CR3从2023年的58%降至56%",
+      "priority": "critical"
+    },
+    {
+      "content": "行业产能利用率约65%，过剩压力仍在",
+      "priority": "critical"
+    },
+    {
+      "content": "动力电池电芯价格下降约15%至约0.4元/Wh，预计2025年继续下降10%-15%",
+      "priority": "critical"
+    },
+    {
+      "content": "海外储能需求爆发，美国ITC政策延期、欧盟REPowerEU计划、中东能源转型推动欧美及中东储能项目招标量翻倍增长",
+      "priority": "critical"
+    },
+    {
+      "content": "预计2025年全球储能出货达300GWh，同比增50%",
+      "priority": "critical"
+    },
+    {
+      "content": "宁德时代凝聚态电池已实现量产，能量密度达500Wh/kg",
+      "priority": "critical"
+    },
+    {
+      "content": "第二代钠离子电池能量密度提升至160Wh/kg，预计2025年量产装车",
+      "priority": "critical"
+    },
+    {
+      "content": "机构一致预期2025年净利润580亿元，同比增长16%",
+      "priority": "critical"
+    }
+  ],
+  "gaps_identified": "还需要了解：1）固态电池全球竞争格局（丰田、三星SDI、宁德时代等进展对比）；2）欧美对中国电池的关税政策和去中国化趋势；3）二三线企业（中创新航、亿纬锂能、国轩高科）的最新进展；4）行业未来3-5年的投资主线",
+  "search_strategy": "搜索固态电池技术竞争、地缘政治风险、二三线企业追赶态势等，完善行业展望分析",
+  "search_result_length": 4722
+}

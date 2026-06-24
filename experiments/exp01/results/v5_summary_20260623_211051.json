@@ -1,0 +1,24 @@
+{
+  "test": "foundation_v5_large",
+  "rounds": 10,
+  "n_citations": 44,
+  "n_violations": 2,
+  "priority_stats": {
+    "critical": 29,
+    "related": 15
+  },
+  "violations": [
+    {
+      "round": 9,
+      "content": "全固态储能电池：长期技术储备，实验室样品能量密度350Wh/kg，循环寿命超过5000次。预计2028年推出样品，2030年实现商业化应用。",
+      "found_in_round": 2,
+      "expected_round": 8
+    },
+    {
+      "round": 9,
+      "content": "凝聚态电池500Wh/kg已量产、固态电池硫化物路线、第二代钠离子电池160Wh/kg。",
+      "found_in_round": 5,
+      "expected_round": 8
+    }
+  ]
+}

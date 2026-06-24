@@ -1,0 +1,322 @@
+{
+  "test": "foundation_v4",
+  "timestamp": "20260623_205649",
+  "model": "deepseek-v4-flash",
+  "rounds": 4,
+  "analyses": [
+    {
+      "total": 6,
+      "matched": 6,
+      "partial": 0,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 4,
+        "related": 2
+      },
+      "by_source_round": {
+        "1": 6
+      },
+      "violations": [],
+      "late_first_citations": [],
+      "details": [
+        {
+          "content": "储能电池系统营收800亿元，同比增长60.3%，占总营收22.2%",
+          "source": "R1-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "储能系统毛利率35%，高于公司综合毛利率",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "储能电池全球出货量80GWh，同比增长55%，市占率40%，连续三年全球第一",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "机构预计2025年储能营收将突破1200亿元，2026年储能营收占比超过30%",
+          "source": "R1-8",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "大型储能（电网侧/电源侧）出货48GWh，占比60%；工商业储能出货20GWh，占比25%；户用储能出货12GWh，占比15%",
+          "source": "R1-4",
+          "priority": "related",
+          "status": "✅"
+        },
+        {
+          "content": "已与阿联酋签署20GWh储能项目合同（全球最大单体储能项目）",
+          "source": "R1-6",
+          "priority": "related",
+          "status": "✅"
+        }
+      ],
+      "accuracy": 1.0
+    },
+    {
+      "total": 6,
+      "matched": 5,
+      "partial": 1,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 5,
+        "related": 1
+      },
+      "by_source_round": {
+        "2": 5,
+        "1": 1
+      },
+      "violations": [
+        {
+          "source": "R1-3",
+          "content": "宁德时代2024年全球动力电池装机量280GWh，市占率36.8%；比亚迪以16.2%市占率排名第二，装机量123GWh",
+          "round": 3,
+          "expected": "R2-N",
+          "actual": "R1-3"
+        }
+      ],
+      "late_first_citations": [],
+      "details": [
+        {
+          "content": "储能系统毛利率35%，显著高于动力电池的28%（高出7个百分点）",
+          "source": "R2-1",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代储能出货80GWh，市占率40%，连续三年全球第一；第二名LG新能源出货30GWh，市占率15%；第三名比亚迪出货22GWh，市占率11%",
+          "source": "R2-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代储能业务国内营收约440亿元（占比55%），海外营收约360亿元（占比45%），海外毛利率40%",
+          "source": "R2-5",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代2024年全球动力电池装机量280GWh，市占率36.8%；比亚迪以16.2%市占率排名第二，装机量123GWh",
+          "source": "R1-3",
+          "priority": "critical",
+          "status": "⚠️"
+        },
+        {
+          "content": "2025年储能出货量目标130-150GWh；毛利率目标维持在30%以上",
+          "source": "R2-6",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "储能业务净利润约120亿元，净利率15%",
+          "source": "R2-1",
+          "priority": "related",
+          "status": "✅"
+        }
+      ],
+      "accuracy": 0.9166666666666666
+    },
+    {
+      "total": 8,
+      "matched": 8,
+      "partial": 0,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 6,
+        "related": 2
+      },
+      "by_source_round": {
+        "3": 8
+      },
+      "violations": [],
+      "late_first_citations": [],
+      "details": [
+        {
+          "content": "宁德时代电池总收入3200亿元（动力2400+储能800），比亚迪电池总收入1500亿元，宁德为比亚迪的2.1倍",
+          "source": "R3-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代净利润500亿元，比亚迪电池净利润约180亿元，宁德为比亚迪的2.8倍，盈利能力差距大于营收差距",
+          "source": "R3-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代综合毛利率26.5%，比亚迪电池业务毛利率约20%，宁德高出6.5个百分点",
+          "source": "R3-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "比亚迪储能电池出货45GWh，同比增长80%，增速超越宁德时代（55%），但绝对规模仅为宁德时代（80GWh）的56%",
+          "source": "R3-3",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代全球动力电池市占率36.8%，比亚迪16.2%，两家合计占全球53%",
+          "source": "R3-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代目标总出货量500GWh（动力350+储能150），比亚迪目标出货量350GWh（动力250+储能100）",
+          "source": "R3-6",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "刀片电池已向特斯拉柏林工厂、宝马、丰田、福特等外部客户供货，2024年外供电池约30GWh",
+          "source": "R3-1",
+          "priority": "related",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代同时布局三元锂和磷酸铁锂，比亚迪100%采用磷酸铁锂刀片电池",
+          "source": "R3-4",
+          "priority": "related",
+          "status": "✅"
+        }
+      ],
+      "accuracy": 1.0
+    }
+  ],
+  "violations": [
+    {
+      "source": "R1-3",
+      "content": "宁德时代2024年全球动力电池装机量280GWh，市占率36.8%；比亚迪以16.2%市占率排名第二，装机量123GWh",
+      "round": 3,
+      "expected": "R2-N",
+      "actual": "R1-3"
+    }
+  ],
+  "late_citations": [
+    {
+      "source": "R1-2",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "储能电池系统营收800亿元，同比增长60.3%，占总营收22.2%"
+    },
+    {
+      "source": "R1-4",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "储能系统毛利率35%，高于公司综合毛利率"
+    },
+    {
+      "source": "R1-4",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "储能电池全球出货量80GWh，同比增长55%，市占率40%，连续三年全球第一"
+    },
+    {
+      "source": "R1-8",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "机构预计2025年储能营收将突破1200亿元，2026年储能营收占比超过30%"
+    },
+    {
+      "source": "R1-4",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "大型储能（电网侧/电源侧）出货48GWh，占比60%；工商业储能出货20GWh，占比25%；户用储能出货12GWh，占比15%"
+    },
+    {
+      "source": "R1-6",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "已与阿联酋签署20GWh储能项目合同（全球最大单体储能项目）"
+    },
+    {
+      "source": "R2-1",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "储能系统毛利率35%，显著高于动力电池的28%（高出7个百分点）"
+    },
+    {
+      "source": "R2-2",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "宁德时代储能出货80GWh，市占率40%，连续三年全球第一；第二名LG新能源出货30GWh，市占率15%；第三名比亚迪出货22GWh，市占率11%"
+    },
+    {
+      "source": "R2-5",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "宁德时代储能业务国内营收约440亿元（占比55%），海外营收约360亿元（占比45%），海外毛利率40%"
+    },
+    {
+      "source": "R1-3",
+      "first_seen_round": 3,
+      "origin_round": 1,
+      "content": "宁德时代2024年全球动力电池装机量280GWh，市占率36.8%；比亚迪以16.2%市占率排名第二，装机量123GWh"
+    },
+    {
+      "source": "R2-6",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "2025年储能出货量目标130-150GWh；毛利率目标维持在30%以上"
+    },
+    {
+      "source": "R2-1",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "储能业务净利润约120亿元，净利率15%"
+    },
+    {
+      "source": "R3-2",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代电池总收入3200亿元（动力2400+储能800），比亚迪电池总收入1500亿元，宁德为比亚迪的2.1倍"
+    },
+    {
+      "source": "R3-2",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代净利润500亿元，比亚迪电池净利润约180亿元，宁德为比亚迪的2.8倍，盈利能力差距大于营收差距"
+    },
+    {
+      "source": "R3-2",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代综合毛利率26.5%，比亚迪电池业务毛利率约20%，宁德高出6.5个百分点"
+    },
+    {
+      "source": "R3-3",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "比亚迪储能电池出货45GWh，同比增长80%，增速超越宁德时代（55%），但绝对规模仅为宁德时代（80GWh）的56%"
+    },
+    {
+      "source": "R3-2",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代全球动力电池市占率36.8%，比亚迪16.2%，两家合计占全球53%"
+    },
+    {
+      "source": "R3-6",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代目标总出货量500GWh（动力350+储能150），比亚迪目标出货量350GWh（动力250+储能100）"
+    },
+    {
+      "source": "R3-1",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "刀片电池已向特斯拉柏林工厂、宝马、丰田、福特等外部客户供货，2024年外供电池约30GWh"
+    },
+    {
+      "source": "R3-4",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代同时布局三元锂和磷酸铁锂，比亚迪100%采用磷酸铁锂刀片电池"
+    }
+  ]
+}

@@ -1,0 +1,221 @@
+{
+  "test": "foundation_v3",
+  "timestamp": "20260623_185145",
+  "model": "deepseek-v4-flash",
+  "rounds": 4,
+  "analyses": [
+    {
+      "total": 4,
+      "matched": 4,
+      "partial": 0,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 4,
+        "related": 0,
+        "unknown": 0
+      },
+      "by_source_round": {
+        "1": 4
+      },
+      "cross_round_refs": [],
+      "source_format_errors": [],
+      "details": [
+        {
+          "content": "储能电池系统营收800亿元，同比增长60.3%，占总营收22.2%",
+          "source": "R1-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "储能电池全球出货量80GWh，同比增长55%，市占率40%，连续三年全球第一",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "储能系统毛利率35%，高于公司综合毛利率",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "公司推出第三代天恒储能系统，采用CTP3.0技术，系统能量密度提升至180Wh/kg，循环寿命超15000次，度电成本降至0.18元/kWh",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        }
+      ],
+      "accuracy": 1.0
+    },
+    {
+      "total": 4,
+      "matched": 2,
+      "partial": 1,
+      "unmatched": 1,
+      "by_priority": {
+        "critical": 3,
+        "related": 1,
+        "unknown": 0
+      },
+      "by_source_round": {
+        "1": 2,
+        "2": 2
+      },
+      "cross_round_refs": [
+        {
+          "source": "R1-3",
+          "content_preview": "全球动力电池装机量约760GWh，同比增长18%。宁德时代装机量达280GWh，同比增长18%，市占率36.8%，连续八年位居全球第一。比亚迪以16.2%市占率",
+          "referenced_from_round": 3,
+          "actual_source_round": 1
+        },
+        {
+          "source": "R1-2",
+          "content_preview": "宁德时代动力电池内部，乘用车电池出货占比82%，商用车占比18%",
+          "referenced_from_round": 3,
+          "actual_source_round": 1
+        }
+      ],
+      "source_format_errors": [],
+      "details": [
+        {
+          "content": "全球动力电池装机量约760GWh，同比增长18%。宁德时代装机量达280GWh，同比增长18%，市占率36.8%，连续八年位居全球第一。比亚迪以16.2%市占率排名第二（装机量123GWh）",
+          "source": "R1-3",
+          "priority": "critical",
+          "status": "⚠️"
+        },
+        {
+          "content": "2024年全球储能电池出货量约200GWh，同比增长45%。宁德时代出货80GWh，市占率40%，连续三年全球第一。第二名LG新能源出货30GWh，市占率15%；第三名比亚迪出货22GWh，市占率11%",
+          "source": "R2-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代两大业务板块2024年关键对比：动力电池营收2400亿元（占比66.7%），增速18.2%，毛利率28%，全球市占率36.8%，净利润贡献约380亿元；储能电池营收800亿元（占比22.2%），增速60.3%，毛利率35%，全球市占",
+          "source": "R2-7",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代动力电池内部，乘用车电池出货占比82%，商用车占比18%",
+          "source": "R1-2",
+          "priority": "related",
+          "status": "❌"
+        }
+      ],
+      "accuracy": 0.625
+    },
+    {
+      "total": 6,
+      "matched": 3,
+      "partial": 3,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 6,
+        "related": 0,
+        "unknown": 0
+      },
+      "by_source_round": {
+        "1": 1,
+        "3": 3,
+        "2": 2
+      },
+      "cross_round_refs": [
+        {
+          "source": "R1-9",
+          "content_preview": "2024年全球动力电池装机量约760GWh，同比增18%。行业特征：（1）集中度略有下降，CR3从2023年的58%降至56%；（2）中国企业全球市占率合计68",
+          "referenced_from_round": 4,
+          "actual_source_round": 1
+        },
+        {
+          "source": "R2-6",
+          "content_preview": "管理层在业绩说明会上表示，2025年储能业务有望延续高增长，预计营收将突破1200亿元，同比增长50%以上",
+          "referenced_from_round": 4,
+          "actual_source_round": 2
+        },
+        {
+          "source": "R2-8",
+          "content_preview": "储能行业特征：（1）中国企业主导，TOP5中中国企业占4席（宁德40%、比亚迪11%、亿纬6%、国轩5%），合计市占率65%",
+          "referenced_from_round": 4,
+          "actual_source_round": 2
+        }
+      ],
+      "source_format_errors": [],
+      "details": [
+        {
+          "content": "2024年全球动力电池装机量约760GWh，同比增18%。行业特征：（1）集中度略有下降，CR3从2023年的58%降至56%；（2）中国企业全球市占率合计68.5%，较2023年提升1.6个百分点",
+          "source": "R1-9",
+          "priority": "critical",
+          "status": "⚠️"
+        },
+        {
+          "content": "机构预计2025年全球动力+储能电池总需求约1800GWh，同比增长25%。其中动力电池需求1200GWh（同比增长20%），储能电池需求600GWh（同比增长50%）",
+          "source": "R3-6",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "行业产能过剩压力仍在，2024年全球电池产能利用率仅65%，2025年预计小幅回升至68%。电芯价格预计2025年继续下降10%-15%，将进一步压缩中小厂商利润空间，加速行业洗牌",
+          "source": "R3-6",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "中国企业合计市占率68.5%（6家），韩国企业19.2%（3家），日本企业7.3%（1家）。TOP10门槛从2023年的12GWh提升至15GWh。CR3=65.8%（宁+比+LG），CR5=77.4%。行业集中度较高但呈下降趋势，2025",
+          "source": "R3-8",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "管理层在业绩说明会上表示，2025年储能业务有望延续高增长，预计营收将突破1200亿元，同比增长50%以上",
+          "source": "R2-6",
+          "priority": "critical",
+          "status": "⚠️"
+        },
+        {
+          "content": "储能行业特征：（1）中国企业主导，TOP5中中国企业占4席（宁德40%、比亚迪11%、亿纬6%、国轩5%），合计市占率65%",
+          "source": "R2-8",
+          "priority": "critical",
+          "status": "⚠️"
+        }
+      ],
+      "accuracy": 0.75
+    }
+  ],
+  "source_round_distribution": {
+    "1": 7,
+    "2": 4,
+    "3": 3
+  },
+  "cross_round_refs": [
+    {
+      "source": "R1-3",
+      "content_preview": "全球动力电池装机量约760GWh，同比增长18%。宁德时代装机量达280GWh，同比增长18%，市占率36.8%，连续八年位居全球第一。比亚迪以16.2%市占率",
+      "referenced_from_round": 3,
+      "actual_source_round": 1
+    },
+    {
+      "source": "R1-2",
+      "content_preview": "宁德时代动力电池内部，乘用车电池出货占比82%，商用车占比18%",
+      "referenced_from_round": 3,
+      "actual_source_round": 1
+    },
+    {
+      "source": "R1-9",
+      "content_preview": "2024年全球动力电池装机量约760GWh，同比增18%。行业特征：（1）集中度略有下降，CR3从2023年的58%降至56%；（2）中国企业全球市占率合计68",
+      "referenced_from_round": 4,
+      "actual_source_round": 1
+    },
+    {
+      "source": "R2-6",
+      "content_preview": "管理层在业绩说明会上表示，2025年储能业务有望延续高增长，预计营收将突破1200亿元，同比增长50%以上",
+      "referenced_from_round": 4,
+      "actual_source_round": 2
+    },
+    {
+      "source": "R2-8",
+      "content_preview": "储能行业特征：（1）中国企业主导，TOP5中中国企业占4席（宁德40%、比亚迪11%、亿纬6%、国轩5%），合计市占率65%",
+      "referenced_from_round": 4,
+      "actual_source_round": 2
+    }
+  ]
+}

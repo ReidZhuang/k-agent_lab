@@ -1,0 +1,13 @@
+{
+  "round": 1,
+  "query": "宁德时代 2024年 年报 营收 净利润 增长 业务板块",
+  "key_findings_used": [
+    {
+      "content": "首次搜索",
+      "priority": "critical"
+    }
+  ],
+  "gaps_identified": "首次搜索，需要获取宁德时代2024年营收、净利润、增长率、各业务板块数据",
+  "search_strategy": "初始搜索，获取宁德时代2024年年报核心数据",
+  "search_result_length": 4722
+}

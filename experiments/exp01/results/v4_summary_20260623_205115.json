@@ -1,0 +1,238 @@
+{
+  "test": "foundation_v4",
+  "timestamp": "20260623_205115",
+  "model": "deepseek-v4-flash",
+  "rounds": 4,
+  "analyses": [
+    {
+      "total": 4,
+      "matched": 4,
+      "partial": 0,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 4,
+        "related": 0
+      },
+      "by_source_round": {
+        "1": 4
+      },
+      "violations": [],
+      "late_first_citations": [],
+      "details": [
+        {
+          "content": "储能电池系统营收800亿元，同比增长60.3%，占总营收22.2%",
+          "source": "R1-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "储能系统毛利率35%，高于公司综合毛利率",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "储能电池全球出货量80GWh，同比增长55%，市占率40%，连续三年全球第一",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "公司推出第三代天恒储能系统，采用CTP3.0技术，系统能量密度提升至180Wh/kg，循环寿命超15000次，度电成本降至0.18元/kWh",
+          "source": "R1-4",
+          "priority": "critical",
+          "status": "✅"
+        }
+      ],
+      "accuracy": 1.0
+    },
+    {
+      "total": 4,
+      "matched": 3,
+      "partial": 1,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 4,
+        "related": 0
+      },
+      "by_source_round": {
+        "2": 3,
+        "1": 1
+      },
+      "violations": [
+        {
+          "source": "R1-3",
+          "content": "宁德时代全球动力电池装机量280GWh，市占率36.8%；比亚迪装机量123GWh，市占率16.2%排名第二",
+          "round": 3,
+          "expected": "R2-N",
+          "actual": "R1-3"
+        }
+      ],
+      "late_first_citations": [],
+      "details": [
+        {
+          "content": "宁德时代动力电池营收2400亿元，同比增长18.2%，占比66.7%；储能电池营收800亿元，同比增长60.3%，占比22.2%",
+          "source": "R2-7",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "动力电池毛利率28%，储能系统毛利率35%，储能毛利率高出7个百分点",
+          "source": "R2-1",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "全球储能市占率：宁德时代40%，比亚迪22GWh、市占率11%排名第三",
+          "source": "R2-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代全球动力电池装机量280GWh，市占率36.8%；比亚迪装机量123GWh，市占率16.2%排名第二",
+          "source": "R1-3",
+          "priority": "critical",
+          "status": "⚠️"
+        }
+      ],
+      "accuracy": 0.875
+    },
+    {
+      "total": 5,
+      "matched": 5,
+      "partial": 0,
+      "unmatched": 0,
+      "by_priority": {
+        "critical": 5,
+        "related": 0
+      },
+      "by_source_round": {
+        "3": 5
+      },
+      "violations": [],
+      "late_first_citations": [],
+      "details": [
+        {
+          "content": "宁德时代电池总收入3200亿元（动力2400+储能800），比亚迪电池总收入1500亿元，宁德为比亚迪的2.1倍",
+          "source": "R3-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "宁德时代综合毛利率26.5%，比亚迪电池业务毛利率约20%，宁德高出6.5个百分点",
+          "source": "R3-2",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "比亚迪储能电池出货45GWh，同比增长80%，增速超越宁德时代55%，但绝对规模仅为宁德时代80GWh的56%",
+          "source": "R3-3",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "全球动力电池TOP10：宁德时代36.8%第一，比亚迪16.2%第二，中国企业合计68.5%",
+          "source": "R3-8",
+          "priority": "critical",
+          "status": "✅"
+        },
+        {
+          "content": "机构预计2025年全球动力+储能电池总需求约1800GWh，宁德时代目标出货500GWh，比亚迪目标350GWh",
+          "source": "R3-6",
+          "priority": "critical",
+          "status": "✅"
+        }
+      ],
+      "accuracy": 1.0
+    }
+  ],
+  "violations": [
+    {
+      "source": "R1-3",
+      "content": "宁德时代全球动力电池装机量280GWh，市占率36.8%；比亚迪装机量123GWh，市占率16.2%排名第二",
+      "round": 3,
+      "expected": "R2-N",
+      "actual": "R1-3"
+    }
+  ],
+  "late_citations": [
+    {
+      "source": "R1-2",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "储能电池系统营收800亿元，同比增长60.3%，占总营收22.2%"
+    },
+    {
+      "source": "R1-4",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "储能系统毛利率35%，高于公司综合毛利率"
+    },
+    {
+      "source": "R1-4",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "储能电池全球出货量80GWh，同比增长55%，市占率40%，连续三年全球第一"
+    },
+    {
+      "source": "R1-4",
+      "first_seen_round": 2,
+      "origin_round": 1,
+      "content": "公司推出第三代天恒储能系统，采用CTP3.0技术，系统能量密度提升至180Wh/kg，循环寿命超15000次，度电成本降至0.18元/kWh"
+    },
+    {
+      "source": "R2-7",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "宁德时代动力电池营收2400亿元，同比增长18.2%，占比66.7%；储能电池营收800亿元，同比增长60.3%，占比22.2%"
+    },
+    {
+      "source": "R2-1",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "动力电池毛利率28%，储能系统毛利率35%，储能毛利率高出7个百分点"
+    },
+    {
+      "source": "R2-2",
+      "first_seen_round": 3,
+      "origin_round": 2,
+      "content": "全球储能市占率：宁德时代40%，比亚迪22GWh、市占率11%排名第三"
+    },
+    {
+      "source": "R1-3",
+      "first_seen_round": 3,
+      "origin_round": 1,
+      "content": "宁德时代全球动力电池装机量280GWh，市占率36.8%；比亚迪装机量123GWh，市占率16.2%排名第二"
+    },
+    {
+      "source": "R3-2",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代电池总收入3200亿元（动力2400+储能800），比亚迪电池总收入1500亿元，宁德为比亚迪的2.1倍"
+    },
+    {
+      "source": "R3-2",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "宁德时代综合毛利率26.5%，比亚迪电池业务毛利率约20%，宁德高出6.5个百分点"
+    },
+    {
+      "source": "R3-3",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "比亚迪储能电池出货45GWh，同比增长80%，增速超越宁德时代55%，但绝对规模仅为宁德时代80GWh的56%"
+    },
+    {
+      "source": "R3-8",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "全球动力电池TOP10：宁德时代36.8%第一，比亚迪16.2%第二，中国企业合计68.5%"
+    },
+    {
+      "source": "R3-6",
+      "first_seen_round": 4,
+      "origin_round": 3,
+      "content": "机构预计2025年全球动力+储能电池总需求约1800GWh，宁德时代目标出货500GWh，比亚迪目标350GWh"
+    }
+  ]
+}

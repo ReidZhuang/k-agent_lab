@@ -1,0 +1,23 @@
+{
+  "test": "foundation_test",
+  "timestamp": "20260623_174957",
+  "model": "deepseek-v4-flash",
+  "rounds": {
+    "1": {
+      "role": "tool_call",
+      "query": "宁德时代 2024年 财报 营收 净利润 增长率",
+      "reasoning_analysis": {
+        "key_findings_used": [
+          "initial_search"
+        ],
+        "gaps_identified": "无，这是第一轮搜索。",
+        "search_strategy": "初始搜索"
+      },
+      "search_result_length": 388,
+      "search_result_snippets": 0,
+      "search_result_preview": "（搜索异常: https://www.bing.com/search ConnectError: error sending request for url (https://www.bing.com/search?q=%28%E5%AE%81%E5%BE%B7%E6%97%B6%E4%BB%A3+2024%E5%B9%B4+%E8%B4%A2%E6%8A%A5+%E8%90%A5%E6%94%B6+%E5%87%80%E5%88%A9%E6%B6%A6+%E5%A2%9E%E9%95%BF%E7%8E%87%29+%28site%3Aeastmoney.com+OR+site%3Afinan",
+      "_full_result": "（搜索异常: https://www.bing.com/search ConnectError: error sending request for url (https://www.bing.com/search?q=%28%E5%AE%81%E5%BE%B7%E6%97%B6%E4%BB%A3+2024%E5%B9%B4+%E8%B4%A2%E6%8A%A5+%E8%90%A5%E6%94%B6+%E5%87%80%E5%88%A9%E6%B6%A6+%E5%A2%9E%E9%95%BF%E7%8E%87%29+%28site%3Aeastmoney.com+OR+site%3Afinance.sina.com.cn%29) > client error (Connect) > peer misbehaved: SelectedUnofferedKxGroup）"
+    }
+  },
+  "final_answer": null
+}

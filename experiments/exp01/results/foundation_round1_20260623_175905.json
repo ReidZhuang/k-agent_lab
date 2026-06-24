@@ -1,0 +1,16 @@
+{
+  "query": "宁德时代 2024年 财报 营收 净利润 增长率 年度报告",
+  "reasoning_analysis": {
+    "key_findings_used": [
+      "initial_search"
+    ],
+    "gaps_identified": "暂无，这是第一轮搜索",
+    "search_strategy": "初始搜索"
+  },
+  "search_result_length": 1214,
+  "messages_count": 4,
+  "token_usage": {
+    "input": 773,
+    "output": 166
+  }
+}
