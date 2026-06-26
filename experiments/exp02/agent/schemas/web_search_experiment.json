@@ -1,0 +1,32 @@
+{
+    "type": "object",
+    "properties": {
+        "key_findings_used": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "oneOf": [{"type": "string"}, {"type": "null"}],
+                        "description": "行号引用。有引用时：支持 N（单行）、N-N（连续区间）、逗号分隔组合。例如: '4-6,8,11-13'。无引用时：必须为 null。"
+                    },
+                    "priority": {
+                        "oneOf": [{"type": "string", "enum": ["critical", "useful", "related"]}, {"type": "null"}],
+                        "description": "按 cite-and-compress 技能中的【引用选择标准】分类。有引用时必填，无引用时为 null。"
+                    },
+                    "context": {
+                        "oneOf": [{"type": "string"}, {"type": "null"}],
+                        "description": "从原文中提炼的引用定位。有引用时必填，无引用时为 null。"
+                    }
+                },
+                "required": ["content", "priority", "context"]
+            },
+            "description": "【必须】从最近一轮结果中按行号引用的数据点列表。"
+        },
+        "query": {
+            "type": "string",
+            "description": "完整的搜索查询语句。"
+        }
+    },
+    "required": ["key_findings_used", "query"]
+}

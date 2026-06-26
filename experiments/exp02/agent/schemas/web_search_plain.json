@@ -1,0 +1,10 @@
+{
+    "type": "object",
+    "properties": {
+        "query": {
+            "type": "string",
+            "description": "搜索查询语句。"
+        }
+    },
+    "required": ["query"]
+}

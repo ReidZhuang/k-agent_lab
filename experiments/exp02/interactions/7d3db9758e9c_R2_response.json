@@ -1,0 +1,15 @@
+{
+  "finish_reason": "tool_calls",
+  "content": "",
+  "tool_calls": [
+    {
+      "id": "call_00_6S5lOXrffV9QHRmgGvUj4210",
+      "type": "function",
+      "function": {
+        "name": "web_search",
+        "arguments": "{\"key_findings_used\": [{\"content\": \"0-51\", \"priority\": \"critical\", \"context\": \"宁德时代财务数据，包含2026一季报、2025年报、2025三季报、2025中报的营收、净利润、毛利率、净利率、ROE、资产负债率等关键指标\"}], \"query\": \"比亚迪 2024年报 2025年报 营收 净利润 财务数据\"}"
+      }
+    }
+  ],
+  "reasoning_content": "我获取了宁德时代的财务数据。现在让我获取比亚迪的财务数据。"
+}

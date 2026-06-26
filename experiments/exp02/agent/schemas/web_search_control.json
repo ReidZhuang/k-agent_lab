@@ -1,0 +1,33 @@
+{
+    "type": "object",
+    "properties": {
+        "key_findings_used": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "【必须】从最近一轮结果中逐字引用的原文片段。"
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "【必须】引用来源或位置说明。"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["critical", "useful", "related"],
+                        "description": "按引用选择标准分类。"
+                    }
+                },
+                "required": ["content", "source", "priority"]
+            },
+            "description": "从最近一轮结果中逐字引用的数据点列表。"
+        },
+        "query": {
+            "type": "string",
+            "description": "完整的搜索查询语句。"
+        }
+    },
+    "required": ["key_findings_used", "query"]
+}

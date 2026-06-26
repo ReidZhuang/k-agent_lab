@@ -1,0 +1,15 @@
+{
+  "finish_reason": "tool_calls",
+  "content": "",
+  "tool_calls": [
+    {
+      "id": "call_00_B6XNmGJzDajDSqmtsNkM0746",
+      "type": "function",
+      "function": {
+        "name": "web_search",
+        "arguments": "{\"key_findings_used\": [{\"content\":null,\"priority\":null,\"context\":null}], \"query\": \"宁德时代 比亚迪 全球动力电池市场份额 2025\"}"
+      }
+    }
+  ],
+  "reasoning_content": "这个搜索没有返回我需要的信息。让我再搜一下市场份额方面的信息。"
+}

@@ -1,0 +1,15 @@
+{
+  "finish_reason": "tool_calls",
+  "content": "",
+  "tool_calls": [
+    {
+      "id": "call_00_BgQIndmDGmmo7bG1MelS1203",
+      "type": "function",
+      "function": {
+        "name": "web_search",
+        "arguments": "{\"key_findings_used\": [{\"content\":\"0-210\",\"priority\":\"critical\",\"context\":\"宁德时代和比亚迪2026Q1-2025中报各期完整财务数据，含营收、净利润、毛利率、净利率、ROE、资产负债率\"},{\"content\":\"213-221\",\"priority\":\"critical\",\"context\":\"宁德时代与比亚迪2026Q1核心指标直接对比\"}], \"query\": \"宁德时代 全球动力电池市场份额 2025 2024\"}"
+      }
+    }
+  ],
+  "reasoning_content": "我有了非常充足的数据来做完整的对比分析了。让我再搜索一下两家公司的业务构成和市场地位信息，使分析更全面。"
+}

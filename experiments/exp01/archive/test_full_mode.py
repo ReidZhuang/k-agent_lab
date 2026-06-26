@@ -2,7 +2,7 @@
 """
 全量模式测试：critical + useful + related 所有层级保留
 
-使用 v1.1 新版 prompts（三层五级分类 + 字符偏移标注）
+使用 v1.2 新版 prompts（三层五级分类 + 字符偏移标注 + context 定位）
 后端：东方财富 API 实时数据
 优先级模式：全量（不丢弃任何 priority 级别的引用）
 
@@ -165,7 +165,7 @@ def main():
     print(f"  全量模式测试")
     print(f"  优先级: critical + useful + related（所有层级保留）")
     print(f"  后端: 东方财富 API（与 baseline 相同）")
-    print(f"  提示词版本: v1.1（三层五级分类 + 字符偏移标注）")
+    print(f"  提示词版本: v1.2（三层五级分类 + 字符偏移标注 + context 定位）")
     print(f"{'='*65}")
 
     messages = [
@@ -254,7 +254,11 @@ def main():
                 c = f.get("content", "")[:80]
                 s = f.get("source", "?")
                 p = f.get("priority", "?")
-                print(f"    [{i}] [{p}] src={s} | {c}")
+                ctx = f.get("context", "")
+                if ctx:
+                    print(f"    [{i}] [{p}] src={s} ctx={ctx} | {c}")
+                else:
+                    print(f"    [{i}] [{p}] src={s} | {c}")
 
             # ── 真实搜索 ──
             t0 = time.time()
@@ -332,7 +336,7 @@ def main():
     output = {
         "test_name": "full_mode",
         "priority_mode": "critical+useful+related",
-        "prompts_version": "v1.1",
+        "prompts_version": "v1.2",
         "model": DEFAULT_MODEL,
         "user_query": USER_QUERY,
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),

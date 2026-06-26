@@ -1,0 +1,54 @@
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "# SOUL.md\n\n## Identity\nYou are an AI assistant focused on delivering accurate, well-supported responses.\n\n## Principles\n- Be clear and precise in your reasoning.\n- Base conclusions on the information available to you.\n- Acknowledge uncertainty when the evidence is insufficient.\n\n## Vibe\nProfessional. Direct. No unnecessary fluff.\n\n# AGENTS.md\n\n## Working Style\n\nYou work in iterations. Each iteration you have the opportunity to:\n- Review new information returned from your last action.\n- Decide what to do next based on what you've learned.\n\n## Multi-Step Investigation\n\nComplex questions are best answered through multiple steps of investigation:\n\n1. **Start broad.** Get an overview of the subject before diving into details.\n2. **Follow the gaps.** Each piece of information should suggest the next question.\n3. **Verify before concluding.** Cross-check claims when possible.\n4. **Know when to stop.** Once you have sufficient evidence to answer the original question clearly, stop. More iterations do not guarantee a better answer.\n\n## Handling Context\n\nYou operate within a limited context window. Each round builds on the last, but earlier rounds are progressively compacted — only the most essential information is preserved.\n\n- If you need a detail preserved for the next round, make sure to reference it clearly in your current output.\n- Information not referenced may be lost when context is compacted.\n\n## Output\n\nWhen you have a final answer, present it directly and comprehensively. State your conclusion, then the evidence that supports it.\n\n## Preferences\n\nSee [[PREFERENCES.md]] for your operational preferences regarding token usage, conciseness, and skill selection.\n\n# PREFERENCES.md\n\n## Token Value Principle\n\nYou operate within a limited context window. Every token consumed is a cost — but the goal is not to minimize that cost at the expense of output quality. The goal is **value for tokens**: the best possible output quality and completeness for the tokens spent.\n\n- **Output completeness is the priority.** A shorter answer that misses key information is a false economy. The benchmark is: would the answer be materially worse if you used fewer tokens? If yes, spend the tokens.\n- **Eliminate waste, not depth.** Redundant phrasing, unnecessary repetition, vague citations — these are waste. Analytical depth, data density, balanced reasoning — these are value. Spend on value, cut waste.\n- **Cite precisely.** Vague citations waste space that could hold real data.\n- **Don't cut corners on reasoning.** Multi-step reasoning, cross-checking, and iterating on findings are legitimate uses of tokens. More rounds are not inherently bad — they are useful when they produce new information or deeper insight.\n- **Prefer skills that improve token-value ratio.** If a skill can help you carry more useful information within the same context, or preserve key data while discarding redundancy, load and use it. The purpose is not to make you stop early — it's to make every round count for more.\n- **Know when you're done.** Stop when you have sufficient evidence to answer the original question completely. This is not about minimizing rounds — it's about not wasting tokens on empty rounds that produce no new information.\n\n## 可用技能\n- **cite-and-compress**：通过划定可引用范围和可引用行以及行号引用机制对工具返回内容进行精确标注和选择性保留，自动压缩上下文中冗余的旧轮次tool返回内容，在不影响输出质量和推理完整性的前提下提高 token 使用效率。适合需要多轮信息收集的agent，尤其适用于信息密集型任务（如财务分析、技术调研、竞品分析、文献综述等）。核心价值：在上下文窗口中精炼tool返回信息，提高上下文质量，优化token使用性价比。\n\n## 压缩机制说明\n\n本技能的核心价值在于压缩：\n- 你通过 key_findings_used 精确标注可引用有效范围中哪些行是关键的、它们的优先级和定位。\n- 系统收到你的引用后，会从可引用有效范围中仅提取你引用的行，附加你生成的摘要代替可引用有效范围内容作为上下文。\n- 未引用的行将被丢弃，所以请谨慎选择可引用行。\n\n**你的引用质量直接影响压缩效果：**\n- 引用越精确，系统保留的有效信息越多、丢弃的冗余越少。\n- context 字段写得越清晰，即使原文被压缩，后续轮次仍能理解每条引用的含义。\n- 不需要的数据不要引用——未被引用的内容会被安全丢弃，不会丢失有用信息。\n\n## 引用目的\n\n系统会根据你在 key_findings_used 中列出的引用信息，选择性地保留上一轮的对应数据。\n未被引用的内容将在下一轮被丢弃。\n不准确或不完整的引用可能导致关键信息丢失。\n\n## 可引用有效范围\n\n定义：可引用有效范围是唯一可以进行引用操作（引用操作详细步骤见下文）的内容，其余的内容均不可执行引用操作。可引用有效范围由可引用行组成。\n\n可引用有效范围的划定必须同时满足以下两个条件，缺一不可。\n\n### 条件一：特定字符与引用块围栏\n\n你的对话历史中可能有多条 `role=tool` 的消息\n如何定位：\n1. 初步定位：定位所有\"role\": \"tool\"的消息内容；\n2. 在其中寻找`<<<CITATION_BLOCK>>>`，锁定 `<<<CITATION_BLOCK>>>` 和 `<<<END_CITATION_BLOCK>>>` 围栏之内的内容，这些内容就是可引用有效范围。\n\n范例：\n```\n<<<CITATION_BLOCK>>>\n0~ 比亚迪(002594) 财务数据报告\n1~ ========================================\n2~ 营业收入: 1502.3亿\n3~ 净利润: 40.8亿\n<<<END_CITATION_BLOCK>>>\n```\n\n注意：\n`<<<CITATION_BLOCK>>>` 和 `<<<END_CITATION_BLOCK>>>` 这两行本身不是可引用行。\n\n### 条件二：格式——以「数字~+空格」开头\n\n属于可引用有效范围的内容，其内容每行一定**以「数字~+空格」开头**，如果一行内容没有以「数字~+空格」开头那么它一定不是可引用有效范围的内容也不是可引用行。\n\n识别方法：\n- ✅ `4~ 营业收入: 1291.3亿` → 行首是「数字~+空格」→ **可引用行**\n- ❌ 不以「数字~+空格」开头的行 → **不是可引用行**\n- ❌ 行号满足格式，但位于 `<<<CITATION_BLOCK>>>` … `<<<END_CITATION_BLOCK>>>` 围栏之外 → **不是可引用行**\n\n注意：\n- **只有行首的「数字~+空格」是行号标记。** 原文中其他位置的同样字符是原文内容。\n- 行号不是原文的一部分，理解语义时忽略。\n- 单行超过 100 字符时在第 100 字符处截断，续行接续编号。\n- 数字从 0 开始递增。\n\n为什么这么严格？系统收到你引用的行号后，使用行号去匹配可引用行去重建引用内容。\n如果你引用了一个不在有效区域内的行号，系统将无法定位到原文，\n该条引用会丢失，对应的数据在后续轮次中不可用。\n\n\n## 可引用行的分类标准\n\n分类目标：可引用行\n\n类别：1. critical; 2. useful; 3. related; 4. useless.\n\n分类标准：\n\n如果可引用行具有以下任意特点，那么它属于critical类别：\n  直接答案：该行包含内容是用户原始问题的直接答案或其问题的某一个子问题的直接答案。\n  推理输入：该行包含内容是得出答案所需的输入项，比如该行包含的内容是：\n    -得到用户问题答案的推导基础，结合其他信息进行逻辑推理或计算后可得出答案。\n    -得到用户问题答案的拼接要素，与其他数据或信息合并后构成答案。\n\n如果可引用行具有以下任意特点，那么它属于useful类别：\n  过程辅助：该行包含内容不直接构成答案，但有助于搜索或判断。起作用可能是：\n    -佐证：支持已有结论，增强可信度。\n    -反证：与已有结论矛盾，提示需要修正判断方向。\n    -方向指引：提示下一步应搜索的维度。\n    -缺口暴露：表明某信息不存在或不足以回答。\n    -候选备用：未找到精确答案时作为替代参考。\n\n如果可引用行具有以下任意特点，那么它属于related类别：\n  背景相关：该行包含内容与用户问题具有联系，但该内容不是直接答案，也不对获取答案有直接或间接的帮助。\n\n如果可引用行具有以下任意特点，那么它属于useless类别：\n  无关数据：该行包含内容与用户问题无关，没有这些内容对回答用户问题没有影响。\n\n\n## 本轮搜索关键字\n\n获取步骤：\n  1. 拿到可引用有效范围或可引用有效行的tool_call_id；\n  2. 在之前的 assistant 消息中找到 tool_calls[0].id === tool_call_id 的那条；\n  3. 读取其 function.arguments 中的 query 字段，这个字段的值就是搜索关键字。\n\n## 引用操作的步骤\n\n### 第零步：定位可引用行\n\n先确定你手上的引用池有多大：\n\n1. 利用“可引用有效范围”中的“条件一：特定字符与引用块围栏”中的规则来定位可引用有效范围，操作后得到可引用有效范围的内容；\n2. 利用“可引用有效范围”中的“条件二：格式——以「数字~+空格」开头”中的规则，对可引用有效范围的内容定位可引用行，操作后得到一个可引用行列表；\n3. 如果筛选后的可引用范围为空、可引用行数列表为空，则表示本轮**没有任何可以引用的内容**。此时按以下规则输出 key_findings_used：\n\n   ```json\n   {\"content\": null, \"priority\": null, \"context\": null}\n   ```\n\n   规则：\n   - **三个字段全部为 `null`**，不能省略字段，也不能用占位文字（如\"初始搜索\"）替代。\n   - 系统收到 `null` 后会判定\"无引用\"，跳过压缩，并清空旧 tool 数据。\n   - 这是唯一合法的\"无引用\"表达方式。任何非 `null` 的 content 值都会被当作有效行号引用去解析。\n\n完成这一步后，你手上有了一个明确的可引用行列表。接下来对列表中的每一行执行第一步。\n\n### 第一步：逐行审视\n\n从第 0 行开始，对每一行执行 a→b→c：\n\n**a. 价值判断**\n   (1) 本行是否是“本轮搜索关键字”的直接结果？\n   (2) 本行对回答用户问题是否有用？\n   两个问题的答案都是「否」→ 标记useless，丢弃，不进入下一个步骤。\n   两个问题的答案至少一个「是」→ 进入 b。\n\n**b. 打标签**\n   按照“可引用行的分类标准”，对该行打标签，每行只能打critical / useful / related三个标签其中的一个。\n\n**c. 写 context**\n   从该行原文提炼一段简短说明，使本条引用在脱离原文后仍可理解其来源。\n   规则：只能来自原文，不能添加原文没有的推断、比较或解读。\n\n### 第二步：聚类输出\n\n按如下步骤顺序操作：\n1. 按行标签分组（分成critical、useful、related三组）\n2. 同一组内，将 context 语义相近的行聚类在一起，形成一个聚类\n3. 将每一聚类内的所有行的行号列出，相邻行号合并为区间（如 \"4-6\"），不相邻行逗号分隔（如 \"4,7\"），混合用 \"4-6,8,11-13\"\n4. 同一聚类内的 context 合并为一段简洁描述\n5. 组合key_findings_used的内容：\n   -每一个聚类构成key_findings_used的一个元素。\n   -每一个key_findings_used元素包含content, priority, context三个元素。\n   -每一个聚类中，\n      -content=聚类输出步骤2中整理好的行号信息\n      -priority=聚类输出步骤1中分组的标签信息\n      -context=聚类输出步骤4并后的context信息\n\n至此，我们运行完了所有的引用操作步骤得到了最终的key_findings_used信息就是引用输出信息。"
+    },
+    {
+      "role": "user",
+      "content": "请研究宁德时代的财务状况，然后与比亚迪进行对比分析。你可以多步搜索，每步基于上一步发现继续深入。目标：全面了解两者的盈利能力、成长性和财务健康状况。"
+    },
+    {
+      "role": "assistant",
+      "content": "# 第一步：获取两家公司财务概况\n\n让我先搜索宁德时代和比亚迪的最新财务数据。",
+      "tool_calls": [
+        {
+          "id": "call_00_iZGvW6lUBiscvlFUV54o4271",
+          "type": "function",
+          "function": {
+            "name": "web_search",
+            "arguments": "{\"key_findings_used\": [{\"content\": null, \"priority\": null, \"context\": null}], \"query\": \"宁德时代 2024年报 营收 净利润 财务数据\"}"
+          }
+        }
+      ],
+      "reasoning_content": "用户想让我研究宁德时代（CATL）和比亚迪（BYD）的财务状况并进行对比分析。我需要多步搜索来获取这两家公司的财务数据。\n\n让我先搜索两者最新的财务数据概览。\n\n我应该使用cite-and-compress技能来优化信息管理。让我开始第一步搜索。"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_00_iZGvW6lUBiscvlFUV54o4271",
+      "content": "[已压缩]\n### 重要性: critical\n### summary: 宁德时代财务数据，包含2026一季报、2025年报、2025三季报、2025中报的营收、净利润、毛利率、净利率、ROE、资产负债率等关键指标\n### content:\n宁德时代(300750) 财务数据报告\n========================================\n\n营业收入: 1291.3亿 (同比52.4%)\n净利润: 207.4亿 (同比48.5%)\n扣非净利润: 180.9亿\n毛利率: 24.82%\n净利率: 17.61%\n每股收益: 4.58\nROE: 5.98%\n总资产: 10463.3亿\n净资产: 3942.3亿\n资产负债率: 62.32%\n\n营业收入: 4237.0亿 (同比17.0%)\n净利润: 722.0亿 (同比42.3%)\n扣非净利润: 645.1亿\n毛利率: 26.27%\n净利率: 18.12%\n每股收益: 16.14\nROE: 24.91%\n总资产: 9748.3亿\n净资产: 3710.3亿\n资产负债率: 61.94%\n\n营业收入: 2830.7亿 (同比9.3%)\n净利润: 490.3亿 (同比36.2%)\n扣非净利润: 436.2亿\n毛利率: 25.31%\n净利率: 18.47%\n每股收益: 11.02\nROE: 17.76%\n总资产: 8960.8亿\n净资产: 3470.1亿\n资产负债率: 61.27%\n\n营业收入: 1788.9亿 (同比7.3%)\n净利润: 304.9亿 (同比33.3%)\n扣非净利润: 272.0亿\n毛利率: 25.02%\n净利率: 18.09%\n每股收益: 6.92\nROE: 11.63%\n总资产: 8671.8亿\n净资产: 3243.9亿\n资产负债率: 62.59%\n\n(数据来源: 东方财富数据中心, 2026-06-27 00:00)"
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_00_6S5lOXrffV9QHRmgGvUj4210",
+          "type": "function",
+          "function": {
+            "name": "web_search",
+            "arguments": "{\"key_findings_used\": [{\"content\": \"0-51\", \"priority\": \"critical\", \"context\": \"宁德时代财务数据，包含2026一季报、2025年报、2025三季报、2025中报的营收、净利润、毛利率、净利率、ROE、资产负债率等关键指标\"}], \"query\": \"比亚迪 2024年报 2025年报 营收 净利润 财务数据\"}"
+          }
+        }
+      ],
+      "reasoning_content": "我获取了宁德时代的财务数据。现在让我获取比亚迪的财务数据。"
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_00_6S5lOXrffV9QHRmgGvUj4210",
+      "content": "<<<CITATION_BLOCK>>>\n0~ 比亚迪(002594) 财务数据报告\n1~ ========================================\n2~ \n3~ ── 2026一季报 ──\n4~ 营业收入: 1502.3亿 (同比-11.8%)\n5~ 净利润: 40.8亿 (同比-55.4%)\n6~ 扣非净利润: 41.5亿\n7~ 毛利率: 18.81%\n8~ 净利率: 2.67%\n9~ 每股收益: 0.448\n10~ ROE: 1.65%\n11~ 总资产: 9020.8亿\n12~ 净资产: 2621.2亿\n13~ 资产负债率: 70.94%\n14~ \n15~ ── 2025年报 ──\n16~ 营业收入: 8039.6亿 (同比3.5%)\n17~ 净利润: 326.2亿 (同比-19.0%)\n18~ 扣非净利润: 294.5亿\n19~ 毛利率: 17.74%\n20~ 净利率: 4.20%\n21~ 每股收益: 3.58\n22~ ROE: 15.31%\n23~ 总资产: 8837.3亿\n24~ 净资产: 2585.4亿\n25~ 资产负债率: 70.74%\n26~ \n27~ ── 2025三季报 ──\n28~ 营业收入: 5662.7亿 (同比12.7%)\n29~ 净利润: 233.3亿 (同比-7.5%)\n30~ 扣非净利润: 204.9亿\n31~ 毛利率: 17.87%\n32~ 净利率: 4.28%\n33~ 每股收益: 2.56\n34~ ROE: 10.83%\n35~ 总资产: 9019.3亿\n36~ 净资产: 2584.0亿\n37~ 资产负债率: 71.35%\n38~ \n39~ ── 2025中报 ──\n40~ 营业收入: 3712.8亿 (同比23.3%)\n41~ 净利润: 155.1亿 (同比13.8%)\n42~ 扣非净利润: 136.0亿\n43~ 毛利率: 18.01%\n44~ 净利率: 4.32%\n45~ 每股收益: 1.71\n46~ ROE: 7.43%\n47~ 总资产: 8463.4亿\n48~ 净资产: 2447.5亿\n49~ 资产负债率: 71.08%\n50~ \n51~ (数据来源: 东方财富数据中心, 2026-06-27 00:00)\n<<<END_CITATION_BLOCK>>>"
+    }
+  ],
+  "model": "deepseek-v4-flash",
+  "max_tokens": 4000
+}
