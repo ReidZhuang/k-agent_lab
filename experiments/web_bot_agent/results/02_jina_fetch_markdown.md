@@ -1,0 +1,1 @@
+Error calling tool 'jina_fetch': Error fetching URL (https://www.stcn.com): HTTPSConnectionPool(host='r.jina.ai', port=443): Max retries exceeded with url: /https%3A//www.stcn.com (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7ff6a80d3790>: Failed to establish a new connection: [Errno 101] Network is unreachable'))

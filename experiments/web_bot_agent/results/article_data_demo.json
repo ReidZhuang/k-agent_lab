@@ -1,0 +1,50 @@
+{
+  "search_meta": {
+    "session_id": "s_20260703_001",
+    "query": "site:stcn.com 中国光刻机制造",
+    "keyword": "产业链 技术壁垒",
+    "created": "2026-07-03T17:30:00"
+  },
+
+  "articles": {
+    "a_20260703_001": {
+      "title": "国产光刻机入选工信部推广目录 产业链这些上市公司有料",
+      "url": "https://www.stcn.com/article/detail/1323196.html",
+      "date": "2024-09-19",
+      "snippet": "据东兴证券研报，光刻机可分为直写光刻机与掩膜光刻机...",
+      "source": "stcn.com",
+      "charnum": 2564,
+      "segments": [
+        {"id": "s1", "charnum": 87},
+        {"id": "s2", "charnum": 64},
+        {"id": "s3", "charnum": 82},
+        {"id": "s4", "charnum": 512},
+        {"id": "s5", "charnum": 186},
+        {"id": "s6", "charnum": 148},
+        {"id": "s7", "charnum": 312},
+        {"id": "s8", "charnum": 1173}
+      ]
+    }
+  },
+
+  "segments": {
+    "a_20260703_001_s1": {
+      "article_id": "a_20260703_001",
+      "point": "首台（套）重大技术装备推广",
+      "summary": "工信微报发布2024年版指导目录",
+      "charnum": 87
+    },
+    "a_20260703_001_s2": {
+      "article_id": "a_20260703_001",
+      "point": "光刻机分类与型号",
+      "summary": "光刻机五大类主流型号",
+      "charnum": 64
+    },
+    "a_20260703_001_s8": {
+      "article_id": "a_20260703_001",
+      "point": "光刻机零部件发展",
+      "summary": "光源系统、物镜系统等核心组件国产化进展",
+      "charnum": 1173
+    }
+  }
+}

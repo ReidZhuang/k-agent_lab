@@ -1,0 +1,21 @@
+{
+  "name": "web_bot_agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@ericthered926/duckduckgo-mcp-server": "^0.6.0",
+    "@iflow-mcp/guangxiangdebizi-web-retrieval-mcp": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "duckduckgo-mcp": "^1.0.1",
+    "duckduckgo-websearch": "^2.0.3",
+    "tsx": "^4.22.4"
+  }
+}

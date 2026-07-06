@@ -1,0 +1,7 @@
+=== duckduckgo-mcp 搜索结果 ===
+
+--- 搜索: "证券时报网 stcn.com" ---
+Error: Failed to get the VQD for query "证券时报网 stcn.com".
+
+--- 新闻搜索: "stcn.com 财经" (近一天) ---
+Error: Rate limit exceeded: Maximum 1 request(s) per second

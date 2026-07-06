@@ -1,0 +1,24 @@
+══════════════════════════════════════════════════
+stcn.com 门户提取 - 工作汇总
+══════════════════════════════════════════════════
+
+工具:
+  - duckduckgo-mcp (@ericthered926/duckduckgo-mcp-server v0.6.0)
+  - Node.js fetch (原生)
+
+duckduckgo-mcp 提供的工具:
+  1. duckduckgo_web_search  - DuckDuckGo 网页搜索
+  2. duckduckgo_news_search - DuckDuckGo 新闻搜索
+
+特点:
+  - 返回搜索结果的标题、URL、摘要片段
+  - 支持 region/时间/安全搜索过滤
+  - 有速率限制 (1/sec, 15000/month)
+  - 默认返回 3 条结果 (可调 1-20)
+
+局限性:
+  - 仅搜索，不抓取完整页面内容
+  - 摘要长度有限 (~150 字符)
+  - 对中文网站的支持取决于 DuckDuckGo 索引
+
+报告时间: 2026-07-01T09:14:33.365Z

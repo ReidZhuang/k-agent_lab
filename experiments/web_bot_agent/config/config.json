@@ -1,0 +1,39 @@
+{
+  "project": "web_bot_agent",
+  "description": "网站结构解析 + 搜索 + LLM 摘要 Agent",
+
+  "proxy": {
+    "enabled": true,
+    "http": "http://172.20.32.1:7890",
+    "https": "http://172.20.32.1:7890"
+  },
+
+  "search": {
+    "engine": "duckduckgo",
+    "max_results": 20,
+    "tool": "web-forager"
+  },
+
+  "extraction": {
+    "primary": "trafilatura",
+    "fallback": "readability",
+    "output_format": "markdown",
+    "include_images": false,
+    "include_links": true,
+    "timeout": 15
+  },
+
+  "ollama": {
+    "endpoint": "http://localhost:11434",
+    "models": {
+      "default": "qwen2.5:7b",
+      "large": "qwen2.5:7b"
+    },
+    "library_path": "/home/stockagent/ollama/lib"
+  },
+
+  "paths": {
+    "results": "results",
+    "models": "/home/stockagent/.ollama/models"
+  }
+}

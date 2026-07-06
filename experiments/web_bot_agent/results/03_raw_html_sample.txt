@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1400,  user-scalable=no" />
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Cache-Control" content="no-transform">
+        <meta name="keywords" content="证券时报,证券时报网,证券时报快讯,时报快讯,证券时报电子版,信息披露,资本市场信息披露平台,今日股市,股市最新消息新闻,中国股市,实时股市">
+            <meta name="description" content="证券时报，证券时报网，由人民日报社主管主办，是证券市场权威信息披露媒体，也是中国资本市场的重要信息披露平台。提供全天候7*24小时财经证券类资讯，内容丰富，包括时报快讯、股市新闻、财经资讯、基金净值、债券、期货、上市公司公告等，为用户提供全方位、最新鲜的财经信息。打造了"信披168"综合服务专区，资本市场投教"星火计划"，是权威、全面的资本市场服务平台。">
+                    <title>证券时报官方网站-中国资本市场信息披露平台</title>
+        <link rel='icon' href='https://static-web.stcn.com/static/images/favicon.ico' type='image/x-icon'/>
+    <link rel="stylesheet" href="https://static-web.stcn.com/static/v3/styles/common.min.css?v=2026061801">
+                    <link rel="stylesheet" href="https://static-web.stcn.com/static/v3/styles/index.min.css?v=20260616">
+<link rel="stylesheet" href="https://static-web.stcn.com/static/styles/chuangtou.css" />
+<link rel="stylesheet" href="https://static-web.stcn.com/static/styles/clarify.css?v=20260330" />
+<meta name="csrf-param" content="_csrf-stcn_web">
+    <meta name="csrf-token" content="IXo6_B2vrGA7w4JfKq9GDvBfIJcPCMFUq-e25IvibwxHpafCDpjrf7T48ZAwUxk03qKuNNOTHNMb_mxO4w3Uug==">
+        <script src="https://static-web.stcn.com/static/v3/scripts/tailwindcss-3.4.17.min.js"></script>
+    <script>
+                window.IS_LOGIN = false;                var DOMAIN_CONFIG = {
+            pc: "https://www.stcn.com",
+            h5: "https://h5.stcn.com",
+            epaper: "https://epaper.stcn.com"
+        };
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#c7000b",
+                        primaryDark: "#960009",
+                        primaryLight: "#fbe9ea",
+                        accent: "#ff9900",
+                        mainText: "#1E2534",
+                    },
+                },
+            },
+            plugins: [
+                function ({ addComponents }) {
+                    addComponents({
+                        ".w-common": {
+                            width: "100%",
+                            maxWidth: "1400px",
+                        },
+                    });
+                },
+            ],
+        };
+    </script>
+    </head>
+<body class=" bg-[#fafafa]" >
+
+<!-- 移动端顶部切换栏 -->
+<div id="mobile-version-toggle" class="index-mobile-version-toggle hidden relative w-full h-[220px] bg-white z-[9999] items-center justify-center space-x-[80px]">
+    <div class="absolute top-0 left-0 w-full h-[100%] from-[#ffdbdc] to-transparent opacity-80 pointer-events-none"></div>
+    <a href="javascript:;" class="relative z-10 w-[340px] h-[90px] flex items-center justify-center rounded-full text-[46px] bg-[#fbe9ea] text-[#c7000b] tracking-widest font-medium">
+        移动版
+    </a>
+    <a href="javascript:void(0)" class="relative z-10 w-[340px] h-[90px] flex items-center justify-center rounded-full text-[46px] bg-[#c7000b] text-white tracking-widest font-medium">
+        网页版
+    </a>
+</div>
+
+
+
+<!-- 首页头部通栏广告 -->
+<div class="wide-add">
+    <div class="swiper-wrapper">
+                <a href="https://www.stcn.com/ad/track.html?id=308&amp;area=Web%2Chome_head&amp;goto=aHR0cHM6Ly93d3cuc3Rjbi5jb20vdG9waWMvZGV0YWlsLzU5My5odG1s" target="_blank" class="swiper-slide" style="background: url('https://static-web.stcn.com/upload/2026/0701/09/6a446e2854027a5e6c74.jpg') center center no-repeat;background-size: cover;"></a>
+                <a href="https://www.stcn.com/ad/track.html?id=186&amp;area=Web%2Chome_head&amp;goto=aHR0cHM6Ly93d3cuc3Rjbi5jb20veGlucGkvaW5kZXguaHRtbA%3D%3D" target="_blank" class="swiper-slide" style="background: url('https://static-web.stcn.com/upload/2026/0401/16/69ccddf10fb103fa70e1.jpg') center center no-repeat;background-size: cover;"></a>
+            </div>
+</div>
+<!-- 首页顶部广告 -->
+
+<!-- 顶部信息栏 -->
+<!-- 顶部信息栏（结构与 views/article/index-v3.html 对齐） -->
+<div class="w-full h-[52px] bg-[#f2f2f2]">
+    <div class="w-common flex h-full m-auto space-x-2">
+        <div class="flex-1 h-full space-x-[8px] flex items-center">
+            <img src="https://static-web.stcn.com/static/v3/images/rmrb-icon.png" alt="" class="w-[11.1%] max-w-[80px] h-auto" />
+            <span class="text-mainText text-[12px]">主管主办</span>
+            <span class="text-mainText text-[12px] ml-[6px]">证券市场信息披露媒体</span>
+            <img src="https://static-web.stcn.com/static/v3/images/slogan.png" alt="" class="ml-[6px] w-[28.8%] max-w-[207px] h-auto" />
+        </div>
+        <div class="flex-1 h-full flex justify-end space-x-[12px]">
+            <div class="flex items-center relative w-[45.2%] max-w-[326px]">
+                <form action="/article/search.html" target="_blank" class="w-full">
+                    <input type="text" name="keyword" placehol

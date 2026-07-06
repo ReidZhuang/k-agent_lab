@@ -1,0 +1,38 @@
+{
+  "proxy": {
+    "enabled": true,
+    "http": "http://172.20.32.1:7890",
+    "https": "http://172.20.32.1:7890"
+  },
+  "search": {
+    "engine": "duckduckgo",
+    "max_results": 5,
+    "tool": "web-forager"
+  },
+  "extraction": {
+    "primary": "trafilatura",
+    "fallback": "readability",
+    "output_format": "markdown",
+    "include_images": false,
+    "include_links": true,
+    "timeout": 15
+  },
+  "ollama": {
+    "endpoint": "http://localhost:11434",
+    "models": {
+      "default": "qwen2.5:7b",
+      "large": "qwen2.5:7b"
+    },
+    "max_parallel": 4,
+    "timeout": 120,
+    "temperature": 0.1,
+    "num_predict": 1024
+  },
+  "split": {
+    "threshold_chars": 3000,
+    "part_target_chars": 2000
+  },
+  "session": {
+    "ttl_minutes": 60
+  }
+}
