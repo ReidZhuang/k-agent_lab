@@ -10,6 +10,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from core import run_search_pipeline
+from core import _call_llm, build_point_locate_prompt, parse_point_locate_output
+import os, re
+_PROMPT_BATCH_LOCATE_PATH = os.path.join(os.path.dirname(__file__), "prompts", "point_locate_batch.txt")
+with open(_PROMPT_BATCH_LOCATE_PATH, encoding='utf-8') as f:
+    _prompt_batch_locate_template = f.read()
 from session_manager import manager as session_manager
 
 app = FastAPI(title="bot_search API", version="1.0.0")
@@ -24,11 +29,13 @@ class SearchRequest(BaseModel):
     keyword: str = ""
     max_results: int = 5
     session: str = "new"  # "new" 或 session_id（仅当组装层想复用已有 session 时）
+    mode: str = "segments"  # "segments" → 按段落分组 | "summary" → 整篇摘要+要点
 
 
 class PollResponse(BaseModel):
     session_id: str
     status: str
+    mode: str | None = None
     articles: dict | None = None
     segments: dict | None = None
     error: str | None = None
@@ -49,9 +56,29 @@ class SegmentResponse(BaseModel):
     text: str
 
 
+class PointTextRequest(BaseModel):
+    session_id: str
+    article_id: str
+    point_indices: list[int]  # 要点序号列表（从1开始），如 [1,4,9]
+
+
+class PointTextItem(BaseModel):
+    point_index: int
+    key_point: str
+    found: bool
+    text: str = ""
+
+
+class PointTextResponse(BaseModel):
+    session_id: str
+    article_id: str
+    results: list[PointTextItem]
+
+
 class StatusResponse(BaseModel):
     session_id: str
     status: str
+    mode: str | None = None
     query: str | None = None
     keyword: str | None = None
     created_at: str | None = None
@@ -69,12 +96,12 @@ class CloseResponse(BaseModel):
 # 后台处理线程
 # ============================================================
 
-def _run_pipeline_in_thread(session_id: str, query: str, keyword: str, max_results: int):
+def _run_pipeline_in_thread(session_id: str, query: str, keyword: str, max_results: int, mode: str = "segments"):
     """在新线程中执行 pipeline，完成后更新 session 状态"""
 
     async def _run():
         try:
-            result = await run_search_pipeline(query, keyword, max_results)
+            result = await run_search_pipeline(query, keyword, max_results, mode)
             elapsed = time.time() - start
             session_manager.set_done(
                 session_id,
@@ -100,12 +127,12 @@ def _run_pipeline_in_thread(session_id: str, query: str, keyword: str, max_resul
 @app.post("/search", response_model=PollResponse)
 async def search(req: SearchRequest):
     """发起新搜索"""
-    session_id = session_manager.create(req.query, req.keyword, req.max_results)
+    session_id = session_manager.create(req.query, req.keyword, req.max_results, req.mode)
 
     # 启动后台线程执行 pipeline
     t = threading.Thread(
         target=_run_pipeline_in_thread,
-        args=(session_id, req.query, req.keyword, req.max_results),
+        args=(session_id, req.query, req.keyword, req.max_results, req.mode),
         daemon=True
     )
     t.start()
@@ -125,12 +152,13 @@ async def poll(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found or closed")
 
     if sess.status == "processing":
-        return PollResponse(session_id=session_id, status="processing")
+        return PollResponse(session_id=session_id, status="processing", mode=sess.mode)
 
     data = sess.to_dict()
     return PollResponse(
         session_id=session_id,
         status=data["status"],
+        mode=data.get("mode"),
         articles=data.get("articles"),
         segments=data.get("segments"),
         error=data.get("error"),
@@ -162,6 +190,7 @@ async def status(session_id: str):
     return StatusResponse(
         session_id=session_id,
         status=data.get("status", "unknown"),
+        mode=data.get("mode"),
         query=data.get("query"),
         keyword=data.get("keyword"),
         created_at=data.get("created_at"),
@@ -178,6 +207,72 @@ async def close(session_id: str):
     if not ok:
         raise HTTPException(status_code=404, detail="Session not found or already closed")
     return CloseResponse(session_id=session_id, status="closed")
+
+
+@app.post("/point-text", response_model=PointTextResponse)
+async def point_text(req: PointTextRequest):
+    """根据要点序号查找对应的原文段落"""
+    sess = session_manager.get(req.session_id)
+    if not sess or sess.status != "done":
+        raise HTTPException(status_code=404, detail="Session not found or not ready")
+    if sess.mode != "summary":
+        raise HTTPException(status_code=400, detail="point-text only available in summary mode")
+
+    article = sess.articles.get(req.article_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+
+    key_points = article.get("key_points", [])
+
+    # 按块分组，同块要点合并一次 LLM 调用
+    from collections import defaultdict
+    chunk_groups = defaultdict(list)
+    for idx in indices:
+        ci = kp_chunk_map[idx] if idx < len(kp_chunk_map) else 0
+        chunk_groups[ci].append((idx, key_points[idx]))
+
+    # (已在模块顶部导入)
+    results = []
+
+    async def _process_chunk(chunk_idx: int, items: list) -> list:
+        chunk = chunks[chunk_idx]
+        chunk_kps = [kp for _, kp in items]
+        out = []
+        if len(items) == 1:
+            orig_idx, kp = items[0]
+            prompt = build_point_locate_prompt(chunk, kp, all_key_points=chunk_kps, target_index=1)
+            raw = await _call_llm(prompt)
+            paras = parse_point_locate_output(raw)
+            valid = [p for p in paras if 1 <= p <= len(chunk)]
+            out.append(PointTextItem(point_index=orig_idx+1, key_point=kp,
+                                     found=bool(valid),
+                                     text='\n\n'.join(chunk[p-1] for p in valid) if valid else ""))
+        else:
+            point_lines = [f"{orig_idx+1}. {kp}" for orig_idx, kp in items]
+            numbered = '\n\n'.join([f'[P{i+1}] {p}' for i, p in enumerate(chunk)])
+            prompt = _prompt_batch_locate_template.format(point_list='\n'.join(point_lines), numbered_body=numbered)
+            raw = await _call_llm(prompt)
+            for orig_idx, kp in items:
+                tag = f"【{orig_idx+1}】"
+                m = re.search(re.escape(tag) + r'\s*段落[：:]\s*(.+)', raw)
+                if m:
+                    res_str = m.group(1).strip()
+                    if res_str in ('无', '「无」'):
+                        out.append(PointTextItem(point_index=orig_idx+1, key_point=kp, found=False, text=""))
+                    else:
+                        paras = parse_point_locate_output(f"【段落】{res_str}")
+                        valid = [p for p in paras if 1 <= p <= len(chunk)]
+                        out.append(PointTextItem(point_index=orig_idx+1, key_point=kp, found=bool(valid),
+                                                  text='\n\n'.join(chunk[p-1] for p in valid) if valid else ""))
+                else:
+                    out.append(PointTextItem(point_index=orig_idx+1, key_point=kp, found=False, text=""))
+        return out
+
+    chunk_tasks = [_process_chunk(ci, items) for ci, items in chunk_groups.items()]
+    chunk_results_lists = await asyncio.gather(*chunk_tasks)
+    results = [item for sublist in chunk_results_lists for item in sublist]
+    results.sort(key=lambda r: r.point_index)
+    return PointTextResponse(session_id=req.session_id, article_id=req.article_id, results=results)
 
 
 @app.get("/")

@@ -1,0 +1,700 @@
+
+================================================================================
+📄 测试文章 #1: https://en.wikipedia.org/wiki/Artificial_intelligence
+================================================================================
+  字数: 184429 | 段落数: 266 | 发布日期: 2001-10-08
+  分割块数: 11
+    块1: 6段, 2438字
+    块2: 9段, 2302字
+    块3: 6段, 2451字
+    块4: 9段, 2061字
+    块5: 8段, 2079字
+    块6: 15段, 2064字
+    块7: 7段, 2038字
+    块8: 7段, 2349字
+    块9: 6段, 2197字
+    块10: 4段, 2049字
+    块11: 11段, 2328字
+
+  ⏳ LLM 推理 块1/11 (max_groups=3)...
+  ⌛ 耗时: 29.3s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：人工智能定义、研究领域和目标
+概括：人工智能是计算系统执行通常与人类智能相关的任务的能力，包括学习、推理、问题解决、感知和决策。它是工程学、数学和计算机科学中的一个研究领域，致力于开发和研究使机器能够感知其环境并使用学习和智能采取行动以最大化实现既定目标的方法和软件。
+
+【组2】段落：P4-P5
+要点：人工智能应用和传统研究目标
+概括：人工智能的高调应用包括高级网络搜索引擎、聊天机器人、虚拟助手、自动驾驶汽车以及策略游戏（如象棋和国际象棋）中的游戏和分析。AI研究的传统目标包括学习、推理、知识表示、规划、自然语言处理和感知，以及支持机器人技术。
+
+【组3】段落：P6
+要点：人工智能历史和发展
+概括：人工智能作为一门学术学科始于1956年，该领域在其历史上经历了多次乐观周期，随后是失望和资金流失的时期，被称为AI寒冬。2012年后，随着图形处理器被用于加速神经网络，深度学习优于之前的AI技术，资金和兴趣大幅增加。2017年后，随着Transformer架构的出现，这种增长进一步加快。2020年代，人工智能繁荣与生成式AI的进步相吻合，这允许创建和修改媒体。
+
+
+  ⏳ LLM 推理 块2/11 (max_groups=3)...
+  ⌛ 耗时: 4.9s
+  📝 LLM 原始输出:
+【组1】段落：P1-P2
+要点：AI研究问题分类、智能系统特性
+概括：将模拟或创造智能的问题分解为子问题，描述了研究者期望智能系统展示的特定特性和能力。
+
+【组2】段落：P3-P6
+要点：推理和解决问题的算法、人类解决问题的方式、推理模型
+概括：介绍了早期研究人员开发的模仿人类推理的算法，以及后来发展起来的处理不确定或不完整信息的方法。还提到了推理模型的兴起及其在数学和编码问题上的改进性能。
+
+【组3】段落：P7-P9
+要点：知识表示、知识库、本体论
+概括：解释了知识表示和知识工程如何使AI程序智能地回答问题和做出关于现实世界事实的推论，并介绍了知识库和本体论的概念及其在多个领域的应用。
+
+
+  ⏳ LLM 推理 块3/11 (max_groups=3)...
+  ⌛ 耗时: 4.9s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：知识表示的困难、常识知识的广度和形式、知识获取问题
+概括：本文讨论了知识表示中的难题，包括常识知识的广泛性和非符号形式，以及获取知识用于AI应用的问题。
+
+【组2】段落：P4-P6
+要点：规划与决策、自动化规划、自动化决策、不确定性处理
+概括：本段介绍了自动化规划和决策中代理的运作方式，包括目标设定、偏好分配、效用计算和不确定性处理。
+
+【组3】段落：P7
+要点：不确定性的偏好学习、信息价值理论、行动评估
+概括：本文最后讨论了在存在其他代理或人类的情况下，如何通过学习或寻求信息来改善代理的偏好，并使用信息价值理论来权衡探索性动作的价值。
+
+
+  ⏳ LLM 推理 块4/11 (max_groups=3)...
+  ⌛ 耗时: 4.6s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：Markov决策过程、策略、奖励函数
+概括：描述了Markov决策过程中的状态转移模型和奖励函数，以及与每个可能状态关联的策略。
+
+【组2】段落：P4-P7
+要点：机器学习、无监督学习、监督学习、强化学习、迁移学习、深度学习
+概括：介绍了机器学习的不同类型，包括无监督学习、监督学习（分类和回归）、强化学习、迁移学习和深度学习。
+
+【组3】段落：P8-P9
+要点：自然语言处理、NLP应用
+概括：解释了自然语言处理（NLP）的概念及其在语音识别、合成、翻译、信息提取和信息检索等领域的应用。
+
+
+  ⏳ LLM 推理 块5/11 (max_groups=3)...
+  ⌛ 耗时: 3.9s
+  📝 LLM 原始输出:
+【组1】段落：P1-P2
+要点：早期语言处理方法和现代深度学习技术
+概括：早期基于生成语法和语义网络的方法在词义消歧上存在困难，而现代深度学习方法如word embedding、transformers等已经能够产生连贯文本并在多个应用中达到人类水平。
+
+【组2】段落：P3-P7
+要点：机器感知和社会智能
+概括：机器感知涉及使用传感器输入来推断世界方面，包括计算机视觉、语音识别、图像分类等；社会智能则关注情感计算和模拟人类情绪，如虚拟助手能够进行对话或幽默交流。
+
+
+  ⏳ LLM 推理 块6/11 (max_groups=3)...
+  ⌛ 耗时: 3.0s
+  📝 LLM 原始输出:
+【组1】段落：P1-P2
+要点：General intelligence, artificial general intelligence
+概括：介绍了人工通用智能的概念及其解决问题的能力。
+
+【组2】段落：P3-P15
+要点：Techniques, Search and optimization, State space search, Local search
+概括：详细描述了人工智能研究中使用的搜索和优化技术，包括状态空间搜索、局部搜索等。
+
+
+  ⏳ LLM 推理 块7/11 (max_groups=3)...
+  ⌛ 耗时: 4.5s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：形式逻辑、命题逻辑、谓词逻辑
+概括：介绍了形式逻辑的基本概念和两种主要形式，即命题逻辑和谓词逻辑。
+
+【组2】段落：P4-P5
+要点：演绎推理、证明树、问题解决、Horn子句逻辑、一阶逻辑、归结
+概括：阐述了演绎推理的过程，以及如何通过搜索证明树解决问题，包括Horn子句逻辑和一阶逻辑中的问题解决方法。
+
+【组3】段落：P6-P7
+要点：模糊逻辑、非单调逻辑、默认推理
+概括：介绍了模糊逻辑和非单调逻辑的概念，以及它们在处理模糊命题和默认推理中的应用。
+
+
+  ⏳ LLM 推理 块8/11 (max_groups=3)...
+  ⌛ 耗时: 4.9s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：不确定推理的概率方法、决策理论、信息价值理论、Markov决策过程、动态决策网络、博弈论和机制设计
+概括：介绍了用于解决AI中不确定性问题的概率方法和相关工具，包括决策理论和信息价值理论等。
+
+【组2】段落：P4
+要点：概率算法在感知系统中的应用
+概括：说明了概率算法如何帮助感知系统分析随时间发生的过程，如隐藏马尔可夫模型或卡尔曼滤波器。
+
+【组3】段落：P5-P7
+要点：分类器和统计学习方法、决策树、K近邻算法、支持向量机（SVM）、朴素贝叶斯分类器、神经网络
+概括：描述了简单的AI应用类型，包括分类器和控制器，以及各种分类器的使用情况。
+
+
+  ⏳ LLM 推理 块9/11 (max_groups=3)...
+  ⌛ 耗时: 2.8s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：人工神经网络、模式识别、学习算法
+概括：介绍了人工神经网络的组成、工作原理和学习算法。
+
+【组2】段落：P4-P7
+要点：前馈网络、感知器、深度学习、卷积神经网络
+概括：描述了不同类型的神经网络及其在数据处理中的应用。
+
+
+  ⏳ LLM 推理 块10/11 (max_groups=3)...
+  ⌛ 耗时: 3.1s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：Deep learning, performance improvement, factors for success
+概括：Deep learning has significantly improved AI performance due to increased computer power and vast training data.
+
+【组2】段落：P4-P7
+要点：GPT models, text generation, multimodal capabilities
+概括：Generative pre-trained transformers (GPT) are large language models that generate human-like text and can process various types of data.
+
+
+  ⏳ LLM 推理 块11/11 (max_groups=3)...
+  ⌛ 耗时: 5.4s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：硬件和软件发展、摩尔定律、黄氏定律
+概括：2010年代后期，GPU取代CPU成为机器学习模型训练的主要手段；编程语言从Prolog转向Python；集成电路的晶体管密度每18个月翻倍。
+
+【组2】段落：P4-P7
+要点：AI应用领域
+概括：AI和机器学习技术应用于搜索、广告、推荐系统、虚拟助手、自动驾驶、翻译、面部识别和图像标签等领域。
+
+【组3】段落：P8-P11
+要点：AI辅助软件开发、Chatbots、健康与医学
+概括：AlphaFold 2在蛋白质结构预测方面取得进展；AI指导的药物发现帮助找到对抗耐药菌的抗生素；机器学习加速帕金森病药物治疗研究。
+
+
+  🔗 合并后分组数: 28
+## 文章 1) 分组结果
+
+| 组 | 段落范围 | 要点 | 概括 |
+|---|---|---|---|
+| 组1 | P1–P3 | 人工智能定义、研究领域和目标 | 人工智能是计算系统执行通常与人类智能相关的任务的能力，包括学习、推理、问题解决、感知和决策。它是工程学、数学和计算机科学中的一个研究领域，致力于开发和研究使机器能够感知其环境并使用学习和智能采取行动以最大化实现既定目标的方法和软件。 |
+| 组2 | P4–P5 | 人工智能应用和传统研究目标 | 人工智能的高调应用包括高级网络搜索引擎、聊天机器人、虚拟助手、自动驾驶汽车以及策略游戏（如象棋和国际象棋）中的游戏和分析。AI研究的传统目标包括学习、推理、知识表示、规划、自然语言处理和感知，以及支持机器人技术。 |
+| 组3 | P6 | 人工智能历史和发展 | 人工智能作为一门学术学科始于1956年，该领域在其历史上经历了多次乐观周期，随后是失望和资金流失的时期，被称为AI寒冬。2012年后，随着图形处理器被用于加速神经网络，深度学习优于之前的AI技术，资金和兴趣大幅增加。2017年后，随着Transformer架构的出现，这种增长进一步加快。2020年代，人工智能繁荣与生成式AI的进步相吻合，这允许创建和修改媒体。 |
+| 组1 | P7–P8 | AI研究问题分类、智能系统特性 | 将模拟或创造智能的问题分解为子问题，描述了研究者期望智能系统展示的特定特性和能力。 |
+| 组2 | P9–P12 | 推理和解决问题的算法、人类解决问题的方式、推理模型 | 介绍了早期研究人员开发的模仿人类推理的算法，以及后来发展起来的处理不确定或不完整信息的方法。还提到了推理模型的兴起及其在数学和编码问题上的改进性能。 |
+| 组3 | P13–P15 | 知识表示、知识库、本体论 | 解释了知识表示和知识工程如何使AI程序智能地回答问题和做出关于现实世界事实的推论，并介绍了知识库和本体论的概念及其在多个领域的应用。 |
+| 组1 | P16–P18 | 知识表示的困难、常识知识的广度和形式、知识获取问题 | 本文讨论了知识表示中的难题，包括常识知识的广泛性和非符号形式，以及获取知识用于AI应用的问题。 |
+| 组2 | P19–P21 | 规划与决策、自动化规划、自动化决策、不确定性处理 | 本段介绍了自动化规划和决策中代理的运作方式，包括目标设定、偏好分配、效用计算和不确定性处理。 |
+| 组3 | P22–P24 | 不确定性的偏好学习、信息价值理论、行动评估 + Markov决策过程、策略、奖励函数 | 本文最后讨论了在存在其他代理或人类的情况下，如何通过学习或寻求信息来改善代理的偏好，并使用信息价值理论来权衡探索性动作的价值。；描述了Markov决策过程中的状态转移模型和奖励函数，以及与每个可能状态关联的策略。 |
+| 组2 | P25–P28 | 机器学习、无监督学习、监督学习、强化学习、迁移学习、深度学习 | 介绍了机器学习的不同类型，包括无监督学习、监督学习（分类和回归）、强化学习、迁移学习和深度学习。 |
+| 组3 | P29–P30 | 自然语言处理、NLP应用 | 解释了自然语言处理（NLP）的概念及其在语音识别、合成、翻译、信息提取和信息检索等领域的应用。 |
+| 组1 | P31–P32 | 早期语言处理方法和现代深度学习技术 | 早期基于生成语法和语义网络的方法在词义消歧上存在困难，而现代深度学习方法如word embedding、transformers等已经能够产生连贯文本并在多个应用中达到人类水平。 |
+| 组2 | P33–P37 | 机器感知和社会智能 | 机器感知涉及使用传感器输入来推断世界方面，包括计算机视觉、语音识别、图像分类等；社会智能则关注情感计算和模拟人类情绪，如虚拟助手能够进行对话或幽默交流。 |
+| 组1 | P39–P40 | General intelligence, artificial general intelligence | 介绍了人工通用智能的概念及其解决问题的能力。 |
+| 组2 | P41–P53 | Techniques, Search and optimization, State space search, Local search | 详细描述了人工智能研究中使用的搜索和优化技术，包括状态空间搜索、局部搜索等。 |
+| 组1 | P54–P56 | 形式逻辑、命题逻辑、谓词逻辑 | 介绍了形式逻辑的基本概念和两种主要形式，即命题逻辑和谓词逻辑。 |
+| 组2 | P57–P58 | 演绎推理、证明树、问题解决、Horn子句逻辑、一阶逻辑、归结 | 阐述了演绎推理的过程，以及如何通过搜索证明树解决问题，包括Horn子句逻辑和一阶逻辑中的问题解决方法。 |
+| 组3 | P59–P60 | 模糊逻辑、非单调逻辑、默认推理 | 介绍了模糊逻辑和非单调逻辑的概念，以及它们在处理模糊命题和默认推理中的应用。 |
+| 组1 | P61–P63 | 不确定推理的概率方法、决策理论、信息价值理论、Markov决策过程、动态决策网络、博弈论和机制设计 | 介绍了用于解决AI中不确定性问题的概率方法和相关工具，包括决策理论和信息价值理论等。 |
+| 组2 | P64 | 概率算法在感知系统中的应用 | 说明了概率算法如何帮助感知系统分析随时间发生的过程，如隐藏马尔可夫模型或卡尔曼滤波器。 |
+| 组3 | P65–P67 | 分类器和统计学习方法、决策树、K近邻算法、支持向量机（SVM）、朴素贝叶斯分类器、神经网络 | 描述了简单的AI应用类型，包括分类器和控制器，以及各种分类器的使用情况。 |
+| 组1 | P68–P70 | 人工神经网络、模式识别、学习算法 | 介绍了人工神经网络的组成、工作原理和学习算法。 |
+| 组2 | P71–P76 | 前馈网络、感知器、深度学习、卷积神经网络 + Deep learning, performance improvement, factors for success | 描述了不同类型的神经网络及其在数据处理中的应用。；Deep learning has significantly improved AI performance due to increased computer power and vast training data. |
+| 组2 | P77–P80 | GPT models, text generation, multimodal capabilities + 硬件和软件发展、摩尔定律、黄氏定律 | Generative pre-trained transformers (GPT) are large language models that generate human-like text and can process various types of data.；2010年代后期，GPU取代CPU成为机器学习模型训练的主要手段；编程语言从Prolog转向Python；集成电路的晶体管密度每18个月翻倍。 |
+| 组2 | P81–P84 | AI应用领域 | AI和机器学习技术应用于搜索、广告、推荐系统、虚拟助手、自动驾驶、翻译、面部识别和图像标签等领域。 |
+| 组3 | P85–P88 | AI辅助软件开发、Chatbots、健康与医学 | AlphaFold 2在蛋白质结构预测方面取得进展；AI指导的药物发现帮助找到对抗耐药菌的抗生素；机器学习加速帕金森病药物治疗研究。 |
+| 组99 | P38 | [补充] | LLM遗漏的段落 |
+| 组99 | P89–P266 | [补充] | LLM遗漏的段落 |
+
+  **各组原文预览：**
+
+  **组1 (P1–P3)** — 人工智能定义、研究领域和目标
+  > # Artificial intelligence
+  > 
+  > | Part of a series on | 
+  > | Artificial intelligence (AI) | 
+  > |---|
+  > 
+  > **Artificial intelligence** (**AI**) is the capability of computational systems to perform tasks typically ...
+
+  **组2 (P4–P5)** — 人工智能应用和传统研究目标
+  > High-profile applications of AI include advanced web search engines, chatbots, virtual assistants, autonomous vehicles, and play and analysis in strategy games (e.g., chess and Go). Since the 2020s, g...
+
+  **组3 (P6)** — 人工智能历史和发展
+  > Artificial intelligence was founded as an academic discipline in 1956,[4] and the field went through multiple cycles of optimism throughout its history,[5][6] followed by periods of disappointment and...
+
+  **组1 (P7–P8)** — AI研究问题分类、智能系统特性
+  > ## Goals
+  > 
+  > The general problem of simulating (or creating) intelligence has been broken into subproblems. These consist of particular traits or capabilities that researchers expect an intelligent syste...
+
+  **组2 (P9–P12)** — 推理和解决问题的算法、人类解决问题的方式、推理模型
+  > ### Reasoning and problem-solving
+  > 
+  > Early researchers developed algorithms that imitated step-by-step reasoning that humans use when they solve puzzles or make logical deductions.[11] By the late 1980s...
+
+  **组3 (P13–P15)** — 知识表示、知识库、本体论
+  > ### Knowledge representation
+  > 
+  > Knowledge representation and knowledge engineering[16] allow AI programs to answer questions intelligently and make deductions about real-world facts. Formal knowledge re...
+
+  **组1 (P16–P18)** — 知识表示的困难、常识知识的广度和形式、知识获取问题
+  > Among the most difficult problems in knowledge representation are the breadth of commonsense knowledge (the set of atomic facts that the average person knows is enormous);[28] and the sub-symbolic for...
+
+  **组2 (P19–P21)** — 规划与决策、自动化规划、自动化决策、不确定性处理
+  > In classical planning, the agent knows exactly what the effect of any action will be.[34] In most real-world problems, however, the agent may not be certain about the situation it is in (it is "unknow...
+
+  **组3 (P22–P24)** — 不确定性的偏好学习、信息价值理论、行动评估 + Markov决策过程、策略、奖励函数
+  > A Markov decision process has a transition model that describes the probability that a particular action will change the state in a particular way and a reward function that supplies the utility of ea...
+
+  **组2 (P25–P28)** — 机器学习、无监督学习、监督学习、强化学习、迁移学习、深度学习
+  > Machine learning is the study of programs that can improve their performance on a given task automatically.[41] It has been a part of AI from the beginning.[e]
+  > 
+  > There are several kinds of machine lear...
+
+  **组3 (P29–P30)** — 自然语言处理、NLP应用
+  > ### Natural language processing
+  > 
+  > Natural language processing (NLP) allows programs to read, write and communicate in human languages.[50] Specific problems include speech recognition, speech synthesis...
+
+  **组1 (P31–P32)** — 早期语言处理方法和现代深度学习技术
+  > Early work, based on Noam Chomsky's generative grammar and semantic networks, had difficulty with word-sense disambiguation[f] unless restricted to small domains called "micro-worlds" (due to the comm...
+
+  **组2 (P33–P37)** — 机器感知和社会智能
+  > ### Perception
+  > 
+  > Machine perception is the ability to use input from sensors (such as cameras, microphones, wireless signals, active lidar, sonar, radar, and tactile sensors) to deduce aspects of the w...
+
+  **组1 (P39–P40)** — General intelligence, artificial general intelligence
+  > ### General intelligence
+  > 
+  > A machine with artificial general intelligence would be able to solve a wide variety of problems with breadth and versatility similar to human intelligence.[68]
+
+  **组2 (P41–P53)** — Techniques, Search and optimization, State space search, Local search
+  > ## Techniques
+  > 
+  > AI research uses a wide variety of techniques to accomplish the goals above.[b]
+  > 
+  > ### Search and optimization
+  > 
+  > There are two different kinds of search used in AI: state space search and ...
+
+  **组1 (P54–P56)** — 形式逻辑、命题逻辑、谓词逻辑
+  > ### Logic
+  > 
+  > Formal logic is used for reasoning and knowledge representation.[78]
+  > Formal logic comes in two main forms: propositional logic (which operates on statements that are true or false and uses ...
+
+  **组2 (P57–P58)** — 演绎推理、证明树、问题解决、Horn子句逻辑、一阶逻辑、归结
+  > Given a problem and a set of premises, problem-solving reduces to searching for a proof tree whose root node is labelled by a solution of the problem and whose leaf nodes are labelled by premises or a...
+
+  **组3 (P59–P60)** — 模糊逻辑、非单调逻辑、默认推理
+  > Fuzzy logic assigns a "degree of truth" between 0 and 1. It can therefore handle propositions that are vague and partially true.[85]
+  > 
+  > Non-monotonic logics, including logic programming with negation as...
+
+  **组1 (P61–P63)** — 不确定推理的概率方法、决策理论、信息价值理论、Markov决策过程、动态决策网络、博弈论和机制设计
+  > ### Probabilistic methods for uncertain reasoning
+  > 
+  > Many problems in AI (including reasoning, planning, learning, perception, and robotics) require the agent to operate with incomplete or uncertain inf...
+
+  **组2 (P64)** — 概率算法在感知系统中的应用
+  > Probabilistic algorithms can also be used for filtering, prediction, smoothing, and finding explanations for streams of data, thus helping perception systems analyze processes that occur over time (e....
+
+  **组3 (P65–P67)** — 分类器和统计学习方法、决策树、K近邻算法、支持向量机（SVM）、朴素贝叶斯分类器、神经网络
+  > ### Classifiers and statistical learning methods
+  > 
+  > The simplest AI applications can be divided into two types: classifiers (e.g., "if shiny then diamond"), on one hand, and controllers (e.g., "if diamo...
+
+  **组1 (P68–P70)** — 人工神经网络、模式识别、学习算法
+  > ### Artificial neural networks
+  > 
+  > An artificial neural network is based on a collection of nodes also known as artificial neurons, which loosely model the neurons in a biological brain. It is trained to...
+
+  **组2 (P71–P76)** — 前馈网络、感知器、深度学习、卷积神经网络 + Deep learning, performance improvement, factors for success
+  > In feedforward neural networks the signal passes in only one direction.[107] The term perceptron typically refers to a single-layer neural network.[108] In contrast, deep learning uses many layers.[10...
+
+  **组2 (P77–P80)** — GPT models, text generation, multimodal capabilities + 硬件和软件发展、摩尔定律、黄氏定律
+  > Current models and services include ChatGPT, Claude, Gemini, Copilot, and Meta AI.[126] Multimodal GPT models can process different types of data (modalities) such as images, videos, sound, and text.[...
+
+  **组2 (P81–P84)** — AI应用领域
+  > ## Applications
+  > 
+  > AI and machine learning technology is used in most of the essential applications of the 2020s, including:
+  > 
+  > - search engines (such as Google Search)
+  > - targeting online advertisements
+  > -...
+
+  **组3 (P85–P88)** — AI辅助软件开发、Chatbots、健康与医学
+  > ### AI-assisted software development
+  > 
+  > ### Chatbots
+  > 
+  > ### Health and medicine
+  > 
+  > AlphaFold 2 (2021) demonstrated the ability to approximate, in hours rather than months, the 3D structure of a protein.[133...
+
+  **组99 (P38)** — [补充]
+  > However, this tends to give naïve users an unrealistic conception of the intelligence of existing computer agents.[66] Moderate successes related to affective computing include textual sentiment analy...
+
+  **组99 (P89–P266)** — [补充]
+  > AI is increasingly being used in medical diagnostics, including the detection of diseases such as lung cancer from medical imaging like CT scans. [137]
+  > 
+  > A 2026 *Nature* article titled "Dozens of AI di...
+
+  ————————————————————————————————————————————————————————————
+
+================================================================================
+📄 测试文章 #2: https://en.wikipedia.org/wiki/Large_language_model
+================================================================================
+  字数: 94775 | 段落数: 189 | 发布日期: 2023-03-09
+  分割块数: 11
+    块1: 8段, 2237字
+    块2: 3段, 2225字
+    块3: 10段, 2370字
+    块4: 12段, 2143字
+    块5: 10段, 2253字
+    块6: 7段, 2100字
+    块7: 9段, 2520字
+    块8: 7段, 2256字
+    块9: 8段, 2446字
+    块10: 4段, 2159字
+    块11: 13段, 2458字
+
+  ⏳ LLM 推理 块1/11 (max_groups=3)...
+  ⌛ 耗时: 4.4s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：大型语言模型、自然语言处理、训练数据偏差
+概括：介绍了大型语言模型（LLM）的定义，其应用和潜在问题。
+
+【组2】段落：P4-P5
+要点：Transformer架构、GPTs、预训练与微调
+概括：解释了LLMs的典型架构，特别是基于transformer的GPTs及其在自然语言处理中的应用。
+
+【组3】段落：P6-P8
+要点：历史发展、n-gram模型、神经网络语言模型
+概括：概述了大型语言模型的历史发展，包括早期技术和近年来的进步。
+
+
+  ⏳ LLM 推理 块2/11 (max_groups=3)...
+  ⌛ 耗时: 5.6s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：Transformer架构、BERT模型、GPT系列发展
+概括：介绍了从2017年NeurIPS会议上的transformer架构到2025年的GPT-4的发展历程，包括BERT和GPT系列模型的引入和应用。
+
+【组2】段落：P4-P6
+要点：GPT-1至GPT-4的发布、ChatGPT、OpenAI o1模型
+概括：描述了从GPT-1到GPT-4的发布过程，以及ChatGPT和OpenAI o1模型的引入及其影响。
+
+【组3】段落：P7
+要点：权重可用模型、Mistral AI、DeepSeek R1
+概括：介绍了权重可用模型的发展，包括BLOOM、LLaMA、Mistral 7B、Mixtral 8x7B和DeepSeek R1等模型的发布和应用情况。
+
+
+  ⏳ LLM 推理 块3/11 (max_groups=3)...
+  ⌛ 耗时: 4.6s
+  📝 LLM 原始输出:
+【组1】段落：P1-P2
+要点：LLMs的多模态能力，开放权重模型的影响力
+概括：自2023年以来，多模态的LLMs和开放权重模型在效率和性能上得到了提升。
+
+【组2】段落：P3-P8
+要点：数据预处理，分词（Tokenization）
+概括：介绍了机器学习算法处理文本的过程，包括词汇表决定、整数索引分配、嵌入关联等，以及分词如何压缩数据集。
+
+【组3】段落：P9-P10
+要点：字节对编码（Byte-pair encoding）
+概括：解释了基于字节对编码的标记化器的工作原理，包括如何将最频繁出现的相邻字符对合并成二元组。
+
+
+  ⏳ LLM 推理 块4/11 (max_groups=3)...
+  ⌛ 耗时: 5.7s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：数据清洗、LLM训练效率、内容质量
+概括：在训练大型语言模型时，数据清洗是提高效率和性能的关键步骤。
+
+【组2】段落：P4-P7
+要点：合成数据、基础模型训练、GPT模型预训练和微调
+概括：当自然语言数据不足或质量不当时，使用合成数据来训练大型语言模型。GPT模型通过大量数据进行预训练，然后进行微调。
+
+【组3】段落：P8-P12
+要点：基础设施成本、模型参数规模、微调和指令学习
+概括：训练大型语言模型需要大量的基础设施和资金投入，且随着模型规模的增加，成本也在上升。微调是调整LLM行为的关键步骤，包括从人类反馈中强化学习和宪法AI。
+
+
+  ⏳ LLM 推理 块5/11 (max_groups=3)...
+  ⌛ 耗时: 4.2s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：RLHF、LLM架构、transformer架构
+概括：介绍了RLHF的概念和LLM的基于transformer架构的特点。
+
+【组2】段落：P4-P7
+要点：注意力机制、上下文窗口、自回归模型、掩码模型
+概括：解释了注意力机制在处理序列元素关系中的作用，以及自回归和掩码模型的训练方式。
+
+【组3】段落：P8-P10
+要点：混合专家架构、参数大小
+概括：介绍了混合专家架构的概念及其在降低推理成本方面的优势，并讨论了LLM的参数规模。
+
+
+  ⏳ LLM 推理 块6/11 (max_groups=3)...
+  ⌛ 耗时: 3.4s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：Quantization, static quantization, dynamic quantization
+概括：介绍了量化技术及其两种形式，静态和动态量化，以及它们对模型精度的影响。
+
+【组2】段落：P4-P7
+要点：Extensibility, prompt engineering, few-shot prompting, self-instructing
+概括：讨论了LLM的扩展性，包括使用外部工具、数据源、复杂问题推理和通过提示方法增强指令遵循或自主性。
+
+
+  ⏳ LLM 推理 块7/11 (max_groups=3)...
+  ⌛ 耗时: 4.4s
+  📝 LLM 原始输出:
+【组1】段落：P1-P2
+要点：Dialogue processing, Chatbot, System prompt
+概括：Describes how an LLM can be transformed into a chatbot with user input and system prompts.
+
+【组2】段落：P3-P7
+要点：Retrieval-augmented generation (RAG), Document retrieval, Tool use
+概括：Explains the RAG approach, document retrieval systems, and tool use in LLMs.
+
+【组3】段落：P8-P9
+要点：Agency, Autonomous agent, Supporting elements
+概括：Discusses the concept of agency in LLMs and how they can be transformed into autonomous agents with additional inputs.
+
+
+  ⏳ LLM 推理 块8/11 (max_groups=3)...
+  ⌛ 耗时: 3.1s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：DEPS方法、Reflexion方法、Monte Carlo树搜索
+概括：介绍了不同的方法和LLM在复杂任务和行为规划中的应用。
+
+【组2】段落：P4-P7
+要点：多智能体交互、Prompt chaining、chain-of-thought prompting
+概括：讨论了多智能体社交互动和两种基于提示的LLM方法。
+
+
+  ⏳ LLM 推理 块9/11 (max_groups=3)...
+  ⌛ 耗时: 4.9s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：Model-native reasoning, reasoning models, performance comparison
+概括：介绍了推理模型的概念，以及OpenAI和DeepSeek的推理模型在数学、编码和逻辑任务上的性能。
+
+【组2】段落：P4
+要点：Computational resources, processing complexity
+概括：指出推理模型相比传统LLM需要更多的计算资源进行更复杂的处理。
+
+【组3】段落：P5-P8
+要点：Multimodality, input/output modalities, image tokenization
+概括：介绍了多模态模型的概念，以及如何通过tokenization方法将图像和文本结合到LLM中。
+
+
+  ⏳ LLM 推理 块10/11 (max_groups=3)...
+  ⌛ 耗时: 3.1s
+  📝 LLM 原始输出:
+【组1】段落：P1-P3
+要点：intermediate fusion, cross-attention, Flamingo model
+概括：介绍了中间融合方法，交叉注意力机制及其在Flamingo模型中的应用。
+
+【组2】段落：P4-P7
+要点：computational biology, transformer-based architectures, ESMFold, Meta Atlas
+概括：讨论了计算生物学中基于transformer的架构，如ESMFold和Meta Atlas的应用。
+
+
+  ⏳ LLM 推理 块11/11 (max_groups=3)...
+  ⌛ 耗时: 3.4s
+  📝 LLM 原始输出:
+【组1】段落：P2-P8
+要点：Scaling laws, cost of pretraining, size of the neural network, size of the dataset
+概括：介绍了LLM性能的 Scaling laws，包括预训练成本、神经网络大小和预训练数据集大小的关系。
+
+【组2】段落：P9-P12
+要点：Emergent abilities, performance on various tasks
+概括：讨论了大型模型在各项任务上的表现，以及“emergent abilities”的出现及其例子。
+
+
+  🔗 合并后分组数: 27
+## 文章 2) 分组结果
+
+| 组 | 段落范围 | 要点 | 概括 |
+|---|---|---|---|
+| 组1 | P1–P3 | 大型语言模型、自然语言处理、训练数据偏差 | 介绍了大型语言模型（LLM）的定义，其应用和潜在问题。 |
+| 组2 | P4–P5 | Transformer架构、GPTs、预训练与微调 | 解释了LLMs的典型架构，特别是基于transformer的GPTs及其在自然语言处理中的应用。 |
+| 组3 | P6–P8 | 历史发展、n-gram模型、神经网络语言模型 | 概述了大型语言模型的历史发展，包括早期技术和近年来的进步。 |
+| 组1 | P9–P11 | Transformer架构、BERT模型、GPT系列发展 | 介绍了从2017年NeurIPS会议上的transformer架构到2025年的GPT-4的发展历程，包括BERT和GPT系列模型的引入和应用。 |
+| 组2 | P12–P14 | GPT-1至GPT-4的发布、ChatGPT、OpenAI o1模型 | 描述了从GPT-1到GPT-4的发布过程，以及ChatGPT和OpenAI o1模型的引入及其影响。 |
+| 组3 | P15–P19 | 权重可用模型、Mistral AI、DeepSeek R1 + LLMs的多模态能力，开放权重模型的影响力 + 数据预处理，分词（Tokenization） | 介绍了权重可用模型的发展，包括BLOOM、LLaMA、Mistral 7B、Mixtral 8x7B和DeepSeek R1等模型的发布和应用情况。；自2023年以来，多模态的LLMs和开放权重模型在效率和性能上得到了提升。；介绍了机器学习算法处理文本的过程，包括词汇表决定、整数索引分配、嵌入关联等，以及分词如何压缩数据集。 |
+| 组3 | P20–P21 | 字节对编码（Byte-pair encoding） | 解释了基于字节对编码的标记化器的工作原理，包括如何将最频繁出现的相邻字符对合并成二元组。 |
+| 组1 | P22–P24 | 数据清洗、LLM训练效率、内容质量 | 在训练大型语言模型时，数据清洗是提高效率和性能的关键步骤。 |
+| 组2 | P25–P28 | 合成数据、基础模型训练、GPT模型预训练和微调 | 当自然语言数据不足或质量不当时，使用合成数据来训练大型语言模型。GPT模型通过大量数据进行预训练，然后进行微调。 |
+| 组3 | P29–P33 | 基础设施成本、模型参数规模、微调和指令学习 | 训练大型语言模型需要大量的基础设施和资金投入，且随着模型规模的增加，成本也在上升。微调是调整LLM行为的关键步骤，包括从人类反馈中强化学习和宪法AI。 |
+| 组1 | P34–P36 | RLHF、LLM架构、transformer架构 | 介绍了RLHF的概念和LLM的基于transformer架构的特点。 |
+| 组2 | P37–P40 | 注意力机制、上下文窗口、自回归模型、掩码模型 | 解释了注意力机制在处理序列元素关系中的作用，以及自回归和掩码模型的训练方式。 |
+| 组3 | P41–P43 | 混合专家架构、参数大小 | 介绍了混合专家架构的概念及其在降低推理成本方面的优势，并讨论了LLM的参数规模。 |
+| 组1 | P44–P46 | Quantization, static quantization, dynamic quantization | 介绍了量化技术及其两种形式，静态和动态量化，以及它们对模型精度的影响。 |
+| 组2 | P47–P50 | Extensibility, prompt engineering, few-shot prompting, self-instructing | 讨论了LLM的扩展性，包括使用外部工具、数据源、复杂问题推理和通过提示方法增强指令遵循或自主性。 |
+| 组1 | P51–P52 | Dialogue processing, Chatbot, System prompt | Describes how an LLM can be transformed into a chatbot with user input and system prompts. |
+| 组2 | P53–P57 | Retrieval-augmented generation (RAG), Document retrieval, Tool use | Explains the RAG approach, document retrieval systems, and tool use in LLMs. |
+| 组3 | P58–P59 | Agency, Autonomous agent, Supporting elements | Discusses the concept of agency in LLMs and how they can be transformed into autonomous agents with additional inputs. |
+| 组1 | P60–P62 | DEPS方法、Reflexion方法、Monte Carlo树搜索 | 介绍了不同的方法和LLM在复杂任务和行为规划中的应用。 |
+| 组2 | P63–P66 | 多智能体交互、Prompt chaining、chain-of-thought prompting | 讨论了多智能体社交互动和两种基于提示的LLM方法。 |
+| 组1 | P67–P69 | Model-native reasoning, reasoning models, performance comparison | 介绍了推理模型的概念，以及OpenAI和DeepSeek的推理模型在数学、编码和逻辑任务上的性能。 |
+| 组2 | P70 | Computational resources, processing complexity | 指出推理模型相比传统LLM需要更多的计算资源进行更复杂的处理。 |
+| 组3 | P71–P74 | Multimodality, input/output modalities, image tokenization | 介绍了多模态模型的概念，以及如何通过tokenization方法将图像和文本结合到LLM中。 |
+| 组1 | P75–P77 | intermediate fusion, cross-attention, Flamingo model | 介绍了中间融合方法，交叉注意力机制及其在Flamingo模型中的应用。 |
+| 组2 | P78–P86 | computational biology, transformer-based architectures, ESMFold, Meta Atlas + Scaling laws, cost of pretraining, size of the neural network, size of the dataset | 讨论了计算生物学中基于transformer的架构，如ESMFold和Meta Atlas的应用。；介绍了LLM性能的 Scaling laws，包括预训练成本、神经网络大小和预训练数据集大小的关系。 |
+| 组2 | P87–P90 | Emergent abilities, performance on various tasks | 讨论了大型模型在各项任务上的表现，以及“emergent abilities”的出现及其例子。 |
+| 组99 | P91–P189 | [补充] | LLM遗漏的段落 |
+
+  **各组原文预览：**
+
+  **组1 (P1–P3)** — 大型语言模型、自然语言处理、训练数据偏差
+  > # Large language model
+  > 
+  > | Part of a series on | 
+  > | Machine learning and data mining | 
+  > |---|
+  > 
+  > A **large language model** (**LLM**) is a neural network trained on a vast amount of text for natural lang...
+
+  **组2 (P4–P5)** — Transformer架构、GPTs、预训练与微调
+  > LLMs are typically based on transformer architecture.[3] Generative pre-trained transformers (GPTs) are a type of LLM that is pre-trained to predict the next word.[4] GPTs are then often fine-tuned to...
+
+  **组3 (P6–P8)** — 历史发展、n-gram模型、神经网络语言模型
+  > ## History
+  > 
+  > [edit]Before the emergence of transformer-based models in 2017, some language models were considered large relative to the computational and data constraints of their time. In the early 19...
+
+  **组1 (P9–P11)** — Transformer架构、BERT模型、GPT系列发展
+  > At the 2017 NeurIPS conference, Google researchers introduced the transformer architecture in their landmark paper "Attention Is All You Need".[13] This paper's goal was to improve upon 2014 seq2seq t...
+
+  **组2 (P12–P14)** — GPT-1至GPT-4的发布、ChatGPT、OpenAI o1模型
+  > Since 2023, many LLMs have been trained to be multimodal, having the ability to also process or generate other types of data, such as images, audio, or 3D meshes.[ citation needed]
+  > 
+  > Open-weight LLMs h...
+
+  **组3 (P15–P19)** — 权重可用模型、Mistral AI、DeepSeek R1 + LLMs的多模态能力，开放权重模型的影响力 + 数据预处理，分词（Tokenization）
+  > [edit]### Tokenization
+  > 
+  > [edit]As machine learning algorithms process numbers rather than text, the text must be converted to numbers. In the first step, a vocabulary is decided upon, then integer indi...
+
+  **组3 (P20–P21)** — 字节对编码（Byte-pair encoding）
+  > #### Byte-pair encoding
+  > 
+  > [edit]As an example, consider a tokenizer based on byte-pair encoding. In the first step, all unique characters (including blanks and punctuation marks) are treated as an init...
+
+  **组1 (P22–P24)** — 数据清洗、LLM训练效率、内容质量
+  > ### Dataset cleaning
+  > 
+  > [edit]In the context of training LLMs, datasets are typically cleaned by removing low-quality, duplicated, or toxic data.[27] Cleaned datasets can increase training efficiency an...
+
+  **组2 (P25–P28)** — 合成数据、基础模型训练、GPT模型预训练和微调
+  > ### Synthetic data
+  > 
+  > [edit]Training of largest language models might need more linguistic data than naturally available, or that the naturally occurring data is of insufficient quality. In these cases,...
+
+  **组3 (P29–P33)** — 基础设施成本、模型参数规模、微调和指令学习
+  > ### Cost
+  > 
+  > [edit]Substantial infrastructure is necessary for training the largest models. The tendency towards larger models is visible in the list of large language models. For example, the training o...
+
+  **组1 (P34–P36)** — RLHF、LLM架构、transformer架构
+  > RLHF involves training a reward model to predict which text humans prefer. Then, the LLM can be fine-tuned through reinforcement learning to better satisfy this reward model.[33]
+  > 
+  > ## Architecture
+  > 
+  > [ed...
+
+  **组2 (P37–P40)** — 注意力机制、上下文窗口、自回归模型、掩码模型
+  > ### Attention mechanism and context window
+  > 
+  > [edit]In order to find out which tokens are relevant to each other within the scope of the context window, the attention mechanism calculates "soft" weights...
+
+  **组3 (P41–P43)** — 混合专家架构、参数大小
+  > [edit]A mixture of experts (MoE) is a machine learning architecture in which multiple specialized neural networks ("experts") work together, with a gating mechanism that routes each input to the most ...
+
+  **组1 (P44–P46)** — Quantization, static quantization, dynamic quantization
+  > #### Quantization
+  > 
+  > [edit]*Post-training quantization*[42] aims to decrease the space requirement by lowering precision of the parameters of a trained model, while preserving most of its performance. Q...
+
+  **组2 (P47–P50)** — Extensibility, prompt engineering, few-shot prompting, self-instructing
+  > ## Extensibility
+  > 
+  > [edit]Beyond basic text generation, various techniques have been developed to extend LLM capabilities, including the use of external tools and data sources, improved reasoning on com...
+
+  **组1 (P51–P52)** — Dialogue processing, Chatbot, System prompt
+  > ### Dialogue processing (chatbot)
+  > 
+  > [edit]An LLM can be turned into a chatbot by specializing it for conversation. User input is prefixed with a marker such as "Q:" or "User:" and the LLM is asked to p...
+
+  **组2 (P53–P57)** — Retrieval-augmented generation (RAG), Document retrieval, Tool use
+  > ### Retrieval-augmented generation
+  > 
+  > [edit]Retrieval-augmented generation (RAG) is an approach that integrates LLMs with document retrieval systems. Given a query, a document retriever is called to ret...
+
+  **组3 (P58–P59)** — Agency, Autonomous agent, Supporting elements
+  > ### Agency
+  > 
+  > [edit]An LLM is typically not an autonomous agent by itself, as it lacks the ability to interact with dynamic environments, recall past behaviors, and plan future actions. But it can be tr...
+
+  **组1 (P60–P62)** — DEPS方法、Reflexion方法、Monte Carlo树搜索
+  > In the DEPS ("describe, explain, plan and select") method, an LLM is first connected to the visual world via image descriptions. It is then prompted to produce plans for complex tasks and behaviors ba...
+
+  **组2 (P63–P66)** — 多智能体交互、Prompt chaining、chain-of-thought prompting
+  > Multiple agents with memory can interact socially.[53]
+  > 
+  > #### Chaining
+  > 
+  > [edit]*Prompt chaining* was introduced in 2022.[54] In this method, a user manually breaks a complex problem down into several st...
+
+  **组1 (P67–P69)** — Model-native reasoning, reasoning models, performance comparison
+  > #### Model-native reasoning
+  > 
+  > [edit]In late 2024, a new approach to LLM development emerged with "reasoning models".[60] These are trained to generate step-by-step analysis before producing final answe...
+
+  **组2 (P70)** — Computational resources, processing complexity
+  > These reasoning models typically require more computational resources per query compared to traditional LLMs, as they perform more extensive processing to work through problems step by step.[62]
+
+  **组3 (P71–P74)** — Multimodality, input/output modalities, image tokenization
+  > ## Forms of input and output
+  > 
+  > [edit]### Multimodality
+  > 
+  > [edit]Multimodality means having multiple modalities, where a "modality" refers to a type of input or output, such as video, image, audio, text, ...
+
+  **组1 (P75–P77)** — intermediate fusion, cross-attention, Flamingo model
+  > Another method, called *intermediate fusion*, involves each modality being first processed independently to obtain modality-specific representations; then these intermediate representations are fused ...
+
+  **组2 (P78–P86)** — computational biology, transformer-based architectures, ESMFold, Meta Atlas + Scaling laws, cost of pretraining, size of the neural network, size of the dataset
+  > In computational biology, transformer-based architectures, such as DNA LLMs, have also proven useful in analyzing biological sequences: protein, DNA, and RNA. With proteins they appear able to capture...
+
+  **组2 (P87–P90)** — Emergent abilities, performance on various tasks
+  > ### Emergent abilities
+  > 
+  > [edit]
+  > 
+  > Performance of bigger models on various tasks, when plotted on a log-log scale, appears as a linear extrapolation of performance achieved by smaller models. However, th...
+
+  **组99 (P91–P189)** — [补充]
+  > - reported arithmetics
+  > - decoding the International Phonetic Alphabet
+  > - unscrambling a word's letters
+  > - disambiguating word-in-context datasets[84]
+  > - converting spatial words
+  > - cardinal directions (fo...
+
+  ————————————————————————————————————————————————————————————

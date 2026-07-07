@@ -17,11 +17,12 @@ SESSION_TTL = cfg["session"]["ttl_minutes"] * 60  # 秒
 class Session:
     """单个会话的数据和状态"""
 
-    def __init__(self, session_id: str, query: str, keyword: str, max_results: int):
+    def __init__(self, session_id: str, query: str, keyword: str, max_results: int, mode: str = "segments"):
         self.session_id = session_id
         self.query = query
         self.keyword = keyword
         self.max_results = max_results
+        self.mode = mode
         self.status = "processing"  # processing | done | error | closed
         self.created_at = time.time()
         self.elapsed = 0.0
@@ -35,6 +36,7 @@ class Session:
         d = {
             "session_id": self.session_id,
             "status": self.status,
+            "mode": self.mode,
             "query": self.query,
             "keyword": self.keyword,
             "max_results": self.max_results,
@@ -63,9 +65,9 @@ class SessionManager:
 
     # ---- 公开方法 ----
 
-    def create(self, query: str, keyword: str = "", max_results: int = 5) -> str:
+    def create(self, query: str, keyword: str = "", max_results: int = 5, mode: str = "segments") -> str:
         session_id = f"s_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{id(self)}"
-        sess = Session(session_id, query, keyword, max_results)
+        sess = Session(session_id, query, keyword, max_results, mode)
         with self._lock:
             self._sessions[session_id] = sess
         return session_id

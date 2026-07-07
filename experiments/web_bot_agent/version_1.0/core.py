@@ -3,6 +3,7 @@
 """
 
 import json, os, sys, time, re, subprocess, asyncio
+from dataclasses import dataclass, field
 import httpx
 
 # 配置路径
@@ -20,6 +21,38 @@ OLLAMA_NUM_PREDICT = cfg["ollama"]["num_predict"]
 SPLIT_THRESHOLD = cfg["split"]["threshold_chars"]
 SPLIT_PART_TARGET = cfg["split"]["part_target_chars"]
 SPLIT_MAX_TOKENS = cfg["split"]["max_tokens"]
+
+
+# ============================================================
+# ChunkUnit — 统一块单元
+# ============================================================
+@dataclass
+class ChunkUnit:
+    """文章的一块（或整篇）。提取切块后产出此结构进入块池。"""
+    article_id: str
+    title: str
+    url: str
+    date: str
+    snippet: str
+    source: str
+    chunk_index: int
+    total_chunks: int
+    paragraphs: list
+    para_offset: int
+
+    @property
+    def is_splitted(self) -> bool:
+        return self.total_chunks > 1
+
+    @property
+    def position(self) -> str:
+        if self.total_chunks <= 1:
+            return ""
+        if self.chunk_index == 0:
+            return "开头"
+        if self.chunk_index == self.total_chunks - 1:
+            return "结尾"
+        return "中间"
 
 
 # ============================================================
@@ -130,6 +163,33 @@ def extract_date_from_snippet(snippet: str) -> str:
     return m.group(1) if m else ""
 
 
+async def extract_and_chunk_async(item: dict, article_id: str) -> list[ChunkUnit]:
+    """提取正文 + 原地切块，返回 ChunkUnit 列表（一块或若干块）。"""
+    url = item["url"]
+    snippet = item.get("snippet", "")
+    body, meta_date, html_len, paragraphs = await fetch_and_extract_async(url)
+    date = extract_date_from_snippet(snippet) or meta_date
+    source = re.sub(r'https?://(www\.)?', '', url).split('/')[0]
+    parts = split_paragraphs(paragraphs)
+    units = []
+    para_offset = 0
+    for pi, part in enumerate(parts):
+        units.append(ChunkUnit(
+            article_id=article_id,
+            title=item["title"],
+            url=url,
+            date=date or "",
+            snippet=snippet,
+            source=source,
+            chunk_index=pi,
+            total_chunks=len(parts),
+            paragraphs=part,
+            para_offset=para_offset,
+        ))
+        para_offset += len(part)
+    return units
+
+
 # ============================================================
 # 3. Token 估算 & 段落分割（按 token 分块）
 # ============================================================
@@ -171,73 +231,210 @@ def split_paragraphs(paragraphs: list) -> list:
 # 4. LLM 分组 prompt
 # ============================================================
 def build_grouping_prompt(paragraphs: list, max_groups: int = 5) -> str:
-    """构建分组 prompt，使用 【正文开始】/【正文结束】 模板，Pn 动态生成"""
+    """构建分组 prompt，使用 prompts/grouping.txt 模板"""
     n = len(paragraphs)
     numbered = '\n\n'.join([f'[P{i+1}] {p}' for i, p in enumerate(paragraphs)])
-
-    return (
-        f"任务：【正文开始】和【正文结束】之间的文字内容是【正文】文本内容，"
-        f"其内容的段落已按照[P1]、[P2]...[P{n}]进行编号，"
-        f"现在需要对段落进行分组，并对分组覆盖的【正文】内容进行总结。\n"
-        "输出要求：只输出分组方案，不要输出原文。\n\n"
-        "分组步骤：\n\n"
-        f"1. 阅读【正文】所有内容，即[P1]至[P{n}]的所有段落。注意，[P{n}]代表全文最后一个段落的编号。"
-        f"将全文概括成3至5个要点（每个要点是文章的一个核心话题，长度为15-50字），"
-        f"每一个要点就是一个【分组】。对应每个要点整理出了3至5个【分组】，"
-        f"每一个【分组】的【要点信息】就是刚刚归纳的要点。\n"
-        "2. 将在上一步中概括的要点逐一整理其覆盖正文中的段落，"
-        "并把段落编号记录在这个要点分组下，这些段落编号就是【段落信息】，"
-        "每一个【分组】都有一个【段落信息】。\n"
-        f"3. 对每一个【分组】覆盖的【段落信息】在【正文】中的内容用几句话（50-100字）进行内容概括。"
-        f"这样你就得到了【概括信息】，每一个分组都有一个【概括信息】。\n"
-        f"4. 在每一个【分组】覆盖的【段落信息】在【正文】中的内容中寻找内容主题中的关键字，"
-        f"这个关键字应该是【分组】的【要点信息】和【概括信息】的主角。"
-        f"关键字可以有多个，这些关键字就是【关键字信息】，每一个分组都有一个【关键字信息】。"
-        f"【关键字信息】不要超过10个字。\n"
-        f"5. 检查【正文】中的[P1]至[P{n}]所有段落是否都包含在了【分组】中，"
-        f"注意，[P{n}]代表全文最后一个段落的编号。"
-        f"没有归纳入任何【分组】的段落，将其单独分入一组，"
-        f"其【要点信息】为\"其他\"。"
-        f"【概括信息】根据其覆盖的【正文】段落信息总结，其【段落信息】就是其段落编号。\n\n"
-        "分组规则和注意事项：\n"
-        "- 分组步骤1中对【正文】所有内容进行要点总结时，需要把总结的要点数量控制在6个以下。\n"
-        "- 请尽量将相邻的、主题相近的段落合并为一组。\n"
-        "- 每组段落编号尽量连续。\n"
-        "- 每组至少包含一个段落，不得引用不存在的段落编号。\n"
-        "- 每个段落只能属于一个组，不得重复分配。\n"
-        f"- 分组步骤4结束后，每个段落（[P1]、[P2]...[P{n}]）都必须被分配到某个组中，不得遗漏。\n"
-        "- 全文只有[P1]一个段落时，只分1组。\n"
-        "- 只有【正文开始】和【正文结束】之间的文字内容才属于需要分组处理的【正文】内容，其余文字内容是提示词。\n\n"
-        "输出格式（严格按此格式，不要输出其他内容）：\n"
-        "【分组】段落：【段落信息】\n"
-        "要点： 【要点信息】\n"
-        "概括： 【概括信息】\n"
-        "关键字： 【关键字信息】\n\n"
-        "字段说明：\n"
-        "- 【段落信息】：该组包含的段落编号范围，用短横线连接起止编号，用逗号隔开不同段落编号\n"
-        "- 【要点信息】：该组覆盖【正文】内容的核心话题（15-50字），多个主题描述用\" + \"连接\n"
-        "- 【概括信息】：该组覆盖【正文】内容的关键信息浓缩（50-100字），包含具体数据或结论\n"
-        "- 【关键字信息】： 该组覆盖【正文】内容中重点介绍对象。"
-        "该组的【要点信息】和【概括信息】中的主角。"
-        "可以包含多个关键字。不同的关键字用+号连接。总字数不要超过10个字\n\n"
-        "范例：\n"
-        "【组1】段落：P1-P3\n"
-        "要点：xxx\n"
-        "概括：xxx\n"
-        "关键字： 国产化需求+国产替代\n\n"
-        "【组2】段落：P4-P7\n"
-        "要点：xxx\n"
-        "概括：xxx\n"
-        "关键字： 海外技术限制+产业链整合\n\n"
-        "【正文开始】\n"
-        f"{numbered}\n"
-        "【正文结束】"
-    )
+    return _prompt_grouping_template.replace('{n}', str(n)).replace('{numbered}', numbered)
 
 
 # ============================================================
-# 5. LLM 推理
+# 4b. Summary 模式 prompt
 # ============================================================
+# 4b. Summary 模式 prompt
+# ============================================================
+PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
+PROMPT_SUMMARY_PATH = os.path.join(PROMPTS_DIR, "summary.txt")
+PROMPT_MERGE_PATH = os.path.join(PROMPTS_DIR, "summary_merge.txt")
+PROMPT_LOCATE_PATH = os.path.join(PROMPTS_DIR, "point_locate.txt")
+PROMPT_LOCATE_SIMPLE_PATH = os.path.join(PROMPTS_DIR, "point_locate_simple.txt")
+PROMPT_GROUPING_PATH = os.path.join(PROMPTS_DIR, "grouping.txt")
+
+with open(PROMPT_SUMMARY_PATH, encoding='utf-8') as f:
+    _prompt_summary_template = f.read()
+with open(PROMPT_MERGE_PATH, encoding='utf-8') as f:
+    _prompt_merge_template = f.read()
+with open(PROMPT_LOCATE_PATH, encoding='utf-8') as f:
+    _prompt_locate_template = f.read()
+with open(PROMPT_LOCATE_SIMPLE_PATH, encoding='utf-8') as f:
+    _prompt_locate_simple_template = f.read()
+with open(PROMPT_GROUPING_PATH, encoding='utf-8') as f:
+    _prompt_grouping_template = f.read()
+
+
+def build_summary_prompt(paragraphs: list, query: str = "", keyword: str = "") -> str:
+    """构建 summary 模式 prompt：从 prompts/summary.txt 读取模板，注入 query/keyword/body"""
+    body = '\n\n'.join(paragraphs)
+    return _prompt_summary_template.format(query=query, keyword=keyword, body=body)
+
+
+def build_merge_prompt(chunk_summaries: list, query: str = "", keyword: str = "") -> str:
+    """构建合并 prompt：从 prompts/summary_merge.txt 读取模板"""
+    text = ''
+    for i, s in enumerate(chunk_summaries, 1):
+        text += f'【第{i}部分概括】\n{s}\n\n'
+    return _prompt_merge_template.format(query=query, keyword=keyword, chunk_summaries=text.strip())
+
+
+def build_point_locate_prompt(paragraphs: list, key_point: str,
+                               all_key_points: list = None, target_index: int = None) -> str:
+    """构建要点定位 prompt。提供 all_key_points 时会在 prompt 中列出全文要点作为上下文。"""
+    numbered = '\n\n'.join([f'[P{i+1}] {p}' for i, p in enumerate(paragraphs)])
+
+    if all_key_points and target_index is not None:
+        kp_text = '\n'.join(f"{i+1}. {kp}" for i, kp in enumerate(all_key_points))
+        return _prompt_locate_template.format(
+            key_point=key_point, numbered_body=numbered,
+            all_key_points_text=kp_text, target_index=target_index
+        )
+    else:
+        # 降级：无上下文时用 prompts/point_locate_simple.txt
+        return _prompt_locate_simple_template.format(key_point=key_point, numbered_body=numbered)
+
+
+def parse_summary_output(raw: str) -> dict:
+    """
+    解析 summary 模式 LLM 输出，返回：
+    {
+        "summary": str,             # 客观概括 + 相关摘要的合并文本
+        "summary_objective": str,   # 【客观概括】内容
+        "summary_relevant": str,    # 【相关摘要】内容
+        "key_points": [str]         # 【核心要点】列表
+    }
+    """
+    result = {"summary": "", "summary_objective": "", "summary_relevant": "", "key_points": []}
+
+    # 提取【客观概括】
+    obj_match = re.search(r'【客观概括】\s*\n(.*?)(?=\n\s*【相关摘要】|\Z)', raw, re.DOTALL)
+    if obj_match:
+        result["summary_objective"] = obj_match.group(1).strip()
+
+    # 提取【相关摘要】
+    rel_match = re.search(r'【相关摘要】\s*\n(.*?)(?=\n\s*【核心要点】|\Z)', raw, re.DOTALL)
+    if rel_match:
+        result["summary_relevant"] = rel_match.group(1).strip()
+
+    # 合并摘要
+    parts = []
+    if result["summary_objective"]:
+        parts.append(result["summary_objective"])
+    if result["summary_relevant"]:
+        parts.append(result["summary_relevant"])
+    result["summary"] = '\n\n'.join(parts)
+
+    # 提取【核心要点】后的编号列表
+    kp_match = re.search(r'【核心要点】\s*\n(.*?)$', raw, re.DOTALL)
+    if kp_match:
+        kp_text = kp_match.group(1).strip()
+        for line in kp_text.split('\n'):
+            line = line.strip()
+            m = re.match(r'^\d+[.、．]\s*(.*)', line)
+            if m:
+                point = m.group(1).strip()
+                if point:
+                    result["key_points"].append(point)
+
+    return result
+
+
+def parse_merge_output(raw: str) -> str:
+    """解析合并 LLM 输出，返回【统一概括】文本"""
+    m = re.search(r'【统一概括】\s*\n(.*?)$', raw, re.DOTALL)
+    return m.group(1).strip() if m else raw
+
+
+def parse_point_locate_output(raw: str) -> list[int]:
+    """
+    解析要点定位 LLM 输出，返回段落编号列表。
+    【段落】P5 → [5]
+    【段落】P3-P7 → [3,4,5,6,7]
+    【段落】无 → []
+    """
+    m = re.search(r'【段落】\s*(.+)', raw)
+    if not m:
+        return []
+    result_str = m.group(1).strip()
+    if result_str == '无':
+        return []
+    # LLM 有时会漏掉 P 前缀，补上
+    if not re.match(r'^[Pp]', result_str):
+        result_str = 'P' + result_str
+    return parse_paragraphs(result_str)
+
+
+async def _call_llm(prompt: str) -> str:
+    """调用 Ollama /api/generate，返回原始响应文本"""
+    payload = {
+        "model": MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "num_predict": OLLAMA_NUM_PREDICT,
+            "temperature": OLLAMA_TEMP
+        }
+    }
+    old_http = os.environ.pop("http_proxy", None)
+    old_https = os.environ.pop("https_proxy", None)
+    try:
+        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
+            resp = await client.post(OLLAMA_URL, json=payload)
+            resp.raise_for_status()
+            return resp.json().get("response", "").strip()
+    except Exception as e:
+        return f"[Ollama 错误] {e}"
+    finally:
+        if old_http: os.environ["http_proxy"] = old_http
+        if old_https: os.environ["https_proxy"] = old_https
+
+
+async def locate_point_text(chunks: list, key_point: str) -> dict:
+    """
+    根据要点定位原文段落。检查所有分块，选择最佳匹配。
+    chunks: [[para1, para2...], [para1, para2...]] 分块段落列表
+    key_point: 要点文本
+    返回: {"found": bool, "paragraphs": [int], "text": str, "chunk_index": int}
+    """
+    # 提取要点中的关键词（2字以上连续中文）
+    kw_set = set()
+    for i in range(len(key_point) - 1):
+        token = key_point[i:i+2]
+        if any('一' <= c <= '鿿' for c in token):
+            kw_set.add(token)
+
+    best = {"found": False, "paragraphs": [], "text": "", "chunk_index": -1, "score": -1}
+
+    for ci, chunk in enumerate(chunks):
+        prompt = build_point_locate_prompt(chunk, key_point)
+        raw = await _call_llm(prompt)
+        paras = parse_point_locate_output(raw)
+        if not paras:
+            continue
+        valid_paras = [p for p in paras if 1 <= p <= len(chunk)]
+        if not valid_paras:
+            continue
+        text_parts = [chunk[p-1] for p in valid_paras]
+        matched_text = '\n\n'.join(text_parts)
+
+        # 计算关键词覆盖率作为匹配质量
+        score = 0
+        if kw_set:
+            found_kw = sum(1 for kw in kw_set if kw in matched_text)
+            score = found_kw / len(kw_set)
+
+        if score > best["score"]:
+            best = {
+                "found": True,
+                "paragraphs": valid_paras,
+                "text": matched_text,
+                "chunk_index": ci,
+                "score": score
+            }
+
+    return {"found": best["found"], "paragraphs": best["paragraphs"],
+            "text": best["text"], "chunk_index": best["chunk_index"]}
+
+
+# ============================================================
+# 5. LLM 推理（分组模式）
 def parse_paragraphs(para_str: str) -> list[int]:
     """
     解析段落编号字符串，支持：
@@ -321,132 +518,20 @@ def consolidate_ranges(groups: list) -> list:
     return groups
 
 
-STAGE2_MERGE_PROMPT = """任务：将下方【初步分组方案】中的分组进行合并，形成更精简的【最终分组方案】。
-
-概念说明：
-- 【分组】：一组相邻段落的集合，包含段落编号范围、要点、概括、关键字。
-- 合并：将要点相似的相邻分组合并为一个新分组。
-
-合并步骤：
-
-第1步：找出相邻分组中要点相似或主题重叠的对。
-第2步：将要点相似的相邻分组合并，段落号范围合并为最简连续区间。
-第3步：对合并后的新分组，整合原有各组的要点形成新的要点，整合原有各组的概括形成新的概括。
-第4步：重复第1-3步，直到总组数不超过5组。
-
-输出格式（严格按此格式）：
-【分组】段落：【段落信息】
-要点： 【要点信息】
-概括： 【概括信息】
-关键字： 【关键字信息】
-
-【段落信息】格式要求：
-- 每个分组只能有一个连续的段落区间
-- 用短横线连接起止编号
-- 正确示例：P1-P7；错误示例：P1-P2, P3-P7
-
-【初步分组方案】：
-{groups_text}"""
-
-
-async def stage2_merge_async(groups: list) -> list:
-    """当分组 > 8 时触发 stage2 合并"""
-    if len(groups) <= 8:
-        return groups
-
-    # 构建 stage2 输入文本
-    lines = []
-    for g in groups:
-        ps = g.get("paragraphs", list(range(g["start_p"], g["end_p"] + 1)))
-        p_range = f"P{min(ps)}-P{max(ps)}" if min(ps) != max(ps) else f"P{min(ps)}"
-        lines.append(f"【分组】段落：{p_range}")
-        lines.append(f"要点：{g.get('point', '')}")
-        lines.append(f"概括：{g.get('summary', '')}")
-        lines.append(f"关键字：{g.get('keywords', '')}")
-        lines.append("")
-    groups_text = '\n'.join(lines).strip()
-
-    prompt = STAGE2_MERGE_PROMPT.format(groups_text=groups_text)
-
-    payload = {
-        "model": MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "num_predict": OLLAMA_NUM_PREDICT,
-            "temperature": OLLAMA_TEMP
-        }
-    }
-
-    old_http = os.environ.pop("http_proxy", None)
-    old_https = os.environ.pop("https_proxy", None)
-    try:
-        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
-            resp = await client.post(OLLAMA_URL, json=payload)
-            resp.raise_for_status()
-            result = resp.json()
-            raw = result.get("response", "").strip()
-    except Exception as e:
-        return groups  # 失败时返回原始分组
-    finally:
-        if old_http: os.environ["http_proxy"] = old_http
-        if old_https: os.environ["https_proxy"] = old_https
-
-    merged = parse_grouping(raw)
-    if not merged:
-        return groups  # 解析失败时返回原始分组
-
-    # 代码合并段落号
-    merged = consolidate_ranges(merged)
-    return merged
-
-
-async def infer_grouping(paragraphs: list, idx: int, max_groups: int = 5) -> tuple:
-    prompt = build_grouping_prompt(paragraphs, max_groups)
-    payload = {
-        "model": MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "num_predict": OLLAMA_NUM_PREDICT,
-            "temperature": OLLAMA_TEMP
-        }
-    }
-    old_http = os.environ.pop("http_proxy", None)
-    old_https = os.environ.pop("https_proxy", None)
-    try:
-        t0 = time.time()
-        async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
-            resp = await client.post(OLLAMA_URL, json=payload)
-            resp.raise_for_status()
-            result = resp.json()
-            elapsed = time.time() - t0
-            return idx, result.get("response", "").strip(), elapsed
-    except Exception as e:
-        return idx, f"[Ollama 错误] {e}", time.time() - t0
-    finally:
-        if old_http: os.environ["http_proxy"] = old_http
-        if old_https: os.environ["https_proxy"] = old_https
-
-
-async def infer_all(tasks_list: list) -> list:
-    """tasks_list: [(paragraphs, max_groups), ...]"""
-    sem = asyncio.Semaphore(MAX_PARALLEL)
-    async def f(paras, mg, i):
-        async with sem:
-            return await infer_grouping(paras, i, mg)
-    tasks = [f(paras, mg, i) for i, (paras, mg) in enumerate(tasks_list)]
-    results = await asyncio.gather(*tasks)
-    results.sort(key=lambda x: x[0])
-    return results
+    # (stage2_merge_async 已移除——LLM二次合并导致过度压缩，改用代码合并)
+    # (infer_grouping / infer_all 已移除——由 run_search_pipeline 内联 _call_llm 替代)
 
 
 # ============================================================
 # 6. 主流程（单次搜索 -> 结构化 JSON）
 # ============================================================
-async def run_search_pipeline(query: str, keyword: str, max_results: int = 5) -> dict:
+async def run_search_pipeline(query: str, keyword: str, max_results: int = 5, mode: str = "segments") -> dict:
     """
-    执行完整 pipeline：搜索 → 提取 → token分块 → stage1分组 → 偏移合并 → stage2合并 → 组装
+    执行完整 pipeline。
+
+    mode="segments"（默认）：搜索 → 提取 → token分块 → LLM分组 → 偏移合并 → 补充遗漏 → 组装
+    mode="summary"：  搜索 → 提取 → LLM摘要+要点 → 组装
+
     返回: {
         "articles": { article_id: {title, url, date, snippet, source, charnum, segments} },
         "segments": { segment_id: {article_id, point, summary, charnum, keywords?} },
@@ -458,175 +543,187 @@ async def run_search_pipeline(query: str, keyword: str, max_results: int = 5) ->
     if not raw_results:
         return {"articles": {}, "segments": {}, "_texts": {}}
 
-    # 并行提取正文
-    async def _fetch_one(item: dict) -> dict:
-        url = item["url"]
-        snippet = item.get("snippet", "")
-        body, meta_date, html_len, paragraphs = await fetch_and_extract_async(url)
-        date = extract_date_from_snippet(snippet) or meta_date
-        return {
-            "title": item["title"],
-            "url": url,
-            "snippet": snippet,
-            "date": date,
-            "paragraphs": paragraphs,
-        }
-
     sem_fetch = asyncio.Semaphore(MAX_PARALLEL)
-    async def _bounded_fetch(item):
+    sem_llm = asyncio.Semaphore(MAX_PARALLEL)
+
+    async def _bounded_fetch(item, aid):
         async with sem_fetch:
-            return await _fetch_one(item)
-
-    items = await asyncio.gather(*[_bounded_fetch(item) for item in raw_results])
+            return await extract_and_chunk_async(item, aid)
 
     # ============================================================
-    # 每篇文章独立处理
+    # Phase 1: 并行提取 + 切块 → ChunkUnit 池
     # ============================================================
+    fetch_tasks = [_bounded_fetch(item, f"a_{i+1:02d}") for i, item in enumerate(raw_results)]
+    chunk_lists = await asyncio.gather(*fetch_tasks)
+    chunk_pool = [cu for cl in chunk_lists for cu in cl]
+
+    # ============================================================
+    # Phase 2: 并行 LLM 推理（全量块一并送入）
+    # ============================================================
+    async def _infer_chunk(cu: ChunkUnit) -> dict:
+        if mode == "summary":
+            prompt = build_summary_prompt(cu.paragraphs, query=query, keyword=keyword)
+            raw = await _call_llm(prompt)
+            parsed = parse_summary_output(raw)
+            return {"article_id": cu.article_id, "cu": cu, "parsed": parsed}
+        else:
+            prompt = build_grouping_prompt(cu.paragraphs)
+            raw = await _call_llm(prompt)
+            groups = parse_grouping(raw)
+            for g in groups:
+                g["start_p"] += cu.para_offset
+                g["end_p"] += cu.para_offset
+                if "paragraphs" in g:
+                    g["paragraphs"] = [p + cu.para_offset for p in g["paragraphs"]]
+            return {"article_id": cu.article_id, "cu": cu, "groups": groups}
+
+    async def _bounded_infer(cu):
+        async with sem_llm:
+            return await _infer_chunk(cu)
+
+    chunk_results = await asyncio.gather(*[_bounded_infer(cu) for cu in chunk_pool])
+
+    # ============================================================
+    # Phase 3: 按 article_id 分组 → 并行合并
+    # ============================================================
+    from collections import defaultdict
+    by_article = defaultdict(list)
+    for cr in chunk_results:
+        by_article[cr["article_id"]].append(cr)
+
     articles = {}
     all_segments = {}
     all_texts = {}
 
-    for idx in range(len(items)):
-        it = items[idx]
-        paragraphs = it["paragraphs"]
+    async def _merge_article(aid: str, cr_list: list):
+        cu0 = cr_list[0]["cu"]
+        total_charnum = sum(len(p) for c in cr_list for p in c["cu"].paragraphs)
+        all_paras = sum([c["cu"].paragraphs for c in cr_list], [])
 
-        # ---- 1. 分块（token 阈值） ----
-        parts = split_paragraphs(paragraphs)
-        it["split_parts"] = parts
-
-        # ---- 2. stage1：逐块推理（每块独立编号 P1-Pn） ----
-        chunk_results = []
-        para_offset = 0  # 全局段落偏移
-        for pi, part in enumerate(parts):
-            # 构建 prompt（local P1-Pn）
-            prompt = build_grouping_prompt(part)
-            payload = {
-                "model": MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": OLLAMA_NUM_PREDICT,
-                    "temperature": OLLAMA_TEMP
-                }
-            }
-            old_http = os.environ.pop("http_proxy", None)
-            old_https = os.environ.pop("https_proxy", None)
-            try:
-                async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
-                    resp = await client.post(OLLAMA_URL, json=payload)
-                    resp.raise_for_status()
-                    result = resp.json()
-                    raw = result.get("response", "").strip()
-            except Exception as e:
-                raw = f"[Ollama 错误] {e}"
-            finally:
-                if old_http: os.environ["http_proxy"] = old_http
-                if old_https: os.environ["https_proxy"] = old_https
-
-            groups = parse_grouping(raw)
-            # 偏移还原到全局段落号
-            for g in groups:
-                g["start_p"] += para_offset
-                g["end_p"] += para_offset
-                if "paragraphs" in g:
-                    g["paragraphs"] = [p + para_offset for p in g["paragraphs"]]
-            chunk_results.append(groups)
-            para_offset += len(part)
-
-        # ---- 3. 合并所有 chunk 的分组 ----
-        all_groups = []
-        for groups in chunk_results:
-            all_groups.extend(groups)
-
-        if not all_groups:
-            continue
-
-        # 合并相邻重叠
-        merged = []
-        for g in all_groups:
-            if merged and g["start_p"] <= merged[-1]["end_p"]:
-                prev = merged[-1]
-                prev["end_p"] = max(prev["end_p"], g["end_p"])
-                prev["point"] += " + " + g["point"]
-                prev["summary"] += "；" + g["summary"]
-                prev_kw = prev.get("keywords", "").strip()
-                g_kw = g.get("keywords", "").strip()
-                if prev_kw and g_kw and prev_kw != g_kw:
-                    prev["keywords"] = prev_kw + "+" + g_kw
-                if "paragraphs" in prev and "paragraphs" in g:
-                    prev["paragraphs"] = sorted(set(prev["paragraphs"] + g["paragraphs"]))
+        if mode == "summary":
+            parsed_list = [c["parsed"] for c in cr_list]
+            summaries = [p["summary_objective"] for p in parsed_list if p["summary_objective"]]
+            if len(summaries) > 1:
+                merge_raw = await _call_llm(build_merge_prompt(summaries, query=query, keyword=keyword))
+                unified_summary = parse_merge_output(merge_raw)
             else:
-                if "paragraphs" not in g:
-                    g["paragraphs"] = list(range(g["start_p"], g["end_p"] + 1))
-                merged.append(g)
+                unified_summary = summaries[0] if summaries else ""
 
-        groups = consolidate_ranges(merged)
+            all_relevant = []
+            for p in parsed_list:
+                r = p["summary_relevant"]
+                if r and r not in all_relevant:
+                    all_relevant.append(r)
 
-        # ---- 5. 补充遗漏段落 ----
-        covered = set()
-        for g in groups:
-            for pn in range(g["start_p"], g["end_p"] + 1):
-                covered.add(pn)
-        all_paras_set = set(range(1, len(paragraphs) + 1))
-        missing = sorted(all_paras_set - covered)
-        if missing:
-            start = missing[0]
-            end = missing[0]
-            for pn in missing[1:]:
-                if pn == end + 1:
-                    end = pn
-                else:
-                    groups.append({"group_id": 99, "start_p": start, "end_p": end,
-                                   "paragraphs": list(range(start, end + 1)),
-                                   "point": "[补充]", "summary": "LLM遗漏的段落", "keywords": ""})
-                    start = pn
-                    end = pn
-            groups.append({"group_id": 99, "start_p": start, "end_p": end,
-                           "paragraphs": list(range(start, end + 1)),
-                           "point": "[补充]", "summary": "LLM遗漏的段落", "keywords": ""})
+            all_key_points = []
+            kp_chunk_map = []
+            for ci, p in enumerate(parsed_list):
+                for kp in p["key_points"]:
+                    if kp not in all_key_points:
+                        all_key_points.append(kp)
+                        kp_chunk_map.append(ci)
 
-        # ---- 6. 构建文章数据 ----
-        article_id = f"a_{idx+1:02d}"
-        segment_texts = {}
-        segments_out = []
-        total_charnum = 0
-
-        for gi, g in enumerate(groups, 1):
-            s = max(0, g["start_p"] - 1)
-            e = min(len(paragraphs), g["end_p"])
-            group_text = '\n\n'.join(paragraphs[s:e])
-            charnum = len(group_text)
-            total_charnum += charnum
-            seg_id = f"s{gi}"
-
-            segments_out.append({"id": seg_id, "charnum": charnum})
-            segment_texts[seg_id] = group_text
-
-            sid = f"{article_id}_{seg_id}"
-            seg_item = {
-                "article_id": article_id,
-                "point": g["point"],
-                "summary": g["summary"],
-                "charnum": charnum
+            texts_data = {
+                "_chunks": [c["cu"].paragraphs for c in cr_list],
+                "_kp_chunk_map": kp_chunk_map,
             }
-            if g.get("keywords"):
-                seg_item["keywords"] = g["keywords"]
-            all_segments[sid] = seg_item
 
-        source = re.sub(r'https?://(www\.)?', '', it["url"]).split('/')[0]
-        articles[article_id] = {
-            "title": it["title"],
-            "url": it["url"],
-            "date": it["date"] or "",
-            "snippet": it["snippet"],
-            "source": source,
-            "charnum": total_charnum,
-            "segments": segments_out
-        }
-        all_texts[article_id] = segment_texts
+            return {
+                "title": cu0.title, "url": cu0.url, "date": cu0.date,
+                "snippet": cu0.snippet, "source": cu0.source,
+                "charnum": total_charnum, "mode": "summary",
+                "summary": unified_summary,
+                "summary_relevant": all_relevant,
+                "key_points": all_key_points,
+                "segments": [],
+            }, {}, texts_data
 
-    return {
-        "articles": articles,
-        "segments": all_segments,
-        "_texts": all_texts
-    }
+        else:
+            all_groups = []
+            for c in cr_list:
+                all_groups.extend(c["groups"])
+            if not all_groups:
+                return None, {}, None
+
+            merged = []
+            for g in all_groups:
+                if merged and g["start_p"] <= merged[-1]["end_p"]:
+                    prev = merged[-1]
+                    prev["end_p"] = max(prev["end_p"], g["end_p"])
+                    prev["point"] += " + " + g["point"]
+                    prev["summary"] += "；" + g["summary"]
+                    prev_kw = prev.get("keywords", "").strip()
+                    g_kw = g.get("keywords", "").strip()
+                    if prev_kw and g_kw and prev_kw != g_kw:
+                        prev["keywords"] = prev_kw + "+" + g_kw
+                    if "paragraphs" in prev and "paragraphs" in g:
+                        prev["paragraphs"] = sorted(set(prev["paragraphs"] + g["paragraphs"]))
+                else:
+                    if "paragraphs" not in g:
+                        g["paragraphs"] = list(range(g["start_p"], g["end_p"] + 1))
+                    merged.append(g)
+
+            groups = consolidate_ranges(merged)
+            covered = set()
+            for g in groups:
+                for pn in range(g["start_p"], g["end_p"] + 1):
+                    covered.add(pn)
+            n_total = sum(len(c["cu"].paragraphs) for c in cr_list)
+            missing = sorted(set(range(1, n_total + 1)) - covered)
+            if missing:
+                start = missing[0]
+                end = missing[0]
+                for pn in missing[1:]:
+                    if pn == end + 1:
+                        end = pn
+                    else:
+                        groups.append({"group_id": 99, "start_p": start, "end_p": end,
+                                       "paragraphs": list(range(start, end + 1)),
+                                       "point": "[补充]", "summary": "LLM遗漏的段落", "keywords": ""})
+                        start = pn
+                        end = pn
+                groups.append({"group_id": 99, "start_p": start, "end_p": end,
+                               "paragraphs": list(range(start, end + 1)),
+                               "point": "[补充]", "summary": "LLM遗漏的段落", "keywords": ""})
+
+            segment_texts = {}
+            segments_out = []
+            article_segments = {}
+            for gi, g in enumerate(groups, 1):
+                s = max(0, g["start_p"] - 1)
+                e = min(n_total, g["end_p"])
+                group_text = '\n\n'.join(all_paras[s:e])
+                charnum = len(group_text)
+                seg_id = f"s{gi}"
+                segments_out.append({"id": seg_id, "charnum": charnum})
+                segment_texts[seg_id] = group_text
+                sid = f"{aid}_{seg_id}"
+                seg_item = {"article_id": aid, "point": g["point"],
+                            "summary": g["summary"], "charnum": charnum}
+                if g.get("keywords"):
+                    seg_item["keywords"] = g["keywords"]
+                article_segments[sid] = seg_item
+
+            return {
+                "title": cu0.title, "url": cu0.url, "date": cu0.date,
+                "snippet": cu0.snippet, "source": cu0.source,
+                "charnum": total_charnum, "segments": segments_out,
+            }, {**article_segments, "_texts": segment_texts}, None
+
+    merge_results = await asyncio.gather(*[_merge_article(aid, crs) for aid, crs in by_article.items()])
+
+    for aid, (art_entry, extra, texts_data) in zip(by_article.keys(), merge_results):
+        if art_entry is None:
+            continue
+        articles[aid] = art_entry
+        if extra:
+            segs = {k: v for k, v in extra.items() if k != "_texts"}
+            all_segments.update(segs)
+            if "_texts" in extra:
+                all_texts[aid] = extra["_texts"]
+        if texts_data:
+            all_texts[aid] = texts_data
+
+    return {"articles": articles, "segments": all_segments, "_texts": all_texts}
+
+    # (旧版 for 循环已移除，改为上面的三阶段并行架构)
