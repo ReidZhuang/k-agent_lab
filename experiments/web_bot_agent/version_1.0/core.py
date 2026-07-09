@@ -2,7 +2,7 @@
 核心引擎：搜索 → 提取 → LLM 分组 → 组装
 """
 
-import json, os, sys, time, re, subprocess, asyncio
+import json, os, sys, time, re, asyncio
 from dataclasses import dataclass, field
 import httpx
 
@@ -11,7 +11,12 @@ CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "config.json")
 with open(CONFIG_PATH) as f:
     cfg = json.load(f)
 
-PROXY = cfg["proxy"]["http"]
+# search_engine
+_SEARCH_PARENT = os.path.join(os.path.dirname(__file__), "..", "..")
+if _SEARCH_PARENT not in sys.path:
+    sys.path.insert(0, _SEARCH_PARENT)
+from search_engine import search as search_web
+
 OLLAMA_URL = f"{cfg['ollama']['endpoint']}/api/generate"
 MODEL = cfg["ollama"]["models"]["default"]
 MAX_PARALLEL = cfg["ollama"]["max_parallel"]
@@ -56,18 +61,9 @@ class ChunkUnit:
 
 
 # ============================================================
-# 1. 搜索
+# 1. 搜索（已迁移至 search_engine 模块）
 # ============================================================
-def search_web(query: str, max_results: int = 5) -> list:
-    """通过 web-forager 搜索，返回 [{title, url, snippet}, ...]"""
-    env = os.environ.copy()
-    env["http_proxy"] = PROXY
-    env["https_proxy"] = PROXY
-    r = subprocess.run(
-        ["web-forager", "search", query, "--max-results", str(max_results)],
-        capture_output=True, text=True, timeout=20, env=env
-    )
-    return json.loads(r.stdout)
+# search_web() 在模块顶部通过 "from search_engine import search as search_web" 导入
 
 
 # ============================================================
@@ -77,7 +73,7 @@ def fetch_and_extract(url: str) -> tuple:
     """返回 (body_text, date_str, html_len, paragraphs)"""
     import trafilatura
     try:
-        with httpx.Client(proxy=PROXY, timeout=15, follow_redirects=True) as client:
+        with httpx.Client(timeout=15, follow_redirects=True) as client:
             resp = client.get(url, headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             })
@@ -120,7 +116,7 @@ async def fetch_and_extract_async(url: str) -> tuple:
     """异步版本，与 fetch_and_extract 功能相同"""
     import trafilatura
     try:
-        async with httpx.AsyncClient(proxy=PROXY, timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
             resp = await client.get(url, headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             })
@@ -372,8 +368,6 @@ async def _call_llm(prompt: str) -> str:
             "temperature": OLLAMA_TEMP
         }
     }
-    old_http = os.environ.pop("http_proxy", None)
-    old_https = os.environ.pop("https_proxy", None)
     try:
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT) as client:
             resp = await client.post(OLLAMA_URL, json=payload)
@@ -381,9 +375,6 @@ async def _call_llm(prompt: str) -> str:
             return resp.json().get("response", "").strip()
     except Exception as e:
         return f"[Ollama 错误] {e}"
-    finally:
-        if old_http: os.environ["http_proxy"] = old_http
-        if old_https: os.environ["https_proxy"] = old_https
 
 
 async def locate_point_text(chunks: list, key_point: str) -> dict:
@@ -525,7 +516,8 @@ def consolidate_ranges(groups: list) -> list:
 # ============================================================
 # 6. 主流程（单次搜索 -> 结构化 JSON）
 # ============================================================
-async def run_search_pipeline(query: str, keyword: str, max_results: int = 5, mode: str = "segments") -> dict:
+async def run_search_pipeline(query: str, keyword: str, max_results: int = 5, mode: str = "segments",
+                               site: str | None = None, timelimit: str | None = None) -> dict:
     """
     执行完整 pipeline。
 
@@ -539,7 +531,7 @@ async def run_search_pipeline(query: str, keyword: str, max_results: int = 5, mo
     }
     """
     # 搜索
-    raw_results = search_web(query, max_results)
+    raw_results = search_web(query, max_results=max_results, site=site, timelimit=timelimit)
     if not raw_results:
         return {"articles": {}, "segments": {}, "_texts": {}}
 

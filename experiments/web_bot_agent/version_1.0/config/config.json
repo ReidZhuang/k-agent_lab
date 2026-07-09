@@ -1,9 +1,4 @@
 {
-  "proxy": {
-    "enabled": true,
-    "http": "http://172.20.32.1:7890",
-    "https": "http://172.20.32.1:7890"
-  },
   "search": {
     "engine": "duckduckgo",
     "max_results": 5,

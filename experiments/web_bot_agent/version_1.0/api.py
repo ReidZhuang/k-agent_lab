@@ -28,8 +28,10 @@ class SearchRequest(BaseModel):
     query: str
     keyword: str = ""
     max_results: int = 5
-    session: str = "new"  # "new" 或 session_id（仅当组装层想复用已有 session 时）
-    mode: str = "segments"  # "segments" → 按段落分组 | "summary" → 整篇摘要+要点
+    session: str = "new"
+    mode: str = "segments"
+    site: str | None = None
+    timelimit: str | None = None
 
 
 class PollResponse(BaseModel):
@@ -96,12 +98,13 @@ class CloseResponse(BaseModel):
 # 后台处理线程
 # ============================================================
 
-def _run_pipeline_in_thread(session_id: str, query: str, keyword: str, max_results: int, mode: str = "segments"):
+def _run_pipeline_in_thread(session_id: str, query: str, keyword: str, max_results: int,
+                             mode: str = "segments", site: str | None = None, timelimit: str | None = None):
     """在新线程中执行 pipeline，完成后更新 session 状态"""
 
     async def _run():
         try:
-            result = await run_search_pipeline(query, keyword, max_results, mode)
+            result = await run_search_pipeline(query, keyword, max_results, mode, site=site, timelimit=timelimit)
             elapsed = time.time() - start
             session_manager.set_done(
                 session_id,
@@ -127,12 +130,12 @@ def _run_pipeline_in_thread(session_id: str, query: str, keyword: str, max_resul
 @app.post("/search", response_model=PollResponse)
 async def search(req: SearchRequest):
     """发起新搜索"""
-    session_id = session_manager.create(req.query, req.keyword, req.max_results, req.mode)
+    session_id = session_manager.create(req.query, req.keyword, req.max_results, req.mode, req.site, req.timelimit)
 
     # 启动后台线程执行 pipeline
     t = threading.Thread(
         target=_run_pipeline_in_thread,
-        args=(session_id, req.query, req.keyword, req.max_results, req.mode),
+        args=(session_id, req.query, req.keyword, req.max_results, req.mode, req.site, req.timelimit),
         daemon=True
     )
     t.start()
