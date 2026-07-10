@@ -263,12 +263,15 @@ def build_summary_prompt(paragraphs: list, query: str = "", keyword: str = "") -
     return _prompt_summary_template.format(query=query, keyword=keyword, body=body)
 
 
-def build_merge_prompt(chunk_summaries: list, query: str = "", keyword: str = "") -> str:
+def build_merge_prompt(chunk_summaries: list, query: str = "", keyword: str = "",
+                        title: str = "") -> str:
     """构建合并 prompt：从 prompts/summary_merge.txt 读取模板"""
     text = ''
     for i, s in enumerate(chunk_summaries, 1):
-        text += f'【第{i}部分概括】\n{s}\n\n'
-    return _prompt_merge_template.format(query=query, keyword=keyword, chunk_summaries=text.strip())
+        text += f'{i}. {s}\n\n'
+    return _prompt_merge_template.format(
+        query=query, keyword=keyword, title=title, chunk_summaries=text.strip()
+    )
 
 
 def build_point_locate_prompt(paragraphs: list, key_point: str,
@@ -299,13 +302,13 @@ def parse_summary_output(raw: str) -> dict:
     """
     result = {"summary": "", "summary_objective": "", "summary_relevant": "", "key_points": []}
 
-    # 提取【客观概括】
-    obj_match = re.search(r'【客观概括】\s*\n(.*?)(?=\n\s*【相关摘要】|\Z)', raw, re.DOTALL)
+    # 提取【客观概括】——兼容同一行或换行两种格式
+    obj_match = re.search(r'【客观概括】[ \t]*\n?(.*?)(?=\n\s*【相关摘要】|\Z)', raw, re.DOTALL)
     if obj_match:
         result["summary_objective"] = obj_match.group(1).strip()
 
-    # 提取【相关摘要】
-    rel_match = re.search(r'【相关摘要】\s*\n(.*?)(?=\n\s*【核心要点】|\Z)', raw, re.DOTALL)
+    # 提取【相关摘要】——兼容同一行或换行两种格式
+    rel_match = re.search(r'【相关摘要】[ \t]*\n?(.*?)(?=\n\s*【核心要点】|\Z)', raw, re.DOTALL)
     if rel_match:
         result["summary_relevant"] = rel_match.group(1).strip()
 
@@ -317,8 +320,8 @@ def parse_summary_output(raw: str) -> dict:
         parts.append(result["summary_relevant"])
     result["summary"] = '\n\n'.join(parts)
 
-    # 提取【核心要点】后的编号列表
-    kp_match = re.search(r'【核心要点】\s*\n(.*?)$', raw, re.DOTALL)
+    # 提取【核心要点】后的编号列表——兼容同一行或换行两种格式
+    kp_match = re.search(r'【核心要点】[ \t]*\n?(.*?)$', raw, re.DOTALL)
     if kp_match:
         kp_text = kp_match.group(1).strip()
         for line in kp_text.split('\n'):
@@ -333,8 +336,8 @@ def parse_summary_output(raw: str) -> dict:
 
 
 def parse_merge_output(raw: str) -> str:
-    """解析合并 LLM 输出，返回【统一概括】文本"""
-    m = re.search(r'【统一概括】\s*\n(.*?)$', raw, re.DOTALL)
+    """解析合并 LLM 输出，返回【统一概括】文本——兼容同一行或换行两种格式"""
+    m = re.search(r'【统一概括】[ \t]*\n?(.*?)(?=\n\s*【各分块概括】|\Z)', raw, re.DOTALL)
     return m.group(1).strip() if m else raw
 
 
@@ -596,7 +599,7 @@ async def run_search_pipeline(query: str, keyword: str, max_results: int = 5, mo
             parsed_list = [c["parsed"] for c in cr_list]
             summaries = [p["summary_objective"] for p in parsed_list if p["summary_objective"]]
             if len(summaries) > 1:
-                merge_raw = await _call_llm(build_merge_prompt(summaries, query=query, keyword=keyword))
+                merge_raw = await _call_llm(build_merge_prompt(summaries, query=query, keyword=keyword, title=cu0.title))
                 unified_summary = parse_merge_output(merge_raw)
             else:
                 unified_summary = summaries[0] if summaries else ""
