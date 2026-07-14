@@ -1,0 +1,61 @@
+{
+  "query": "宁德时代今天上午的涨跌幅如何？",
+  "model": "qwen2.5:7b",
+  "run_id": "28495f54",
+  "timestamp": "20260713_180608",
+  "total_route_calls": 2,
+  "stop_reason": "final_answer_tag",
+  "has_final_answer": true,
+  "final_answer": "宁德时代（股票代码 300750.SZ）今天上午的涨跌幅为 359.06%。\n\n[FINAL_ANSWER] 宁德时代的涨跌幅为 359.06%。",
+  "rounds": [
+    {
+      "round": 1,
+      "route_args": {
+        "keywords": [
+          "涨跌幅"
+        ],
+        "entity_type": "stock_code",
+        "entity_value": "300750.SZ",
+        "intent_type": "fact",
+        "time_start": "20260713",
+        "time_end": "20260713"
+      },
+      "fields_count": 7,
+      "field_ids": [
+        "FIELD_INDEX_PCT_CHG",
+        "FIELD_SECTOR_PCT_CHG",
+        "FIELD_LHB_PCT_CHG",
+        "FIELD_QUOTE_PCT_CHG",
+        "FIELD_KLINE_PCT_CHG",
+        "FIELD_CB_PCT_CHG",
+        "FIELD_FUND_PCT_CHG"
+      ],
+      "concept": "市场整体行情",
+      "datasource": "DS_TUSHARE_INDEX_DAILY",
+      "injected_tool_result": "【路由结果】共匹配到 7 个 DataField\n\n── Field #1 ──\n  (1) FIELD_INDEX_PCT_CHG\n      alias: simple\n      data_type: float\n      unit: %\n      granularity: 日频,指数级别\n      refresh_time: daily_17:00\n      datasource: TuShare 指数日线\n      protocol: tushare\n\n── Field #2 ──\n  (2) FIELD_SECTOR_PCT_CHG\n      alias: simple\n      data_type: float\n      unit: %\n      granularity: 日频,板块级别\n      refresh_time: intraday\n      datasource: TuShare 指数日线\n      protocol: tushare\n\n── Field #3 ──\n  (3) FIELD_LHB_PCT_CHG\n      alias: simple\n      data_type: float\n      unit: %\n      granularity: 日频,个股级别\n      refresh_time: daily_20:00\n      datasource: TuShare 指数日线\n      protocol: tushare\n\n── Field #4 ──\n  (4) FIELD_QUOTE_PCT_CHG\n      alias: simple\n      data_type: float\n      unit: %\n      granularity: 实时,个股级别\n      refresh_time: realtime\n      datasource: TuShare 指数日线\n      protocol: tushare\n\n── Field #5 ──\n  (5) FIELD_KLINE_PCT_CHG\n      alias: simple\n      data_type: float\n      unit: %\n      granularity: 日频,个股级别\n      refresh_time: daily_17:00\n      datasource: TuShare 指数日线\n      protocol: tushare\n\n── Field #6 ──\n  (6) FIELD_CB_PCT_CHG\n      alias: simple\n      data_type: float\n      unit: %\n      granularity: 日频,个券级别\n      refresh_time: daily_17:00\n      datasource: TuShare 指数日线\n      protocol: tushare\n\n── Field #7 ──\n  (7) FIELD_FUND_PCT_CHG\n      alias: simple\n      data_type: float\n      unit: %\n      granularity: 日频,基金级别\n      refresh_time: daily_17:00\n      datasource: TuShare 指数日线\n      protocol: tushare\n\n📌 主概念：CONCEPT_MARKET_INDEX（市场整体行情）\n🔌 主数据源：DS_TUSHARE_INDEX_DAILY | 协议=tushare"
+    },
+    {
+      "round": 2,
+      "route_args": {
+        "entity_value": "300750.SZ",
+        "field_id": "FIELD_QUOTE_PCT_CHG",
+        "time_end": "20260713",
+        "time_start": "20260713",
+        "entity_type": "stock_code"
+      },
+      "fields_count": 7,
+      "field_ids": [
+        "FIELD_INDEX_PCT_CHG",
+        "FIELD_SECTOR_PCT_CHG",
+        "FIELD_LHB_PCT_CHG",
+        "FIELD_QUOTE_PCT_CHG",
+        "FIELD_KLINE_PCT_CHG",
+        "FIELD_CB_PCT_CHG",
+        "FIELD_FUND_PCT_CHG"
+      ],
+      "concept": "市场整体行情",
+      "datasource": "DS_TUSHARE_INDEX_DAILY",
+      "injected_tool_result": "取数成功:\n股票代码: sz300750, 涨跌幅: 359.06%"
+    }
+  ]
+}

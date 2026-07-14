@@ -1,0 +1,62 @@
+{
+  "query": "宁德时代今天中午的MA10是多少",
+  "model": "qwen2.5:7b",
+  "run_id": "f81d5913",
+  "timestamp": "20260713_175308",
+  "total_route_calls": 2,
+  "stop_reason": "convergence",
+  "has_final_answer": true,
+  "final_answer": "路由收敛于 FIELD_MACRO_SF_MONTH",
+  "rounds": [
+    {
+      "round": 1,
+      "route_args": {
+        "keywords": [
+          "MA10"
+        ],
+        "entity_type": "stock_code",
+        "entity_value": "300750.SZ",
+        "intent_type": "fact",
+        "time_start": "20260713000000",
+        "time_end": "20260713120000",
+        "strict": false
+      },
+      "fields_count": 5,
+      "field_ids": [
+        "FIELD_MACRO_SF_MONTH",
+        "FIELD_RATE_DATE",
+        "FIELD_MACRO_GDP_PI",
+        "FIELD_MACRO_M",
+        "FIELD_INDUSTRY_IS_NEW"
+      ],
+      "concept": "宏观经济指标",
+      "datasource": "DS_TUSHARE_CN_MACRO",
+      "injected_tool_result": "【路由结果】共匹配到 5 个 DataField\n\n── Field #1 ──\n  (1) FIELD_MACRO_SF_MONTH\n      alias: fuzzy\n      data_type: float\n      unit: 亿元\n      granularity: 月频,国家级别\n      refresh_time: monthly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #2 ──\n  (2) FIELD_RATE_DATE\n      alias: fuzzy\n      data_type: date\n      unit: —\n      granularity: 日频,市场级别\n      refresh_time: daily\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #3 ──\n  (3) FIELD_MACRO_GDP_PI\n      alias: fuzzy\n      data_type: float\n      unit: 亿元\n      granularity: 月频,国家级别\n      refresh_time: quarterly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #4 ──\n  (4) FIELD_MACRO_M0\n      alias: fuzzy\n      data_type: float\n      unit: 亿元\n      granularity: 月频,国家级别\n      refresh_time: monthly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #5 ──\n  (5) FIELD_INDUSTRY_IS_NEW\n      alias: fuzzy\n      data_type: string\n      unit: —\n      granularity: 低频,行业级别\n      refresh_time: weekly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n📌 主概念：CONCEPT_MACRO_ECONOMY（宏观经济指标）\n🔌 主数据源：DS_TUSHARE_CN_MACRO | 协议=tushare"
+    },
+    {
+      "round": 2,
+      "route_args": {
+        "keywords": [
+          "MA10"
+        ],
+        "strict": false,
+        "time_end": "20260713120000",
+        "time_start": "20260713000000",
+        "entity_type": "stock_code",
+        "entity_value": "300750.SZ",
+        "intent_type": "fact"
+      },
+      "fields_count": 5,
+      "field_ids": [
+        "FIELD_MACRO_SF_MONTH",
+        "FIELD_RATE_DATE",
+        "FIELD_MACRO_GDP_PI",
+        "FIELD_MACRO_M",
+        "FIELD_INDUSTRY_IS_NEW"
+      ],
+      "concept": "宏观经济指标",
+      "datasource": "DS_TUSHARE_CN_MACRO",
+      "injected_tool_result": "【路由结果】共匹配到 5 个 DataField\n\n── Field #1 ──\n  (1) FIELD_MACRO_SF_MONTH\n      alias: fuzzy\n      data_type: float\n      unit: 亿元\n      granularity: 月频,国家级别\n      refresh_time: monthly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #2 ──\n  (2) FIELD_RATE_DATE\n      alias: fuzzy\n      data_type: date\n      unit: —\n      granularity: 日频,市场级别\n      refresh_time: daily\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #3 ──\n  (3) FIELD_MACRO_GDP_PI\n      alias: fuzzy\n      data_type: float\n      unit: 亿元\n      granularity: 月频,国家级别\n      refresh_time: quarterly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #4 ──\n  (4) FIELD_MACRO_M0\n      alias: fuzzy\n      data_type: float\n      unit: 亿元\n      granularity: 月频,国家级别\n      refresh_time: monthly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n── Field #5 ──\n  (5) FIELD_INDUSTRY_IS_NEW\n      alias: fuzzy\n      data_type: string\n      unit: —\n      granularity: 低频,行业级别\n      refresh_time: weekly\n      datasource: TuShare 中国宏观\n      protocol: tushare\n\n📌 主概念：CONCEPT_MACRO_ECONOMY（宏观经济指标）\n🔌 主数据源：DS_TUSHARE_CN_MACRO | 协议=tushare"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "description": "数据源主备优先级权重配置 - 可手动调优",
+  "version": "1.0",
+
+  "formula": "priority = weight_reliability × reliability_score + weight_freshness × freshness_score",
+
+  "weights": {
+    "reliability": 0.7,
+    "freshness": 0.3
+  },
+
+  "freshness_map": {
+    "realtime": 1.0,
+    "intraday": 0.9,
+    "daily_17:00": 0.7,
+    "daily_20:00": 0.7,
+    "weekly": 0.5,
+    "monthly": 0.4,
+    "quarterly": 0.3,
+    "event_driven": 0.6
+  },
+
+  "reliability_overrides": {
+    "DS_TUSHARE_DAILY": 0.95,
+    "DS_TUSHARE_DAILY_BASIC": 0.95,
+    "DS_TUSHARE_FINA_IND": 0.95,
+    "DS_TUSHARE_INCOME": 0.95,
+    "DS_TUSHARE_BALANCE": 0.95,
+    "DS_TUSHARE_CASHFLOW": 0.95,
+    "DS_TUSHARE_MONEYFLOW": 0.90,
+    "DS_TUSHARE_HSGT": 0.90,
+    "DS_TUSHARE_MARGIN": 0.90,
+    "DS_TUSHARE_INDEX_DAILY": 0.95,
+    "DS_TUSHARE_STOCK_BASIC": 0.95,
+    "DS_TUSHARE_STOCK_COMPANY": 0.95,
+    "DS_TENCENT_QUOTE": 0.85,
+    "DS_LEVISTOCK_EMOTION": 0.80,
+    "DS_LEVISTOCK_NEWS": 0.85,
+    "DS_LEVISTOCK_ZT_POOL": 0.80,
+    "DS_AKSHARE_SECTOR_SPOT": 0.85,
+    "DS_AKSHARE_SECTOR_THS": 0.85,
+    "DS_AKSHARE_CNINFO": 0.95,
+    "DS_AKSHARE_IRM": 0.95,
+    "DS_AKSHARE_CNINFO_PROFILE": 0.95,
+    "DS_SINA_QUOTE": 0.75,
+    "DS_SINA_KLINE": 0.70,
+    "DS_SINA_FINANCE": 0.75,
+    "DS_XUEQIU_QUOTE": 0.80,
+    "DS_XUEQIU_KLINE": 0.80,
+    "DS_XUEQIU_IND_COMPARE": 0.85,
+    "DS_WEB_SEARCH": 0.70,
+    "DS_LLM_GEN": 0.65,
+    "DS_LOCAL_CALC": 1.00
+  }
+}

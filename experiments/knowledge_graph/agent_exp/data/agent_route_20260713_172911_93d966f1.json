@@ -1,0 +1,11 @@
+{
+  "query": "宁德时代今天上午振幅",
+  "model": "qwen2.5:7b",
+  "run_id": "93d966f1",
+  "timestamp": "20260713_172911",
+  "total_route_calls": 0,
+  "stop_reason": "stop_no_tag",
+  "has_final_answer": true,
+  "final_answer": "ronics, \"entity_value\": \"300750.SZ\", \"keywords\": [\"振幅\"], \"time_start\": \"20260713\", \"time_end\": \"20260713\"}}\n</tool_call>",
+  "rounds": []
+}

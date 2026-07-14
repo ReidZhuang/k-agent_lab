@@ -1,0 +1,81 @@
+{
+  "_meta": {
+    "description": "路由解析 agent 跨模型对比测试集",
+    "created": "2026-07-13",
+    "format_version": 1
+  },
+  "queries": [
+    {
+      "id": "q001",
+      "text": "宁德时代今天上午的涨跌幅如何？",
+      "tags": ["stock", "realtime", "time_qualifier"],
+      "expected_domain": "stock",
+      "expected_field": "FIELD_QUOTE_PCT_CHG",
+      "note": "基础测试：个股实时涨跌幅，有时间定语'上午'"
+    },
+    {
+      "id": "q002",
+      "text": "贵州茅台2025年第一季度的毛利率是多少？",
+      "tags": ["stock", "financial", "time_range"],
+      "expected_domain": "stock",
+      "expected_field": null,
+      "note": "历史财务数据查询，跨季度时间范围"
+    },
+    {
+      "id": "q003",
+      "text": "今天上证指数涨了多少？",
+      "tags": ["index", "realtime"],
+      "expected_domain": "index",
+      "expected_field": "FIELD_INDEX_PCT_CHG",
+      "note": "指数涨跌幅查询"
+    },
+    {
+      "id": "q004",
+      "text": "半导体板块今天表现怎么样",
+      "tags": ["sector", "analysis"],
+      "expected_domain": "sector",
+      "expected_field": "FIELD_SECTOR_PCT_CHG",
+      "note": "板块行情，带分析意图"
+    },
+    {
+      "id": "q005",
+      "text": "查询300750.SZ的市盈率TTM",
+      "tags": ["stock", "valuation", "direct_code"],
+      "expected_domain": "stock",
+      "expected_field": "FIELD_PE_TTM",
+      "note": "直接输入股票代码查估值指标"
+    },
+    {
+      "id": "q006",
+      "text": "宁德时代今日成交额和换手率",
+      "tags": ["stock", "multi_metric"],
+      "expected_domain": "stock",
+      "expected_field": null,
+      "note": "双指标查询，需要识别两个不同field"
+    },
+    {
+      "id": "q007",
+      "text": "宁德时代所属板块今日涨跌幅",
+      "tags": ["sector", "entity_shift"],
+      "expected_domain": "sector",
+      "expected_field": "FIELD_SECTOR_PCT_CHG",
+      "note": "entity不是个股而是所属板块，需切换entity_type"
+    },
+    {
+      "id": "q008",
+      "text": "宁德时代今天中午的MA10是多少",
+      "tags": ["stock", "no_alias_match"],
+      "expected_domain": "stock",
+      "expected_field": null,
+      "note": "MA10无alias匹配，考验兜底策略"
+    },
+    {
+      "id": "q009",
+      "text": "宁德时代今天上午振幅",
+      "tags": ["stock", "realtime"],
+      "expected_domain": "stock",
+      "expected_field": "FIELD_AMPLITUDE",
+      "note": "振幅查询，实时个股级别"
+    }
+  ]
+}
