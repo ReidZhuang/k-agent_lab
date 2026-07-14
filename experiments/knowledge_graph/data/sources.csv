@@ -70,3 +70,6 @@ DS_XUEQIU_IND_COMPARE,雪球行业估值对比,xueqiu,{},A,quarterly,0.85,,,
 DS_WEB_SEARCH,站内搜索,web_search,{},S/C,realtime,0.70,,,
 DS_LLM_GEN,LLM 生成分析,llm_gen,{},C,event_driven,0.65,,,
 DS_LOCAL_CALC,本地计算,local_calc,{},A,event_driven,1.00,,,
+DS_SINA_INCOME,新浪利润表,html_scrape,{},B,quarterly,0.75,,,DS_SINA_INCOME
+DS_SINA_BALANCE,新浪资产负债表,html_scrape,{},B,quarterly,0.75,,,DS_SINA_BALANCE
+DS_SINA_CASHFLOW,新浪现金流量表,html_scrape,{},B,quarterly,0.75,,,DS_SINA_CASHFLOW

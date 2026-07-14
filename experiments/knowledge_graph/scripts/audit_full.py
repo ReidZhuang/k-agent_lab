@@ -42,6 +42,14 @@ with DRIVER.session() as s:
     check("所有Field有embedding", fe == f_count, f"{fe}/{f_count}")
     gr = s.run("MATCH (f:DataField) WHERE f.granularity IS NOT NULL RETURN count(f) as c").single()["c"]
     check("所有Field有granularity", gr >= f_count - 10, f"{gr}/{f_count}")
+    # 新增: api_column/data_type/unit 完整性
+    no_col = s.run("MATCH (f:DataField) WHERE f.api_column IS NULL OR f.api_column = '' OR f.api_column STARTS WITH 'col_' RETURN count(f) as c").single()["c"]
+    check("所有Field有api_column", no_col == 0, f"缺失{no_col}")
+    no_dt = s.run("MATCH (f:DataField) WHERE f.data_type IS NULL RETURN count(f) as c").single()["c"]
+    check("所有Field有data_type", no_dt == 0, f"缺失{no_dt}")
+    no_unit = s.run("MATCH (f:DataField) WHERE f.unit IS NULL RETURN count(f) as c").single()["c"]
+    check("所有Field有unit", no_unit == 0, f"缺失{no_unit}")
+
 
 # 2. 关系
 print("\n--- 2. 关系 ---")
@@ -51,6 +59,23 @@ with DRIVER.session() as s:
         check(rel + ">=520", cnt >= 520, str(cnt))
     cnt = s.run("MATCH ()-[:SEMANTIC_SIMILAR_TO]->() RETURN count(*) as c").single()["c"]
     check("SEMANTIC_SIMILAR_TO>=3800", cnt >= 3800, str(cnt))
+
+# 新增: Concept 分配正确性
+with DRIVER.session() as s:
+    # 查每个 DataSource 的字段是否分配到合理 Concept（不同数据源配不同概念）
+    expected_concepts = {
+        "DS_SINA_INCOME": "CONCEPT_FINANCIAL_STATEMENTS",
+        "DS_SINA_BALANCE": "CONCEPT_FINANCIAL_STATEMENTS",
+        "DS_SINA_CASHFLOW": "CONCEPT_FINANCIAL_STATEMENTS",
+    }
+    for ds_id, expected_c in expected_concepts.items():
+        wrong = s.run("""
+            MATCH (f:DataField)-[:HAS_DATASOURCE]->(ds:DataSource {id: $ds_id})
+            MATCH (f)-[:BELONGS_TO_CONCEPT]->(c:IntentConcept)
+            WHERE c.id <> $exp
+            RETURN count(f) as cnt
+        """, ds_id=ds_id, exp=expected_c).single()["cnt"]
+        check(f"Concept正确:{ds_id}", wrong == 0, f"{wrong}个分配错误")
 
 # 3. DataSource 质量
 print("\n--- 3. DataSource 质量 ---")
@@ -84,8 +109,38 @@ print("\n--- 5. 协议覆盖 ---")
 with DRIVER.session() as s:
     protos = s.run("MATCH (ds:DataSource) RETURN ds.protocol as p").data()
     proto_set = {r["p"] for r in protos}
-for p in ["tushare","akshare","levistock","sina","tencent","xueqiu","web_search","llm_gen","local_calc"]:
+for p in ["tushare","akshare","levistock","sina","tencent","xueqiu","web_search","llm_gen","local_calc","html_scrape"]:
     check(f"协议:{p}", p in proto_set)
+
+# 5b. 重复字段检测
+print("\n--- 5b. 重复字段 ---")
+with DRIVER.session() as s:
+    # 同数据源内同名才算重复（跨产品线同语义字段不视为重复）
+    same_ds_dups = s.run("""
+        MATCH (f:DataField)-[:HAS_DATASOURCE]->(ds:DataSource)
+        WITH f.standard_name AS name, ds.id AS dsid, count(f) AS cnt, collect(f.id) AS fids
+        WHERE cnt > 1
+        RETURN name, dsid, cnt, fids ORDER BY cnt DESC
+    """).data()
+    cross_ds_dups = s.run("""
+        MATCH (f:DataField)-[:HAS_DATASOURCE]->(ds:DataSource)
+        WITH f.standard_name AS name, count(DISTINCT ds.id) AS dss
+        WHERE dss > 1
+        RETURN name, dss ORDER BY dss DESC
+    """).data()
+    if same_ds_dups:
+        for r in same_ds_dups:
+            print(f"  ⚠️ 同数据源重复: '{r['name']}' 在 {r['dsid']} 出现 {r['cnt']} 次: {r['fids']}")
+    if cross_ds_dups:
+        print(f"  ℹ️ 跨数据源同名: {len(cross_ds_dups)} 组（不同产品线，正常）")
+    # 有主备关系的重复不算问题
+    unbacked = 0
+    for r in same_ds_dups:
+        for fid in r['fids']:
+            has_backup = s.run("MATCH (f:DataField {id:$id})-[:HAS_BACKUP_DATASOURCE]->() RETURN count(*) as c", id=fid).single()["c"]
+            if has_backup == 0:
+                unbacked += 1
+    check("同数据源内重复已配主备", unbacked == 0, f"{unbacked}个缺主备")
 
 # 6. Faiss
 print("\n--- 6. Faiss ---")
@@ -94,6 +149,25 @@ fi = faiss.read_index("../faiss_index/fields.index")
 with open("../faiss_index/fields_ids.txt") as f:
     fids = [l.strip() for l in f]
 check("Faiss数量一致", fi.ntotal == len(fids), f"{fi.ntotal}")
+
+# 6b. api_column 一致性快照
+print("\n--- 6b. api_column 一致性 ---")
+with DRIVER.session() as s:
+    # 检查 api_column 含中文的字段（仅当协议不该返回中文列名时标记）
+    cn_cols = s.run("""
+        MATCH (f:DataField)-[:HAS_DATASOURCE]->(ds:DataSource)
+        WHERE f.api_column IS NOT NULL
+        AND f.api_column =~ '.*[一-鿿].*'
+        AND ds.protocol NOT IN ['akshare', 'html_scrape']
+        RETURN count(f) as cnt
+    """).single()["cnt"]
+    # 检查 api_column 为 col_ 自动编号的字段
+    auto_cols = s.run("""
+        MATCH (f:DataField) WHERE f.api_column STARTS WITH 'col_'
+        RETURN count(f) as cnt
+    """).single()["cnt"]
+    check("api_column无异常中文字段", cn_cols == 0, f"{cn_cols}个")
+    check("api_column无自动编号", auto_cols == 0, f"{auto_cols}个col_N")
 
 # 7. ds_prompts
 print("\n--- 7. ds_prompts ---")

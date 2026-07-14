@@ -34,6 +34,7 @@ _PROTOCOL_HINTS = {
     "local_calc": "直接用 Python 表达式计算",
     "web_search": "返回需要搜索的完整 URL 列表",
     "llm_gen": "无需取数，直接生成分析",
+    "html_scrape": "从 HTML 页面解析表格数据",
 }
 
 
@@ -207,6 +208,32 @@ else:
     row = df.iloc[0]
     _result = [row["close"]]
 ```"""
+    elif protocol == "html_scrape":
+        return """## 生成步骤
+1. 构造 HTML 页面 URL，将 {code} 替换为查询主体.代码
+2. 用 requests.get() 获取页面（编码: gb2312）
+3. 用 BeautifulSoup 找到数据表格
+4. 按行标签找到目标字段所在行，提取对应数据
+5. 结果存入 _result
+
+## 输出规则
+- _result 顺序与 查询指标 一致
+- 系统自动捕获 _result
+
+## 示例
+```python
+# import requests + BeautifulSoup 由系统自动注入
+url = f"https://vip.stock.finance.sina.com.cn/corp/go.php/vFD_ProfitStatement/stockid/300750/ctrl/part/displaytype/4.phtml"
+resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+resp.encoding = "gb2312"
+soup = BeautifulSoup(resp.text, "html.parser")
+for table in soup.find_all("table"):
+    for row in table.find_all("tr"):
+        cells = row.find_all("td")
+        if cells and "营业收入" in str(cells[0].get_text()):
+            _result = [float(cells[1].get_text().replace(",", ""))]
+            break
+```"""
     elif protocol == "local_calc":
         return """## 生成步骤
 1. 直接用 Python 表达式计算
@@ -269,6 +296,7 @@ CODE_TEMPLATES = {
     "xueqiu": "import pysnowball as ball\n",
     "tencent": "import requests\n",
     "sina": "import requests\n",
+    "html_scrape": "import requests\nfrom bs4 import BeautifulSoup\n",
 }
 
 
