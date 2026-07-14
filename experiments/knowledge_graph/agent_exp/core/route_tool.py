@@ -115,6 +115,14 @@ class RouteTool:
         if not ds:
             return f"错误: 字段 {field_id} 没有关联数据源"
 
+        # ── 硬编码实时取数（tencent/sina 等纯 HTTP GET 接口，无需 LLM） ──
+        from irkg.realtime_fetcher import is_realtime_protocol, fetch as rt_fetch
+        if is_realtime_protocol(ds.protocol or ""):
+            field_names = [f.api_column for f in [field_node] if f.api_column]
+            if field_names and entity_value:
+                return rt_fetch(ds.protocol, entity_value, field_names)
+            # fallback: 走 LLM 路径
+
         # 构造 RouteResult
         result = RouteResult(
             intent_type="fact",

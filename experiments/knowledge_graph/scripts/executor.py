@@ -1,5 +1,20 @@
-"""执行层适配器：执行 LLM 生成的取数代码"""
+"""执行层适配器：执行 LLM 生成的取数代码
+
+支持两种结果捕获方式：
+1. print() 输出（通过 stdout）
+2. _result 变量（列表，按顺序对应查询指标）
+"""
 import os, sys, json, subprocess, tempfile
+from pathlib import Path
+
+# 从安全存储加载 TUSHARE_TOKEN
+_TOKEN_PATH = os.path.expanduser("~/.secrets/stockagent.env")
+if Path(_TOKEN_PATH).exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_TOKEN_PATH)
+    except ImportError:
+        pass  # dotenv 未安装，走系统环境变量
 
 TUSHARE_TOKEN = os.getenv("TUSHARE_TOKEN", "")
 
@@ -7,36 +22,48 @@ TUSHARE_TOKEN = os.getenv("TUSHARE_TOKEN", "")
 def execute_code(code: str, timeout: int = 30) -> dict:
     """在隔离环境中执行 LLM 生成的 Python 代码
 
+    代码中可定义 _result 列表变量，其顺序应与查询指标列表对应。
+    执行结果通过 __RESULT_MARKER__ JSON 行返回。
+
     Args:
         code: LLM 生成的 Python 代码
         timeout: 超时秒数
 
     Returns:
-        {"success": bool, "output": str, "error": str}
+        {"success": bool, "output": str, "result": list, "error": str}
+        - output: print() 捕获的文本
+        - result: _result 列表（若定义了的话）
     """
-    # 注入 Token 环境变量
     env = os.environ.copy()
     if TUSHARE_TOKEN:
         env["TUSHARE_TOKEN"] = TUSHARE_TOKEN
 
-    # 写入临时文件执行
+    # 包装代码：捕获 stdout + _result 变量
+    wrapped = (
+        "import sys, io, json\n"
+        "_out = io.StringIO()\n"
+        "_old = sys.stdout\n"
+        "sys.stdout = _out\n"
+        "_result = []\n"
+        "try:\n"
+    )
+    # 缩进 LLM 代码（放入 try 块）
+    for line in code.split("\n"):
+        wrapped += f"    {line}\n"
+    wrapped += (
+        "except Exception:\n"
+        "    import traceback\n"
+        "    traceback.print_exc()\n"
+        "finally:\n"
+        "    sys.stdout = _old\n"
+        "    _captured_stdout = _out.getvalue()\n"
+        "    print('__RESULT_MARKER__' + json.dumps({\n"
+        "        'stdout': _captured_stdout,\n"
+        "        '_result': _result,\n"
+        "    }))\n"
+    )
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-        # 包装代码：捕获 print 输出
-        wrapped = (
-            "import sys, io\n"
-            "_out = io.StringIO()\n"
-            "_old = sys.stdout\n"
-            "sys.stdout = _out\n"
-            "try:\n"
-        )
-        for line in code.split("\n"):
-            wrapped += f"    {line}\n"
-        wrapped += (
-            "finally:\n"
-            "    sys.stdout = _old\n"
-            "    _result = _out.getvalue()\n"
-            "    print(_result, end='')\n"
-        )
         f.write(wrapped)
         fpath = f.name
 
@@ -46,15 +73,36 @@ def execute_code(code: str, timeout: int = 30) -> dict:
             capture_output=True, text=True,
             timeout=timeout, env=env,
         )
-        if result.returncode == 0:
-            return {"success": True, "output": result.stdout.strip()}
+        if result.returncode != 0 and not result.stdout:
+            return {"success": False, "output": "", "result": [], "error": result.stderr.strip()}
+
+        # 解析 __RESULT_MARKER__ JSON
+        stdout = result.stdout
+        marker = "__RESULT_MARKER__"
+        if marker in stdout:
+            parts = stdout.split(marker, 1)
+            before = parts[0].strip()  # 之前的 print 输出
+            try:
+                meta = json.loads(parts[1])
+                captured_stdout = meta.get("stdout", "")
+                captured_result = meta.get("_result", [])
+                # 合并 before 和 captured_stdout
+                all_stdout = (before + "\n" + captured_stdout).strip()
+                return {
+                    "success": True,
+                    "output": all_stdout,
+                    "result": captured_result,
+                    "error": "",
+                }
+            except json.JSONDecodeError:
+                return {"success": True, "output": stdout.strip(), "result": [], "error": ""}
         else:
-            return {"success": False, "output": result.stdout.strip(),
-                    "error": result.stderr.strip()}
+            return {"success": True, "output": stdout.strip(), "result": [], "error": ""}
+
     except subprocess.TimeoutExpired:
-        return {"success": False, "output": "", "error": f"执行超时 ({timeout}s)"}
+        return {"success": False, "output": "", "result": [], "error": f"执行超时 ({timeout}s)"}
     except Exception as e:
-        return {"success": False, "output": "", "error": str(e)}
+        return {"success": False, "output": "", "result": [], "error": str(e)}
     finally:
         os.unlink(fpath)
 
@@ -74,7 +122,6 @@ def test_tushare():
 
 
 def test_levistock():
-    """测试 levistock 接口是否可用"""
     try:
         import levistock as lk
         emotion = lk.market_emotion_cls()
@@ -84,7 +131,6 @@ def test_levistock():
 
 
 def test_akshare():
-    """测试 akshare 接口是否可用"""
     try:
         import akshare as ak
         df = ak.stock_board_industry_name_em()

@@ -1,8 +1,4 @@
-# DS_AKSHARE_SECTOR_THS API 调用规则
-
-```python
-import akshare as ak
-df = ak.stock_board_industry_summary_ths()
-```
-免费无需Token
-作为东方财富板块的备用/补充数据源
+## 函数
+ak.stock_board_concept_name_ths()
+返回同花顺概念板块列表，无参数
+返回 DataFrame 含板块名称、代码等信息

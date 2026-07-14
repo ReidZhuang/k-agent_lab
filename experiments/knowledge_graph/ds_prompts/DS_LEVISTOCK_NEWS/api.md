@@ -1,5 +1,3 @@
-# DS_LEVISTOCK_NEWS API 调用规则
-
 ## 接口
 lk.news_telegraph_cls(category='important')
 
@@ -11,15 +9,3 @@ lk.news_telegraph_cls(category='important')
 - item['time']     → 发布时间
 - item['title']    → 标题
 - item['content']  → 正文
-
-## 示例
-```python
-import levistock as lk
-news_list = lk.news_telegraph_cls(category='important')
-for n in news_list[:5]:
-    print(n['time'], n['title'])
-```
-
-## 注意
-- 默认返回最近 20-50 条
-- 无需 Token

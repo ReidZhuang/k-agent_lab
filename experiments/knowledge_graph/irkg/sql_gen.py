@@ -1,4 +1,8 @@
-"""SQL 生成：路由结果 + ds_prompts -> prompt -> LLM -> 可执行代码"""
+"""SQL 生成：路由结果 + ds_prompts -> prompt -> LLM -> 可执行代码
+
+build_sql_prompt() 将路由结果和 ds_prompts 下的内容合并为
+一个结构化的取数代码生成任务 prompt。
+"""
 import re
 from pathlib import Path
 
@@ -11,12 +15,209 @@ def load_prompt(path: str | Path) -> str:
     p = Path(path)
     if p.exists():
         return p.read_text(encoding="utf-8")
-    return f"(文件 {p.name} 未找到)"
+    return ""
 
 
 def read_ds_file(ds_id: str, filename: str) -> str:
     fp = DS_PROMPTS_DIR / ds_id / filename
     return load_prompt(fp)
+
+
+# 协议说明 — 只注入当前协议对应的一条
+_PROTOCOL_HINTS = {
+    "tencent": "HTTP GET 请求，返回 ~ 分隔的 88 个字段",
+    "sina": "HTTP GET 请求，返回 GBK 编码数据",
+    "tushare": "使用 tushare SDK（pro.xxx()）",
+    "akshare": "使用 akshare SDK（ak.xxx()）",
+    "levistock": "使用 levistock SDK（lk.xxx()）",
+    "xueqiu": "使用 pysnowball SDK（ball.xxx()）",
+    "local_calc": "直接用 Python 表达式计算",
+    "web_search": "返回需要搜索的完整 URL 列表",
+    "llm_gen": "无需取数，直接生成分析",
+}
+
+
+def _format_code(code_val: str, protocol: str, entity_type: str) -> str:
+    """格式转换：300750.SZ → sz300750（tencent/sina 协议）"""
+    if protocol in ("tencent", "sina") and entity_type == "stock_code" and "." in code_val:
+        parts = code_val.split(".")
+        sym, ex = parts[0], parts[1]
+        ex_map = {"SH": "sh", "SZ": "sz"}
+        return f"{ex_map.get(ex, ex.lower())}{sym}"
+    return code_val
+
+
+def _conditions_text(cond, protocol: str, target_cols: list[str]) -> str:
+    """格式化为结构化查询条件（纯文本描述，避免 LLM 误认为是 Python 字典）"""
+    lines = []
+
+    if cond.entity_value:
+        code = _format_code(cond.entity_value, protocol, cond.entity_type or "")
+        type_label = {"stock_code": "股票", "sector_name": "板块", "index_code": "指数"}.get(
+            cond.entity_type or "", "实体")
+        lines.append(f"  · {type_label}: {code}")
+    else:
+        lines.append("  · 主体: 无")
+
+    lines.append(f"  · 指标: {', '.join(target_cols)}")
+
+    if cond.time_range_start:
+        scope = f"{cond.time_range_start} ~ {cond.time_range_end}"
+        lines.append(f"  · 时间范围: {scope}")
+    elif cond.time_range_end:
+        lines.append(f"  · 截至: {cond.time_range_end}")
+
+    return "\n".join(lines)
+
+
+def _steps_and_example(protocol: str) -> str:
+    """协议相关的生成步骤 + 完整示例"""
+    if protocol == "tencent":
+        return """## 生成步骤
+1. 将 查询主体.代码 填入 URL 的 {code} 位置
+2. 用 requests.get() 发送请求
+3. 用 .text.split("~") 分割响应
+4. 在字段映射表中找到 查询指标 对应的索引，提取值
+5. 将结果按 查询指标 顺序存入 _result 列表
+
+## 示例
+查询条件:
+  · 股票: sz300750
+  · 指标: price, pct_chg
+
+```python
+# 【系统注入: import requests】
+code = "sz300750"                     # → 查询主体.代码
+url = f"https://web.sqt.gtimg.cn/q={code}"
+resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"},
+    timeout=10, allow_redirects=True)
+fields = resp.text.split("~")
+
+price = float(fields[3])              # 指标: price → 索引 3
+pct_chg = float(fields[32])           # 指标: pct_chg → 索引 32
+_result = [price, pct_chg]            # ← 按指标顺序存入
+```"""
+    elif protocol == "sina":
+        return """## 生成步骤
+1. 将 查询主体.代码 填入 URL
+2. HTTP GET（带 Referer 头），GBK 解码
+3. 去掉 "var hq_str_xxx=" 前缀，按逗号 split
+4. 按索引提取指标并存入 _result
+
+## 输出规则
+- 结果存入 `_result` 列表，顺序与 查询指标 一致
+- 系统自动捕获 _result"""
+    elif protocol == "tushare":
+        return """## 生成步骤
+1. 初始化 API 客户端: pro = ts.pro_api()
+   - pro 是 tushare 的 API 操作对象，所有接口通过 pro.xxx() 调用
+2. 调用 pro.daily(ts_code, start_date, end_date) 获取日线数据
+   - ts_code ← 查询主体.代码
+   - start_date, end_date ← 查询范围.时间
+3. 从返回的 DataFrame 中按列名提取 查询指标
+4. 将结果按 查询指标 顺序存入 _result 列表
+
+## 输出规则
+- 结果存入 `_result` 列表，顺序与 查询指标 一致
+- 空数据: _result = []
+- 系统自动捕获 _result
+
+## 示例
+查询条件:
+  · 股票: 000001.SZ
+  · 指标: close, pct_chg
+  · 时间范围: 20260701 ~ 20260714
+
+```python
+# import os/token 由系统自动注入，无需重复写
+pro = ts.pro_api()                       # 初始化 tushare API 客户端
+
+df = pro.daily(
+    ts_code="000001.SZ",               # ← 查询主体.代码
+    start_date="20260701",              # ← 查询范围.时间 起始
+    end_date="20260714",                # ← 查询范围.时间 结束
+)
+if df.empty:
+    _result = []                         # 空数据
+else:
+    row = df.iloc[0]
+    _result = [                          # ← 按指标顺序
+        row["close"],                    #   指标: close
+        row["pct_chg"],                  #   指标: pct_chg
+    ]
+```"""
+    elif protocol == "akshare":
+        return """## 生成步骤
+1. 调用 ak.xxx() 获取数据，函数名和参数见 API 文档
+   - akshare 的接口以 ak.xxx() 形式调用，每个数据源有独立函数
+2. 从返回的 DataFrame 中按列名提取 查询指标
+3. 将结果按 查询指标 顺序存入 _result 列表
+
+## 输出规则
+- _result 顺序与 查询指标 一致
+- 空数据: _result = []
+- 系统自动捕获 _result
+
+## 示例
+```python
+# import akshare as ak 由系统自动注入
+df = ak.stock_board_industry_spot_em(symbol="小金属")
+if df.empty:
+    _result = []
+else:
+    row = df.iloc[0]
+    _result = [
+        row["板块名称"],
+        row["涨跌幅"],
+    ]
+```"""
+    elif protocol == "levistock":
+        return """## 生成步骤
+1. 调用 lk.xxx() 获取数据，函数名和参数见 API 文档
+2. 从返回数据中提取 查询指标
+3. 存入 _result
+
+## 输出规则
+- _result 顺序与 查询指标 一致
+- 系统自动捕获 _result
+
+## 示例
+```python
+# import levistock as lk 由系统自动注入
+data = lk.market_emotion_cls()
+_result = [data.get("market_degree", 0)]
+```"""
+    elif protocol == "xueqiu":
+        return """## 生成步骤
+1. 调用 ball.xxx() 获取数据，函数名和参数见 API 文档
+2. 从返回数据中提取 查询指标
+3. 存入 _result
+
+## 输出规则
+- _result 顺序与 查询指标 一致
+- 系统自动捕获 _result
+
+## 示例
+```python
+# import pysnowball as ball 由系统自动注入
+df = ball.kline(symbol="SH600519", days=1)
+if df.empty:
+    _result = []
+else:
+    row = df.iloc[0]
+    _result = [row["close"]]
+```"""
+    elif protocol == "local_calc":
+        return """## 生成步骤
+1. 直接用 Python 表达式计算
+2. 结果存入 _result
+
+## 示例
+```python
+# 根据已有数据直接计算
+_result = [a_value / b_value * 100]
+```"""
+    return "## 输出规则\n- 结果存入 `_result` 列表\n- 系统自动捕获 _result\n"
 
 
 def build_sql_prompt(route_result) -> str:
@@ -26,69 +227,57 @@ def build_sql_prompt(route_result) -> str:
         return "错误: 无数据源信息"
 
     ds_id = ds.id
-    field_doc = read_ds_file(ds_id, "field.md")
-    table_doc = read_ds_file(ds_id, "table.md")
-    api_doc = read_ds_file(ds_id, "api.md")
+    protocol = ds.protocol or ""
 
-    def fmt_field(f):
-        col = f" -> API列: {f.api_column}" if f.api_column else ""
-        return f"{f.standard_name}{col}"
+    # 读取文档
+    field_doc = read_ds_file(ds_id, "field.md")       # 字段映射表
+    api_doc = read_ds_file(ds_id, "api.md")            # API 调用规则
 
-    field_list = [fmt_field(f) for f in route_result.fields]
-    if route_result.expanded_fields:
-        field_list += [fmt_field(f) for f in route_result.expanded_fields]
-
+    # 查询条件（结构化）
     cond = route_result.conditions
-    cond_parts = []
-    if cond.entity_value:
-        code_val = cond.entity_value
-        proto = ds.protocol or ""
-        if proto in ("tencent", "sina") and cond.entity_type == "stock_code" and "." in code_val:
-            sym, ex = code_val.split(".")[0], code_val.split(".")[1]
-            ex_map = {"SH": "sh", "SZ": "sz"}
-            code_val = f"{ex_map.get(ex, ex.lower())}{sym}"
-        cond_parts.append(f"实体: {cond.entity_type}={code_val}")
-    if cond.time_range_start:
-        cond_parts.append(f"时间: {cond.time_range_start} ~ {cond.time_range_end}")
+    target_cols = [f.api_column or f.id for f in route_result.fields]
+    cond_text = _conditions_text(cond, protocol, target_cols)
 
-    # 根据 protocol 选择代码生成说明
-    protocol = ds.protocol if ds.protocol else ""
-    lang_hints = {
-        "tushare": "使用 Python 调用 tushare SDK（pro.xxx()），不要使用 SQL",
-        "akshare": "使用 Python 调用 akshare SDK（ak.xxx()），不要使用 SQL",
-        "levistock": "使用 Python 调用 levistock SDK（lk.xxx()），不要使用 SQL",
-        "xueqiu": "使用 Python 调用 pysnowball SDK（ball.xxx()），不要使用 SQL",
-        "tencent": "使用 Python requests 库发送 HTTP GET 请求",
-        "sina": "使用 Python requests 库发送 HTTP GET 请求，注意 GBK 编码",
-        "local_calc": "使用 Python 表达式直接计算",
-        "web_search": "返回需要搜索的完整站点 URL 列表",
-        "llm_gen": "无需取数，LLM 直接生成分析",
-    }
-    lang_hint = lang_hints.get(protocol, "生成 Python 取数代码")
+    # 去掉文档中的标题行
+    field_body = re.sub(r'^#.*\n?', '', field_doc, flags=re.MULTILINE).strip()
+    api_body = re.sub(r'^#.*\n?', '', api_doc, flags=re.MULTILINE).strip()
 
-    prompt = f"""
-# 取数代码生成任务
+    prompt = f"""# 取数代码生成
 
-## 生成要求
-{lang_hint}
+## 查询条件（本次取数的输入变量）
+{cond_text}
 
-## 要取的数据
-字段: {', '.join(field_list)}
-数据源: {ds_id} ({ds.name})
+## 字段映射（API返回数据中各字段的名称、类型和索引位置）
+{field_body}
 
-## 查询条件
-{chr(10).join(cond_parts) if cond_parts else '无特殊条件'}
+## API（取数函数的调用方式和参数说明）
+{api_body}
 
-## 可用字段
-{field_doc}
-
-## 表/接口结构
-{table_doc}
-
-## API 调用规则
-{api_doc}
+{_steps_and_example(protocol)}
 """
     return prompt
+
+
+# ── 代码模板（协议相关的固定开头，执行前自动注入） ──
+CODE_TEMPLATES = {
+    "tushare": (
+        "import os, tushare as ts\n"
+        "ts.set_token(os.getenv('TUSHARE_TOKEN'))\n"
+    ),
+    "akshare": "import akshare as ak\n",
+    "levistock": "import levistock as lk\n",
+    "xueqiu": "import pysnowball as ball\n",
+    "tencent": "import requests\n",
+    "sina": "import requests\n",
+}
+
+
+def merge_with_template(code: str, protocol: str) -> str:
+    """将 LLM 生成的代码与协议模板合并"""
+    tmpl = CODE_TEMPLATES.get(protocol, "")
+    if not tmpl:
+        return code
+    return tmpl + "\n" + code
 
 
 def parse_llm_output(text: str) -> str:

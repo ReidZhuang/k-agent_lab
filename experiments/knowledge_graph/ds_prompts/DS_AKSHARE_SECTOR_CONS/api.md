@@ -1,5 +1,6 @@
-# DS_AKSHARE_SECTOR_CONS API 调用规则
-```python
-import akshare as ak
-df = ak.stock_board_industry_cons_em(symbol='小金属')
-```
+## 函数
+ak.stock_board_industry_cons_em(symbol)
+返回板块成分股列表
+
+## 参数
+symbol: 板块名称（必填），如 小金属
