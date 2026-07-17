@@ -1,0 +1,240 @@
+{
+  "model": "qwen2.5:7b",
+  "cases": [
+    {
+      "id": "RR-01",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_PCT_CHG",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回的字段信息：\n\n- `FIELD_INDEX_PCT_CHG` 的 `granularity` 为 \"日频,指数级别\"，与 `entity_type=\"stock_code\"` 不匹配。\n- `FIELD_SECTOR_PCT_CHG` 的 `granularity` 为 \"日频,板块级别\"，与 `entity_type=\"stock_code\"` 不匹配。\n- `FIELD_LHB_PCT_CHG`、`FIELD_QUOTE_PCT_CHG` 和 `FIELD_KLINE_PCT_CHG` 的 `granularity` 都是 \"日频,个股级别\"，与 `entity_type=\"stock_code\"` 匹配。\n\n因此，我们选择 `FIELD_QUOTE_PCT_CHG` 作为最终答案。它具有明确的 `qualified` alias，并且 granularity 和 entity_type 完全匹配。\n\n[FINAL_ANSWER] — 精确命中 FIELD_QUOTE_PCT_CHG"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_QUOTE*，实际 FIELD_INDEX_PCT_CHG",
+        "数据源不符：期望包含 DS_TUSHARE，实际 "
+      ]
+    },
+    {
+      "id": "RR-02",
+      "request": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_VOL",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回的字段信息，我们来检查 `granularity` 和 `entity_type` 是否匹配。\n\n1. **FIELD_INDEX_VOL**:\n   - granularity: 日频, 指数级别\n   - entity_type: stock_code\n   - 不匹配（指数级别 vs 个股级别）\n\n2. **FIELD_QUOTE_VOL**:\n   - granularity: 实时, 个股级别\n   - entity_type: stock_code\n   - 匹配\n\n3. **FIELD_KLINE_VOL**:\n   - granularity: 日频, 个股级别\n   - entity_type: stock_code\n   - 匹配\n\n4. **FIELD_FUT_VOL**:\n   - granularity: 日频, 合约级别\n   - entity_type: stock_code\n   - 不匹配（合约级别 vs 个股级别）\n\n5. **FIELD_FUT_DETAIL_VOL**:\n   - granularity: 日频, 合约级别\n   - entity_type: stock_code\n   - 不匹配\n\n6. **FIELD_CB_VOL**:\n   - granularity: 日频, 个券级别\n   - entity_type: stock_code\n   - 不匹配（个券级别 vs 个股级别）\n\n7. **FIELD_FUND_VOL**:\n   - granularity: 日频, 基金级别\n   - entity_type: stock_code\n   - 不匹配（基金级别 vs 个股级别）\n\n从上述分析来看，`FIELD_QUOTE_VOL` 和 `FIELD_KLINE_VOL` 的 `granularity` 都与 `entity_type=stock_code` 匹配。其中 `FIELD_QUOTE_VOL` 是实时数据，而 `FIELD_KLINE_VOL` 是日频数据。\n\n由于我们希望获取的是今天的数据（实时或日频），因此选择 `FIELD_QUOTE_VOL` 作为最终答案更为合适。\n\n**结论：**\n\n- **匹配的字段是** `FIELD_QUOTE_VOL`\n- **关键词为** \"成交量\"，加限定后应为 \"个股成交量\"\n\n因此，最终答案如下：\n\n[FINAL_ANSWER] — 精确命中 FIELD_QUOTE_VOL\n\n返回结果确认为：\n```json\n{\n  \"final_answer\": \"FIELD_QUOTE_VOL\"\n}\n```\n\n请确认是否需要进一步处理或输出此结果。"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_QUOTE*，实际 FIELD_INDEX_VOL",
+        "数据源不符：期望包含 DS_TUSHARE，实际 "
+      ]
+    },
+    {
+      "id": "RR-03",
+      "request": {
+        "obj": [
+          "上证指数"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_PCT_CHG",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回的字段信息，我们来检查 `granularity` 和 `entity_type` 是否匹配：\n\n1. **FIELD_INDEX_PCT_CHG**:\n   - entity_type: index_code\n   - granularity: 日频,指数级别\n   - 该字段与 entity_type 匹配。\n\n2. **其他字段（如 FIELD_SECTOR_PCT_CHG、FIELD_LHB_PCT_CHG 等）**:\n   - entity_type 不匹配，这些字段的 `entity_type` 是 sector_name 或 stock_code，而我们的实体类型是 index_code。因此，这些字段不符合要求。\n\n由于我们明确知道取数对象是 \"上证指数\"（index_code），我们需要确认 `FIELD_INDEX_PCT_CHG` 是否为最终答案。\n\n### 分析结果\n- **granularity=日频,指数级别** 与 entity_type=index_code 匹配。\n- **alias=simple**，但这是基础匹配，可能有歧义。\n\n因此，我们确认该字段符合要求。输出 [FINAL_ANSWER] 确认：\n\n```json\n[FINAL_ANSWER]\n```\n\n最终答案为 `FIELD_INDEX_PCT_CHG`。"
+      },
+      "errors": [
+        "数据源不符：期望包含 DS_TUSHARE，实际 "
+      ]
+    },
+    {
+      "id": "RR-04",
+      "request": {
+        "obj": [
+          "电池板块"
+        ],
+        "var": "板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_SECTOR_PCT_CHG",
+        "datasource_id": "DS_AKSHARE_SECTOR_SPOT",
+        "protocol": "akshare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回字段的属性分析：\n\n- **entity_type**: `sector_name` (板块)\n- **granularity**: `日频,板块级别`\n\n这两个属性是匹配的：\n- granularity 的范围级别为 `板块级别`，与 entity_type `sector_name` 一致。\n\n因此，关键词 `\"板块涨跌幅\"` 精确命中了 `FIELD_SECTOR_PCT_CHG` 字段。 \n\n最终答案确认如下：\n\n[FINAL_ANSWER] — 精确命中 FIELD_SECTOR_PCT_CHG\n\n返回字段信息：\n- **id**: FIELD_SECTOR_PCT_CHG\n- **alias**: qualified\n- **data_type**: float\n- **unit**: %\n- **granularity**: 日频,板块级别\n- **refresh_time**: intraday\n- **datasource**: akshare 板块实时行情\n- **protocol**: akshare\n\n概念：CONCEPT_SECTOR_REALTIME（板块实时行情）\n数据源：DS_AKSHARE_SECTOR_SPOT | 协议=akshare"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-05",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_QUOTE_HIGH",
+        "datasource_id": "",
+        "protocol": "tencent",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回的字段信息：\n\n- `FIELD_QUOTE_HIGH` 的 `granularity` 为 \"实时,个股级别\"，与 `entity_type=\"stock_code\"` 完全匹配。\n- 其他字段虽然也与 `entity_type=\"stock_code\"` 匹配，但它们的 `granularity` 不是 \"个股级别\"。\n\n因此，`FIELD_QUOTE_HIGH` 是最符合要求的字段。我们确认其为最终答案。\n\n[FINAL_ANSWER] — 精确命中 FIELD_QUOTE_HIGH\n\n返回的 DataField 详细信息如下：\n- **id**: FIELD_QUOTE_HIGH\n- **alias**: simple\n- **data_type**: float\n- **unit**: 元\n- **granularity**: 实时,个股级别\n- **refresh_time**: realtime\n- **datasource**: 腾讯财经实时行情\n- **protocol**: tencent\n\n最终答案为 `FIELD_QUOTE_HIGH`。"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-06",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "换手率",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_TURNOVER",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回的字段信息：\n\n- `FIELD_INDEX_TURNOVER`：granularity 为 \"日频,指数级别\"，与 entity_type=\"stock_code\" 不匹配。\n- `FIELD_SECTOR_TURNOVER`：granularity 为 \"日频,板块级别\"，与 entity_type=\"stock_code\" 不匹配。\n- `FIELD_LHB_TURNOVER`：granularity 为 \"日频,个股级别\"，与 entity_type=\"stock_code\" 匹配。\n- `FIELD_TURNOVER_RATE`：granularity 为 \"实时,个股级别\"，与 entity_type=\"stock_code\" 匹配。\n\n因此，我们有两个匹配的字段：\n1. `FIELD_LHB_TURNOVER` (日频,个股级别)\n2. `FIELD_TURNOVER_RATE` (实时,个股级别)\n\n由于 `FIELD_TURNOVER_RATE` 的 granularity 为 \"实时\", 更符合 \"最近5天\" 这个时间范围，我们选择这个字段。\n\n最终答案：\n[FINAL_ANSWER] — 精确命中 FIELD_TURNOVER_RATE\n\n返回的 DataField 是：`FIELD_TURNOVER_RATE`\n\n进一步确认关键词是否需要限定前缀：\n\n- `换手率` 的 simple alias 匹配到了 \"实时,个股级别\"，符合 entity_type=\"stock_code\"。\n\n因此无需添加限定前缀。最终答案为：\n[FINAL_ANSWER] — 精确命中 FIELD_TURNOVER_RATE\n\n返回的 DataField 是：`FIELD_TURNOVER_RATE`\n\n输出结果如下：\n\n```json\n{\n  \"final_answer\": \"FIELD_TURNOVER_RATE\"\n}\n```"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_QUOTE*，实际 FIELD_INDEX_TURNOVER"
+      ]
+    },
+    {
+      "id": "RR-07",
+      "request": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_PE",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回的字段信息：\n\n- `FIELD_INDEX_PE` 的 `granularity` 为 \"日频,指数级别\"，与 `entity_type=\"stock_code\"` 不匹配（个股级别 vs 指数级别）。\n- `FIELD_PE_TTM` 和 `FIELD_VAL_PE_TTM` 的 `granularity` 为 \"日频,个股级别\"，与 `entity_type=\"stock_code\"` 匹配。\n\n因此，我们应选择 `FIELD_PE_TTM` 或 `FIELD_VAL_PE_TTM`。由于它们的 alias 都是 simple 级别，我们需要进一步确认哪个更精确。\n\n接下来，我们将使用 `FIELD_PE_TTM` 作为最终答案：\n\n```json\n[FINAL_ANSWER] — 精确命中 FIELD_PE_TTM\n```\n\n具体字段信息如下：\n- **id**: FIELD_PE_TTM\n- **alias**: simple\n- **data_type**: float\n- **unit**: 倍\n- **granularity**: 日频,个股级别\n- **refresh_time**: daily_17:00\n\n最终答案为 `FIELD_PE_TTM`。"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_FIN*，实际 FIELD_INDEX_PE"
+      ]
+    },
+    {
+      "id": "RR-08",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "板块",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_SECTOR_NAME",
+        "datasource_id": "",
+        "protocol": "akshare",
+        "stop_reason": "final_answer",
+        "rounds": 3,
+        "final_answer": "根据返回的字段信息，`FIELD_SECTOR_NAME` 的 `granularity` 为 \"日频,板块级别\"，与 `entity_type=\"stock_code\"` 不匹配（预期应为个股级别）。因此，我们需要进一步限定关键词。\n\n我们将 `\"板块\"` 改为 `\"所属板块\"` 并重新路由。根据之前的步骤和结果，我们可以确认 `FIELD_SECTOR_NAME` 是最接近的匹配项，并且其数据源是 `akshare 板块实时行情`。\n\n最终输出 [FINAL_ANSWER]：\n\n```json\n{\n  \"final_field\": \"FIELD_SECTOR_NAME\",\n  \"alias\": \"fuzzy\",\n  \"data_type\": \"string\",\n  \"unit\": \"\",\n  \"granularity\": \"日频,板块级别\",\n  \"refresh_time\": \"intraday\",\n  \"datasource\": \"akshare 板块实时行情\",\n  \"protocol\": \"akshare\"\n}\n```\n\n[FINAL_ANSWER] 确认。"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-09",
+      "request": {
+        "obj": [
+          "宁德时代",
+          "比亚迪"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_QUOTE_PCT_CHG",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回的字段信息，我们来检查 `granularity` 是否与 `entity_type` 匹配。\n\n### 检查结果：\n\n1. **宁德时代** (stock_code)：\n   - FIELD_QUOTE_PCT_CHG: granularity = 实时,个股级别 -> 匹配 entity_type=stock_code\n   - FIELD_KLINE_PCT_CHG: granularity = 日频,个股级别 -> 匹配 entity_type=stock_code\n\n2. **比亚迪** (stock_code)：\n   - FIELD_QUOTE_PCT_CHG: granularity = 实时,个股级别 -> 匹配 entity_type=stock_code\n   - FIELD_KLINE_PCT_CHG: granularity = 日频,个股级别 -> 匹配 entity_type=stock_code\n\n### 分析：\n\n- `宁德时代` 和 `比亚迪` 的匹配字段都符合 `granularity` 与 `entity_type` 的匹配规则。\n- `FIELD_QUOTE_PCT_CHG` 和 `FIELD_KLINE_PCT_CHG` 都是精确匹配，且 granularity 与 entity_type 完全一致。\n\n### 输出最终答案：\n\n[FINAL_ANSWER] — 精确命中 FIELD_QUOTE_PCT_CHG 或者 FIELD_KLINE_PCT_CHG\n\n具体选择哪一个字段取决于进一步的业务需求。通常情况下，实时数据（`FIELD_QUOTE_PCT_CHG`）会更符合“今天”的时间要求。\n\n因此，最终答案为：\n\n[FINAL_ANSWER] — 精确命中 `FIELD_QUOTE_PCT_CHG` 或者 `FIELD_KLINE_PCT_CHG`\n\n建议使用 `FIELD_QUOTE_PCT_CHG` 作为最终结果。"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-10",
+      "request": {
+        "obj": [
+          "北向资金"
+        ],
+        "var": "资金流向",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_NORTH_NET",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 3,
+        "final_answer": "从返回的结果来看，`entity_type` 是 `index_code`（指数代码），但所有字段的 `granularity` 都是 \"日频,市场级别\" 或 \"季度级\"，这与 `entity_type` 不匹配。\n\n具体来说：\n- `entity_type` 应该是 `index_code`\n- 但是 `granularity` 却是 “日频,市场级别” 和 “季度级”，而通常我们期望的是更精确的“个股级别”\n\n尽管如此，返回结果中的 `FIELD_NORTH_NET` 的 `alias` 是 `fuzzy`，这意味着它是一个模糊匹配的结果。我们需要进一步确认是否可以接受这个结果。\n\n由于没有找到明确匹配 `entity_type` 为 `index_code` 并且 `granularity` 为 “个股级别”的字段，我们暂时认为 `FIELD_NORTH_NET` 是最接近的匹配项。\n\n因此，我们可以输出最终答案：\n\n```json\n[FINAL_ANSWER]\n{\n    \"field\": \"FIELD_NORTH_NET\",\n    \"alias\": \"fuzzy\",\n    \"data_type\": \"float\",\n    \"unit\": \"百万元\",\n    \"granularity\": \"日频,市场级别\",\n    \"refresh_time\": \"intraday\",\n    \"datasource\": \"TuShare 沪深港通资金流向\",\n    \"protocol\": \"tushare\"\n}\n```\n\n最终答案确认为 `FIELD_NORTH_NET`，尽管其 `granularity` 与预期不完全匹配。"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_MONEY*，实际 FIELD_NORTH_NET"
+      ]
+    }
+  ]
+}

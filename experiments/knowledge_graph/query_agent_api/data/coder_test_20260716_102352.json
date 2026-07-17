@@ -1,0 +1,35 @@
+{
+  "model": "?",
+  "cases": [
+    {
+      "id": "CG-01",
+      "desc": "Tushare日线-涨跌幅",
+      "success": true,
+      "result": [
+        2.4697
+      ],
+      "error": "",
+      "time": 23.1
+    },
+    {
+      "id": "CG-02",
+      "desc": "Tushare换手率",
+      "success": true,
+      "result": [
+        0.8421
+      ],
+      "error": "",
+      "time": 4.8
+    },
+    {
+      "id": "CG-03",
+      "desc": "Akshare板块涨跌幅",
+      "success": true,
+      "result": [
+        -0.13
+      ],
+      "error": "",
+      "time": 16.2
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# DS_TUSHARE_GGT_DAILY
+ggt_daily

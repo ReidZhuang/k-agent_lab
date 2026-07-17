@@ -1,9 +1,11 @@
-## 函数
-ak.stock_notice_report(symbol, date)
-返回上市公司公告列表
+## 接口
+ak.stock_zh_a_disclosure_report_cninfo(symbol)
 
 ## 参数
-| 参数 | 类型 | 说明 | 示例 |
-|:----|:----:|:-----|:----:|
-| symbol | str | 股票代码或"全部" | 000001.SZ |
-| date | str | 公告日期 YYYYMMDD | 20260714 |
+symbol: 股票代码（必填），**不带后缀**，如 000001（不是 000001.SZ）
+
+## 重要
+- symbol 参数不要带 .SZ / .SH 后缀，只传纯数字代码
+
+## 返回列名
+['代码', '简称', '公告标题', '公告时间', '公告链接']

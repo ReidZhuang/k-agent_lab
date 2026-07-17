@@ -1,0 +1,459 @@
+{
+  "model": "qwen2.5:7b",
+  "fast": true,
+  "cases": [
+    {
+      "id": "E2E-04",
+      "query": "宁德时代和比亚迪今天的股价",
+      "mode": "route",
+      "success": true,
+      "elapsed": 8.95,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代",
+              "比亚迪"
+            ],
+            "var": "股价",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_DAILY_BASIC_PE",
+          "datasource": {
+            "id": "DS_TUSHARE_DAILY_BASIC",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-07",
+      "query": "宁德时代所在的板块今天的涨跌幅",
+      "mode": "route",
+      "success": true,
+      "elapsed": 8.1,
+      "chain": true,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_DC_DAILY_CATEGORY",
+          "datasource": {
+            "id": "DS_TUSHARE_DC_DAILY",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        },
+        {
+          "req_id": "R_002",
+          "request": {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_INDEX_PCT_CHG",
+          "datasource": {
+            "id": "DS_TUSHARE_INDEX_DAILY",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "res0",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-11",
+      "query": "宁德时代今天的大单资金流向",
+      "mode": "route",
+      "success": true,
+      "elapsed": 6.24,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "大单资金流向",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_FLOW_LARGE_BUY_AMT",
+          "datasource": {
+            "id": "DS_TUSHARE_MONEYFLOW",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-13",
+      "query": "宁德时代在今天收盘和上周收盘的换手率",
+      "mode": "route",
+      "success": true,
+      "elapsed": 7.84,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天收盘"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_TURNOVER_RATE",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "sz300750",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        },
+        {
+          "req_id": "R_002",
+          "request": {
+            "req_id": "R_002",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "换手率",
+            "condition": [
+              "一周前收盘"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_TURNOVER_RATE",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "sz300750",
+          "time_start": "",
+          "time_end": ""
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-14",
+      "query": "宁德时代所在板块今天的涨跌幅和成交量",
+      "mode": "route",
+      "success": true,
+      "elapsed": 15.5,
+      "chain": true,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_DC_DAILY_CATEGORY",
+          "datasource": {
+            "id": "DS_TUSHARE_DC_DAILY",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        },
+        {
+          "req_id": "R_002",
+          "request": {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_QUOTE_PCT_CHG",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "res0",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        },
+        {
+          "req_id": "R_003",
+          "request": {
+            "req_id": "R_003",
+            "obj": [
+              "res0"
+            ],
+            "var": "成交量",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_QUOTE_VOL",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "res0",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-16",
+      "query": "恒生指数今天的收盘价",
+      "mode": "route",
+      "success": true,
+      "elapsed": 7.07,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "恒生指数"
+            ],
+            "var": "收盘价",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_INDEX_PRICE",
+          "datasource": {
+            "id": "DS_TUSHARE_INDEX_DAILY",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "HSI.HK",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-18",
+      "query": "茅台和五粮液今天的股价谁高？",
+      "mode": "route",
+      "success": true,
+      "elapsed": 5.75,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "茅台",
+              "五粮液"
+            ],
+            "var": "股价",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_DAILY_BASIC_PE",
+          "datasource": {
+            "id": "DS_TUSHARE_DAILY_BASIC",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "600519.SH",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-19",
+      "query": "查一下宁德时代所在的板块的龙头股的涨跌幅",
+      "mode": "guide",
+      "success": true,
+      "elapsed": 3.94,
+      "guide": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "龙头股",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "res1"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true,
+        "query_id": "d1c55176a2cb",
+        "_raw": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"宁德时代\"],\n            \"var\": \"板块\",\n            \"condition\": [\"今天\"]\n        },\n        {\n            \"req_id\": \"R_002\",\n            \"obj\": [\"res0\"],\n            \"var\": \"龙头股\",\n            \"condition\": [\"今天\"]\n        },\n        {\n            \"req_id\": \"R_003\",\n            \"obj\": [\"res1\"],\n            \"var\": \"涨跌幅\",\n            \"condition\": [\"今天\"]\n        }\n    ],\n    \"chain\": true\n}",
+        "_info": {
+          "elapsed": 3.94,
+          "prompt_tokens": 3758,
+          "completion_tokens": 133
+        }
+      },
+      "error": ""
+    },
+    {
+      "id": "E2E-21",
+      "query": "宁德时代最近一个季度的营业收入",
+      "mode": "route",
+      "success": true,
+      "elapsed": 4.6,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "营业收入",
+            "condition": [
+              "最近一个季度"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_FS_REVENUE",
+          "datasource": {
+            "id": "DS_TUSHARE_INCOME",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260701",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    }
+  ],
+  "summary": "9/9"
+}

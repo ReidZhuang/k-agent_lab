@@ -1,0 +1,6 @@
+{
+    "xq_a_token": "71dea811bf83f9356354ba120294af071646c44c",
+    "u": "3755631005",
+    "updated": "2026-07-17",
+    "note": "手动从雪球网站cookie获取，过期需更新。更新位置: web_search_base/knowledge/pysnowball/login_xueqiu.py"
+}

@@ -1,0 +1,2 @@
+# DS_TUSHARE_FX_DAILY
+fx_daily

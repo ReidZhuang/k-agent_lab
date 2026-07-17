@@ -1,30 +1,30 @@
-## 字段映射
-| 字段名 | 类型 | 说明 | 数据示例 |
-|--------|:----:|:-----|:--------:|
-| quarter | str | 季度 | — |
-| gdp | float | GDP 累计值 | — |
-| pi | float | 第一产业累计值 | — |
-| si | float | 第二产业累计值 | — |
-| ti | float | 第三产业累计值 | — |
-| gdp_yoy | float | GDP 当季同比 | — |
-| cnt_val | float | CPI 当月值 | — |
-| cnt_yoy | float | CPI 同比 | — |
-| cnt_mom | float | CPI 环比 | — |
-| ppi_yoy | float | PPI 同比 | — |
-| ppi_mom | float | PPI 环比 | — |
-| m0 | float | M0 | — |
-| m1 | float | M1 | — |
-| m2 | float | M2 | — |
-| m2_yoy | float | M2 同比 | — |
-| inc_month | float | 社融增量 | — |
-| inc_cumval | float | 社融累计值 | — |
-| stk_endval | float | 社融存量 | — |
+# DS_TUSHARE_CN_MACRO 字段映射
 
-## 子表
-| 函数 | 参数 | 说明 |
-|:----|:-----|:------|
-| pro.cn_gdp | quarter | GDP |
-| pro.cn_cpi | month | CPI |
-| pro.cn_ppi | month | PPI |
-| pro.cn_pmi | month | PMI |
-| pro.cn_m | month | M0/M1/M2 |
+| 字段名 | 类型 | 单位 | 说明 |
+|--------|:----:|:----:|:-----|
+| 综合PMI | float | — | 综合PMI产出指数 |
+| cnt_mom | float | % | CPI当月环比增速 |
+| cnt_val | float | — | 全国CPI当月值 |
+| cnt_yoy | float | % | CPI当月同比增速 |
+| gdp | float | 亿元 | 国内生产总值累计值 |
+| pi | float | 亿元 | 第一产业GDP累计值 |
+| si | float | 亿元 | 第二产业GDP累计值 |
+| ti | float | 亿元 | 第三产业GDP累计值 |
+| gdp_yoy | float | % | GDP当季同比增速 |
+| m0 | float | 亿元 | 流通中现金（亿元） |
+| m1 | float | 亿元 | 狭义货币供应量（亿元） |
+| m2 | float | 亿元 | 广义货币供应量（亿元） |
+| m2_yoy | float | % | M2同比增速 |
+| 非制造业PMI | float | — | 非制造业商务活动指数 |
+| PMI010000 | float | — | 制造业PMI指数 |
+| PMI020100 | float | — | 大型企业PMI |
+| PMI020200 | float | — | 中型企业PMI |
+| PMI010200 | float | — | PMI新订单指数 |
+| PMI010100 | float | — | PMI生产指数 |
+| PMI020300 | float | — | 小型企业PMI |
+| ppi_mom | float | % | PPI当月环比增速 |
+| ppi_yoy | float | % | PPI当月同比增速 |
+| quarter | string | — | 数据对应的季度 |
+| inc_cumval | float | 亿元 | 社融累计值（亿元） |
+| inc_month | float | 亿元 | 当月社融增量（亿元） |
+| stk_endval | float | 万亿元 | 社融存量（万亿元） |

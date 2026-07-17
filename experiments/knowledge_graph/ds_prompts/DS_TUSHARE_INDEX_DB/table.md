@@ -1,0 +1,2 @@
+# DS_TUSHARE_INDEX_DB
+index_dailybasic

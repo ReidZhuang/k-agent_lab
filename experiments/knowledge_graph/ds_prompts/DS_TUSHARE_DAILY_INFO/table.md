@@ -1,0 +1,2 @@
+# DS_TUSHARE_DAILY_INFO
+daily_info

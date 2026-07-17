@@ -1,0 +1,2 @@
+# DS_TUSHARE_NEW_SHARE
+new_share

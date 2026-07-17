@@ -1,0 +1,2 @@
+# DS_TUSHARE_INDEX_WEIGHT
+index_weight

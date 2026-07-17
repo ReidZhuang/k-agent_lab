@@ -1,9 +1,9 @@
 ## 函数
-pro.stock_basic(ts_code, list_status, exchange)
+pro.stock_basic(exchange='', list_status='L')
 
-## 参数说明
-| 参数 | 类型 | 必填 | 说明 | 示例 |
-|:----|:----:|:----:|:-----|:----:|
-| ts_code | str | 否 | 股票代码 | 000001.SZ |
-| list_status | str | 否 | 上市状态 L/D/P | L |
-| exchange | str | 否 | 交易所 SSE/SZSE | SZSE |
+## 参数
+- exchange: 交易所（SSE/SZSE/BSE），可选
+- list_status: 上市状态 L上市 D退市，默认L
+
+## 返回
+包含 ts_code, symbol, name, area, industry, list_date 等字段

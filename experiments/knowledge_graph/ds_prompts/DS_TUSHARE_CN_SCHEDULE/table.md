@@ -1,0 +1,2 @@
+# DS_TUSHARE_CN_SCHEDULE
+cn_schedule

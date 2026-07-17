@@ -1,0 +1,2 @@
+# DS_TUSHARE_MONEYFLOW_HSGT
+moneyflow_hsgt

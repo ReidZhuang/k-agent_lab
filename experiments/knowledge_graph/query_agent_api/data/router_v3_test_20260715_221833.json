@@ -1,0 +1,246 @@
+{
+  "model": "qwen2.5:7b",
+  "cases": [
+    {
+      "id": "RR-01",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 10.5,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": "FIELD_QUOTE_PCT_CHG"
+    },
+    {
+      "id": "RR-02",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_VOL",
+        "candidates_count": 7,
+        "time": 1.0,
+        "raw": "FIELD_QUOTE_VOL"
+      },
+      "expect": "FIELD_QUOTE_VOL"
+    },
+    {
+      "id": "RR-03",
+      "req": {
+        "obj": [
+          "上证指数"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_INDEX_PCT_CHG"
+      },
+      "expect": "FIELD_INDEX_PCT_CHG"
+    },
+    {
+      "id": "RR-04",
+      "req": {
+        "obj": [
+          "电池板块"
+        ],
+        "var": "板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_PCT_CHG",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_SECTOR_PCT_CHG"
+      },
+      "expect": "FIELD_SECTOR_PCT_CHG"
+    },
+    {
+      "id": "RR-05",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_HIGH",
+        "candidates_count": 6,
+        "time": 0.9,
+        "raw": "FIELD_QUOTE_HIGH"
+      },
+      "expect": "FIELD_QUOTE_HIGH"
+    },
+    {
+      "id": "RR-06",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "换手率",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_TURNOVER_RATE",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_TURNOVER_RATE"
+      },
+      "expect": "FIELD_TURNOVER_RATE"
+    },
+    {
+      "id": "RR-07",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PE_TTM",
+        "candidates_count": 5,
+        "time": 1.0,
+        "raw": "FIELD_PE_TTM"
+      },
+      "expect": "FIELD_PE_TTM"
+    },
+    {
+      "id": "RR-08",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "板块",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_NAME",
+        "candidates_count": 5,
+        "time": 1.6,
+        "raw": "FIELD_SECTOR_NAME"
+      },
+      "expect": "FIELD_SECTOR_NAME"
+    },
+    {
+      "id": "RR-09",
+      "req": {
+        "obj": [
+          "宁德时代",
+          "比亚迪"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": "FIELD_QUOTE_PCT_CHG"
+    },
+    {
+      "id": "RR-10",
+      "req": {
+        "obj": [
+          "北向资金"
+        ],
+        "var": "资金流向",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_NORTH_NET",
+        "candidates_count": 5,
+        "time": 1.3,
+        "raw": "FIELD_NORTH_NET"
+      },
+      "expect": "FIELD_NORTH_NET"
+    },
+    {
+      "id": "RR-11",
+      "req": {
+        "obj": [
+          "恒生指数"
+        ],
+        "var": "收盘价",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_PRICE",
+        "candidates_count": 6,
+        "time": 0.9,
+        "raw": "FIELD_INDEX_PRICE"
+      },
+      "expect": "FIELD_INDEX_PRICE"
+    },
+    {
+      "id": "RR-12",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "股价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_CHG",
+        "candidates_count": 5,
+        "time": 1.9,
+        "raw": "FIELD_QUOTE_CHG"
+      },
+      "expect": ""
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# DS_TUSHARE_IDX_ANNS
+idx_anns

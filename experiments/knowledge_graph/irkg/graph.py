@@ -43,6 +43,7 @@ class GraphQuerier:
                 has_backup=f.get("has_backup", False),
                 granularity=f.get("granularity", ""),
                 refresh_time=f.get("refresh_time", ""),
+                authority_level=f.get("authority_level", ""),
             )
 
     def get_concept(self, field_id: str) -> list[str]:

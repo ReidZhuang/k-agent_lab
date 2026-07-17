@@ -1,0 +1,2 @@
+# DS_TUSHARE_FX_OBASIC
+fx_obasic

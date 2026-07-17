@@ -3,6 +3,9 @@
 支持两种结果捕获方式：
 1. print() 输出（通过 stdout）
 2. _result 变量（列表，按顺序对应查询指标）
+
+⚠️ 会自动检测并使用 stock_agent conda 环境（含 tushare/akshare/levistock 等金融包），
+避免在系统 Python (3.13) 下因缺少金融包导致执行失败。
 """
 import os, sys, json, subprocess, tempfile
 from pathlib import Path
@@ -17,6 +20,37 @@ if Path(_TOKEN_PATH).exists():
         pass  # dotenv 未安装，走系统环境变量
 
 TUSHARE_TOKEN = os.getenv("TUSHARE_TOKEN", "")
+
+# ── Python 解释器检测 ──────────────────────────────────────────────
+
+def _resolve_python() -> str:
+    """返回可用的 Python 解释器路径。
+
+    优先用 stock_agent conda 环境（含所有金融包），
+    如果当前 Python 能加载必要包则用当前 Python，
+    兜底返回当前 Python。
+    """
+    # 检查当前 Python 是否能用
+    _has_packages = True
+    for mod in ["tushare", "akshare", "levistock", "pysnowball"]:
+        try:
+            __import__(mod)
+        except ImportError:
+            _has_packages = False
+            break
+
+    if _has_packages:
+        return sys.executable
+
+    # 当前 Python 缺包 → 用 stock_agent 环境
+    if Path("/home/stockagent/miniforge3/envs/stock_agent/bin/python").exists():
+        return "/home/stockagent/miniforge3/envs/stock_agent/bin/python"
+
+    # 兜底：回退当前 Python
+    return sys.executable
+
+_STOCK_AGENT_PYTHON = _resolve_python()
+"""可用 Python 解释器路径。模块级别的缓存在第一次 import 时确定。"""
 
 
 def execute_code(code: str, timeout: int = 30) -> dict:
@@ -38,13 +72,14 @@ def execute_code(code: str, timeout: int = 30) -> dict:
     if TUSHARE_TOKEN:
         env["TUSHARE_TOKEN"] = TUSHARE_TOKEN
 
-    # 包装代码：捕获 stdout + _result 变量
+    # 包装代码：捕获 stdout + _result 变量 + 异常
     wrapped = (
-        "import sys, io, json\n"
+        "import sys, io, json, traceback as _tb\n"
         "_out = io.StringIO()\n"
         "_old = sys.stdout\n"
         "sys.stdout = _out\n"
         "_result = []\n"
+        "_error = ''\n"
         "try:\n"
     )
     # 缩进 LLM 代码（放入 try 块）
@@ -52,14 +87,14 @@ def execute_code(code: str, timeout: int = 30) -> dict:
         wrapped += f"    {line}\n"
     wrapped += (
         "except Exception:\n"
-        "    import traceback\n"
-        "    traceback.print_exc()\n"
+        "    _error = _tb.format_exc()\n"
         "finally:\n"
         "    sys.stdout = _old\n"
         "    _captured_stdout = _out.getvalue()\n"
         "    print('__RESULT_MARKER__' + json.dumps({\n"
         "        'stdout': _captured_stdout,\n"
         "        '_result': _result,\n"
+        "        'error': _error,\n"
         "    }))\n"
     )
 
@@ -69,7 +104,7 @@ def execute_code(code: str, timeout: int = 30) -> dict:
 
     try:
         result = subprocess.run(
-            [sys.executable, fpath],
+            [_STOCK_AGENT_PYTHON, fpath],
             capture_output=True, text=True,
             timeout=timeout, env=env,
         )
@@ -86,8 +121,16 @@ def execute_code(code: str, timeout: int = 30) -> dict:
                 meta = json.loads(parts[1])
                 captured_stdout = meta.get("stdout", "")
                 captured_result = meta.get("_result", [])
+                captured_error = meta.get("error", "")
                 # 合并 before 和 captured_stdout
                 all_stdout = (before + "\n" + captured_stdout).strip()
+                if captured_error:
+                    return {
+                        "success": False,
+                        "output": all_stdout,
+                        "result": [],
+                        "error": captured_error.strip(),
+                    }
                 return {
                     "success": True,
                     "output": all_stdout,

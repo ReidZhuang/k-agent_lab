@@ -1,0 +1,41 @@
+# DS_TUSHARE_TDX_DAILY 字段映射
+
+| 字段名 | 类型 | 说明 |
+|--------|:----:|:-----|
+| up_num | float | up_num（通达信） |
+| bm_ratio | float | bm_ratio（通达信） |
+| bm_net | float | bm_net（通达信） |
+| bm_buy_ratio | float | bm_buy_ratio（通达信） |
+| bm_buy_net | float | bm_buy_net（通达信） |
+| total_share | float | total_share（通达信） |
+| float_share | float | float_share（通达信） |
+| ab_total_mv | float | ab_total_mv（通达信） |
+| float_mv | float | float_mv（通达信） |
+| pb | float | pb（通达信） |
+| pe | float | pe（通达信） |
+| 1year | float | 1year（通达信） |
+| ytd | float | ytd（通达信） |
+| mtd | float | mtd（通达信） |
+| 60day | float | 60day（通达信） |
+| 20day | float | 20day（通达信） |
+| 10day | float | 10day（通达信） |
+| 5day | float | 5day（通达信） |
+| 3day | float | 3day（通达信） |
+| lu_days | float | lu_days（通达信） |
+| limit_down_num | float | limit_down_num（通达信） |
+| limit_up_num | float | limit_up_num（通达信） |
+| down_num | float | down_num（通达信） |
+| up_num | float | up_num（通达信） |
+| swing | float | swing（通达信） |
+| turnover_rate | float | turnover_rate（通达信） |
+| vol_ratio | float | vol_ratio（通达信） |
+| rise | float | rise（通达信） |
+| amount | float | amount（通达信） |
+| vol | float | vol（通达信） |
+| pct_change | float | pct_change（通达信） |
+| change | float | change（通达信） |
+| pre_close | float | pre_close（通达信） |
+| low | float | low（通达信） |
+| high | float | high（通达信） |
+| open | float | open（通达信） |
+| close | float | close（通达信） |

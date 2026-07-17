@@ -71,6 +71,8 @@ class Router:
                     f.unit = node.unit
                 if node.data_type:
                     f.data_type = node.data_type
+                if node.authority_level:
+                    f.authority_level = node.authority_level
 
         if not result.fields:
             return result

@@ -1,15 +1,88 @@
-# DS_TUSHARE_INCOME 可用字段
+# DS_TUSHARE_INCOME 字段映射
 
-| 字段名 | 类型 | 说明 | 数据示例 |
-|--------|:----:|:-----|:--------:|
-| revenue | — | 营业收入 | — |
-| oper_cost | — | 营业成本 | — |
-| sell_exp | — | 销售费用 | — |
-| admin_exp | — | 管理费用 | — |
-| rd_exp | — | 研发费用 | — |
-| fin_exp | — | 财务费用 | — |
-| operate_profit | — | 营业利润 | — |
-| total_profit | — | 利润总额 | — |
-| n_income | — | 净利润 | — |
-| n_income_attr_p | — | 归母净利润 | — |
-| basic_eps | — | 基本每股收益 | — |
+| 字段名 | 类型 | 说明 |
+|--------|:----:|:-----|
+| compens_payout_refu | float | compens_payout_refu |
+| continued_net_profit | float | continued_net_profit |
+| capit_comstock_div | float | capit_comstock_div |
+| comshare_payable_dvd | float | comshare_payable_dvd |
+| prfshare_payable_dvd | float | prfshare_payable_dvd |
+| distr_profit_shrhder | float | distr_profit_shrhder |
+| workers_welfare | float | workers_welfare |
+| withdra_oth_ersu | float | withdra_oth_ersu |
+| withdra_rese_fund | float | withdra_rese_fund |
+| withdra_biz_devfund | float | withdra_biz_devfund |
+| withdra_legal_pubfund | float | withdra_legal_pubfund |
+| withdra_legal_surplus | float | withdra_legal_surplus |
+| adj_lossgain | float | adj_lossgain |
+| transfer_oth | float | transfer_oth |
+| transfer_housing_imprest | float | transfer_housing_imprest |
+| transfer_surplus_rese | float | transfer_surplus_rese |
+| fin_exp_int_inc | float | fin_exp_int_inc |
+| fin_exp_int_exp | float | fin_exp_int_exp |
+| distable_profit | float | distable_profit |
+| undist_profit | float | undist_profit |
+| insurance_exp | float | insurance_exp |
+| ebitda | float | ebitda |
+| ebit | float | ebit |
+| compr_inc_attr_m_s | float | compr_inc_attr_m_s |
+| compr_inc_attr_p | float | compr_inc_attr_p |
+| t_compr_income | float | t_compr_income |
+| oth_compr_income | float | oth_compr_income |
+| income_tax | float | income_tax |
+| nca_disploss | float | nca_disploss |
+| non_oper_exp | float | non_oper_exp |
+| non_oper_income | float | non_oper_income |
+| other_bus_cost | float | other_bus_cost |
+| reins_cost_refund | float | reins_cost_refund |
+| insur_reser_refu | float | insur_reser_refu |
+| sell_exp | float | 销售费用 |
+| oper_cost | float | 营业成本 |
+| total_revenue | float | 营业总收入 |
+| basic_eps | float | 基本每股收益 |
+| n_income | float | 净利润 |
+| operate_profit | float | 营业利润 |
+| rd_exp | float | 研发费用 |
+| fin_exp | float | 财务费用 |
+| minority_gain | float | 少数股东损益 |
+| total_cogs | float | 营业总成本 |
+| end_date | date | 财务报表截止日期 |
+| revenue | float | 营业收入 |
+| total_profit | float | 利润总额 |
+| admin_exp | float | 管理费用 |
+| n_income_attr_p | float | 归属母公司股东净利润 |
+| dt_eps | float | 稀释每股收益 |
+| f_ann_date | float | f_ann_date |
+| report_type | float | report_type |
+| comp_type | float | comp_type |
+| end_type | float | end_type |
+| basic_eps | float | basic_eps |
+| diluted_eps | float | diluted_eps |
+| int_income | float | int_income |
+| prem_earned | float | prem_earned |
+| comm_income | float | comm_income |
+| n_commis_income | float | n_commis_income |
+| n_oth_income | float | n_oth_income |
+| n_oth_b_income | float | n_oth_b_income |
+| prem_income | float | prem_income |
+| out_prem | float | out_prem |
+| une_prem_reser | float | une_prem_reser |
+| reins_income | float | reins_income |
+| n_sec_tb_income | float | n_sec_tb_income |
+| n_sec_uw_income | float | n_sec_uw_income |
+| n_asset_mg_income | float | n_asset_mg_income |
+| oth_b_income | float | oth_b_income |
+| fv_value_chg_gain | float | fv_value_chg_gain |
+| invest_income | float | invest_income |
+| ass_invest_income | float | ass_invest_income |
+| forex_gain | float | forex_gain |
+| int_exp | float | int_exp |
+| comm_exp | float | comm_exp |
+| biz_tax_surchg | float | biz_tax_surchg |
+| assets_impair_loss | float | assets_impair_loss |
+| prem_refund | float | prem_refund |
+| compens_payout | float | compens_payout |
+| reser_insur_liab | float | reser_insur_liab |
+| div_payt | float | div_payt |
+| reins_exp | float | reins_exp |
+| oper_exp | float | oper_exp |

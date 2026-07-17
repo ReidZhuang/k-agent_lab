@@ -1,0 +1,2 @@
+# DS_TUSHARE_IDX_FACTOR_PRO
+idx_factor_pro

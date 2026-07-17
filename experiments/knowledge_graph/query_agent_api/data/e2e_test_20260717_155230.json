@@ -1,0 +1,328 @@
+{
+  "model": "qwen2.5:7b",
+  "fast": false,
+  "cases": [
+    {
+      "id": "E2E-01",
+      "query": "宁德时代今天的涨跌幅",
+      "mode": "full",
+      "success": true,
+      "elapsed": 12.21,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [
+            -1.69
+          ],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_QUOTE_PCT_CHG",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "sz300750",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-02",
+      "query": "贵州茅台今天的成交量",
+      "mode": "full",
+      "success": true,
+      "elapsed": 9.13,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "贵州茅台"
+            ],
+            "var": "成交量",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [
+            58417.0
+          ],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_QUOTE_VOL",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "sh600519",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-03",
+      "query": "宁德时代今天的最高价和最低价",
+      "mode": "full",
+      "success": true,
+      "elapsed": 25.46,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "最高价",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": false,
+          "result": [],
+          "output": "",
+          "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据",
+          "field_id": "FIELD_QUOTE_HIGH",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "sz300750",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        },
+        {
+          "req_id": "R_002",
+          "request": {
+            "req_id": "R_002",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "最低价",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [
+            360.0
+          ],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_QUOTE_LOW",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "sz300750",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-05",
+      "query": "电池板块今天的涨跌幅",
+      "mode": "full",
+      "success": true,
+      "elapsed": 11.09,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "电池板块"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [
+            -4.91
+          ],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_SECTOR_PCT_CHG",
+          "datasource": {
+            "id": "DS_AKSHARE_SECTOR_THS",
+            "protocol": "akshare",
+            "prompt_dir": ""
+          },
+          "entity_value": "电池",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-06",
+      "query": "上证指数今天的涨跌幅",
+      "mode": "full",
+      "success": false,
+      "elapsed": 27.52,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": false,
+          "result": [],
+          "output": "",
+          "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据",
+          "field_id": "FIELD_INDEX_PCT_CHG",
+          "datasource": {
+            "id": "DS_TUSHARE_INDEX_DAILY",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "000001.SH",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-07",
+      "query": "宁德时代所在的板块今天的涨跌幅",
+      "mode": "route",
+      "success": true,
+      "elapsed": 9.63,
+      "chain": true,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_DC_DAILY_CATEGORY",
+          "datasource": {
+            "id": "DS_TUSHARE_DC_DAILY",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        },
+        {
+          "req_id": "R_002",
+          "request": {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_QUOTE_PCT_CHG",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "res0",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    },
+    {
+      "id": "E2E-12",
+      "query": "宁德时代今天的股价",
+      "mode": "full",
+      "success": true,
+      "elapsed": 10.38,
+      "chain": false,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "股价",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [
+            23.0688
+          ],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_DAILY_BASIC_PE",
+          "datasource": {
+            "id": "DS_TUSHARE_DAILY_BASIC",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    }
+  ],
+  "summary": "6/7"
+}

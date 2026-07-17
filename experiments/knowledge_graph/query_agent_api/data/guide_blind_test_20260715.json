@@ -1,0 +1,257 @@
+{
+  "model": "qwen2.5:7b",
+  "cases": [
+    {
+      "id": "BT-01",
+      "query": "查询300750.SZ今天的最新价",
+      "output": {
+        "query_id": "Q_4e5f6a7b",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "300750.SZ"
+            ],
+            "var": "最新价",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-02",
+      "query": "中国平安今天的市盈率是多少",
+      "output": {
+        "query_id": "Q_3f4e5f6e",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "中国平安"
+            ],
+            "var": "市盈率",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-03",
+      "query": "恒生指数今天的收盘价和涨跌幅",
+      "output": {
+        "query_id": "Q_4e5f6a7b",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "恒生指数"
+            ],
+            "var": "收盘价",
+            "condition": [
+              "今天收盘"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "恒生指数"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-04",
+      "query": "海康威视和大华股份今天的涨跌幅",
+      "output": {
+        "query_id": "Q_9e4b3a5c",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "海康威视",
+              "大华股份"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-05",
+      "query": "科创50指数今天的成交额",
+      "output": {
+        "query_id": "Q_4e5f6a7b",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "科创50指数"
+            ],
+            "var": "成交额",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-06",
+      "query": "药明康德今日的成交量",
+      "output": {
+        "query_id": "Q_3f4e5f6e",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "药明康德"
+            ],
+            "var": "成交量",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-07",
+      "query": "中信证券所在行业的平均市盈率",
+      "output": {
+        "query_id": "Q_4e9a3bdf",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "中信证券"
+            ],
+            "var": "行业",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "平均市盈率",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-08",
+      "query": "游戏板块今天的主力资金净流入",
+      "output": {
+        "query_id": "Q_3f4e5d6c",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "游戏板块"
+            ],
+            "var": "主力资金净流入",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-09",
+      "query": "长江电力和中国核电今天的涨跌幅对比",
+      "output": {
+        "query_id": "Q_4e5f6a7b",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "长江电力",
+              "中国核电"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "BT-10",
+      "query": "三一重工所属行业的龙头股的资金流向",
+      "output": {
+        "query_id": "Q_4e5f6g7h",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "三一重工"
+            ],
+            "var": "行业",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "龙头股",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "res1"
+            ],
+            "var": "资金流向",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "status": "PASS"
+    }
+  ]
+}

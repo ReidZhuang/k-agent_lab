@@ -1,0 +1,2 @@
+# DS_TUSHARE_BSE_MAPPING
+bse_mapping

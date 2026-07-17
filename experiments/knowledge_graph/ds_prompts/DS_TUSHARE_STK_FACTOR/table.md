@@ -1,0 +1,2 @@
+# DS_TUSHARE_STK_FACTOR
+stk_factor

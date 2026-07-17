@@ -1,0 +1,2 @@
+# DS_TUSHARE_BAK_DAILY
+bak_daily

@@ -1,17 +1,13 @@
-# DS_TUSHARE_STK_MANAGERS 可用字段
+# DS_TUSHARE_STK_MANAGERS 字段映射
 
-| 字段名 | 类型 | 说明 | 数据示例 |
-|--------|:----:|:-----|:--------:|
-| ts_code | — | 股票代码 | — |
-| name | — | 姓名 | — |
-| gender | — | 性别 | — |
-| title | — | 职务 | — |
-| position | — | 岗位 | — |
-| phone | — | 电话 | — |
-| email | — | 邮箱 | — |
-| birth_year | — | 出生年份 | — |
-| edu | — | 学历 | — |
-| nationality | — | 国籍 | — |
-| begin_date | — | 任职起始日 | — |
-| end_date | — | 任职结束日 | — |
-| resume | — | 简历 | — |
+| 字段名 | 类型 | 说明 |
+|--------|:----:|:-----|
+| begin_date | float | begin_date |
+| birthday | float | birthday |
+| national | float | national |
+| edu | float | edu |
+| lev | float | lev |
+| gender | float | gender |
+| salary | string | 高管薪酬（数据粒度：个股级别） |
+| title | string | 高管职务（数据粒度：个股级别） |
+| name | string | 高管姓名（数据粒度：个股级别） |

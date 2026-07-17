@@ -1,0 +1,2 @@
+# DS_TUSHARE_CN_PMI
+cn_pmi

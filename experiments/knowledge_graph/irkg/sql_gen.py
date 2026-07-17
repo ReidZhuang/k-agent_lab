@@ -18,8 +18,9 @@ def load_prompt(path: str | Path) -> str:
     return ""
 
 
-def read_ds_file(ds_id: str, filename: str) -> str:
-    fp = DS_PROMPTS_DIR / ds_id / filename
+def read_ds_file(dir_name: str, filename: str) -> str:
+    """读取 ds_prompts/{dir_name}/{filename} 中的组件内容"""
+    fp = DS_PROMPTS_DIR / dir_name / filename
     return load_prompt(fp)
 
 
@@ -255,10 +256,14 @@ def build_sql_prompt(route_result) -> str:
 
     ds_id = ds.id
     protocol = ds.protocol or ""
+    prompt_dir = getattr(ds, 'prompt_dir', '') or ""
+
+    # prompt_dir 非空则用其覆盖 ds.id 作为目录名
+    effective_dir = prompt_dir.strip() if prompt_dir.strip() else ds_id
 
     # 读取文档
-    field_doc = read_ds_file(ds_id, "field.md")       # 字段映射表
-    api_doc = read_ds_file(ds_id, "api.md")            # API 调用规则
+    field_doc = read_ds_file(effective_dir, "field.md")       # 字段映射表
+    api_doc = read_ds_file(effective_dir, "api.md")            # API 调用规则
 
     # 查询条件（结构化）
     cond = route_result.conditions

@@ -1,0 +1,2 @@
+# DS_TUSHARE_CI_INDEX_MEMBER
+ci_index_member

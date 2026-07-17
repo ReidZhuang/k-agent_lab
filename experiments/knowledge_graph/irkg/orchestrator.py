@@ -47,7 +47,7 @@ def run(keywords, intent="fact", conditions=None, router=None):
     with driver.session() as s:
         backups = s.run(
             "MATCH (f:DataField {id: $fid})-[r:HAS_BACKUP_DATASOURCE]->(ds:DataSource) "
-            "RETURN ds.id as did, ds.name as dn, ds.protocol as proto, "
+            "RETURN ds.id as did, ds.name as dn, ds.protocol as proto, ds.prompt_dir as pd, "
             "r.api_column as col, r.priority as pri ORDER BY r.priority",
             fid=f0.id
         ).data()
@@ -58,7 +58,7 @@ def run(keywords, intent="fact", conditions=None, router=None):
         r.datasource = type("DS", (), {
             "id": bk["did"], "name": bk["dn"],
             "protocol": bk["proto"],
-            "prompt_dir": bk["did"]
+            "prompt_dir": bk.get("pd", "") or bk["did"]
         })()
         code2 = parse_llm_output(_llm(build_sql_prompt(r)))
         ex2 = execute_code(code2)

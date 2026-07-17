@@ -1,0 +1,2 @@
+# DS_TUSHARE_DC_INDEX
+dc_index

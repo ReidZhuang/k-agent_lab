@@ -1,0 +1,2 @@
+# DS_TUSHARE_FUND_FACTOR_PRO
+fund_factor_pro

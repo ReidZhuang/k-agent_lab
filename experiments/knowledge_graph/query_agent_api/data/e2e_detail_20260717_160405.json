@@ -1,0 +1,2868 @@
+{
+  "timestamp": "20260717_155942",
+  "model": "qwen2.5:7b",
+  "tests": [
+    {
+      "id": "E2E-01",
+      "query": "宁德时代今天的涨跌幅",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            -1.69
+          ],
+          "error": "",
+          "entity_value": "sz300750",
+          "field_id": "FIELD_QUOTE_PCT_CHG",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "涨跌幅",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_QUOTE_PCT_CHG",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_PCT_CHG",
+                    "name": "板块涨跌幅",
+                    "scope": "板块级别(同花顺(akshare))",
+                    "protocol": "akshare"
+                  },
+                  {
+                    "id": "FIELD_LHB_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_QUOTE_PCT_CHG"
+              },
+              "elapsed": 5.5
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_QUOTE_PCT_CHG",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "sz300750",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "pct_chg",
+                "condition_text": "  主体: 宁德时代(sz300750)\n  指标: pct_chg\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TENCENT_QUOTE",
+                "protocol": "tencent"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  -1.69
+                ],
+                "error": ""
+              },
+              "elapsed": 3.94
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-02",
+      "query": "贵州茅台今天的成交量",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            58417.0,
+            null
+          ],
+          "error": "",
+          "entity_value": "sh600519",
+          "field_id": "FIELD_QUOTE_VOL",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "贵州茅台"
+                ],
+                "var": "成交量",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_QUOTE_VOL",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_VOL",
+                    "name": "成交量",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_VOL",
+                    "name": "成交量",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_VOL",
+                    "name": "成交量",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_VOL",
+                    "name": "成交量",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_DETAIL_VOL",
+                    "name": "成交量",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_QUOTE_VOL"
+              },
+              "elapsed": 3.89
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_QUOTE_VOL",
+                "obj": [
+                  "贵州茅台"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "sh600519",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "vol",
+                "condition_text": "  主体: 贵州茅台(sh600519)\n  指标: vol\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TENCENT_QUOTE",
+                "protocol": "tencent"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  58417.0,
+                  null
+                ],
+                "error": ""
+              },
+              "elapsed": 5.25
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-03",
+      "query": "宁德时代今天的最高价和最低价",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "2/2 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            375.24
+          ],
+          "error": "",
+          "entity_value": "sz300750",
+          "field_id": "FIELD_QUOTE_HIGH",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "最高价",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_QUOTE_HIGH",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_QUOTE_HIGH",
+                    "name": "最高价",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_HIGH",
+                    "name": "最高价",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_HIGH",
+                    "name": "最高价",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_CB_HIGH",
+                    "name": "最高价",
+                    "scope": "个券级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUND_HIGH",
+                    "name": "最高价",
+                    "scope": "基金级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_QUOTE_HIGH"
+              },
+              "elapsed": 3.21
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_QUOTE_HIGH",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "sz300750",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "high",
+                "condition_text": "  主体: 宁德时代(sz300750)\n  指标: high\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TENCENT_QUOTE",
+                "protocol": "tencent"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  375.24
+                ],
+                "error": ""
+              },
+              "elapsed": 3.78
+            }
+          ]
+        },
+        {
+          "req_id": "R_002",
+          "success": true,
+          "result": [
+            360.0
+          ],
+          "error": "",
+          "entity_value": "sz300750",
+          "field_id": "FIELD_QUOTE_LOW",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_002_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "最低价",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_002_router",
+              "output": {
+                "field_id": "FIELD_QUOTE_LOW",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_QUOTE_LOW",
+                    "name": "最低价",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_LOW",
+                    "name": "最低价",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_LOW",
+                    "name": "最低价",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_CB_LOW",
+                    "name": "最低价",
+                    "scope": "个券级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUND_LOW",
+                    "name": "最低价",
+                    "scope": "基金级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_QUOTE_LOW"
+              },
+              "elapsed": 3.35
+            },
+            {
+              "step": "R_002_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_QUOTE_LOW",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_002_enrich",
+              "output": {
+                "entity_value": "sz300750",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "low",
+                "condition_text": "  主体: 宁德时代(sz300750)\n  指标: low\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_002_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TENCENT_QUOTE",
+                "protocol": "tencent"
+              }
+            },
+            {
+              "step": "R_002_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  360.0
+                ],
+                "error": ""
+              },
+              "elapsed": 3.75
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-04",
+      "query": "宁德时代和比亚迪今天的股价",
+      "mode": "route",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "300750.SZ",
+          "field_id": "FIELD_DAILY_BASIC_PE",
+          "datasource": {
+            "id": "DS_TUSHARE_DAILY_BASIC",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代",
+                  "比亚迪"
+                ],
+                "var": "股价",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_DAILY_BASIC_PE",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_STOCK_COMPANY_PROVINCE",
+                    "name": "所在省份",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_DAILY_BASIC_PE",
+                    "name": "pe",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INDUSTRY_L1_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_IND_DC_CLOSE",
+                    "name": "板块最新指数",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_THS_HOT_RANK",
+                    "name": "排行",
+                    "scope": "板块级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_DAILY_BASIC_PE"
+              },
+              "elapsed": 4.51
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_DAILY_BASIC_PE",
+                "obj": [
+                  "宁德时代",
+                  "比亚迪"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "300750.SZ",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_DAILY_BASIC",
+                "protocol": "tushare",
+                "api_column": "pe",
+                "condition_text": "  主体: 宁德时代(300750.SZ), 比亚迪(002594.SZ)\n  指标: pe\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-05",
+      "query": "电池板块今天的涨跌幅",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            -4.91
+          ],
+          "error": "",
+          "entity_value": "电池",
+          "field_id": "FIELD_SECTOR_PCT_CHG",
+          "datasource": {
+            "id": "DS_AKSHARE_SECTOR_THS",
+            "protocol": "akshare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "电池板块"
+                ],
+                "var": "涨跌幅",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_SECTOR_PCT_CHG",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_PCT_CHG",
+                    "name": "板块涨跌幅",
+                    "scope": "板块级别(同花顺(akshare))",
+                    "protocol": "akshare"
+                  },
+                  {
+                    "id": "FIELD_LHB_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_SECTOR_PCT_CHG"
+              },
+              "elapsed": 3.25
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_SECTOR_PCT_CHG",
+                "obj": [
+                  "电池板块"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "电池",
+                "entity_type": "sector_name",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_AKSHARE_SECTOR_THS",
+                "protocol": "akshare",
+                "api_column": "涨跌幅",
+                "condition_text": "  主体: 板块: 电池\n  指标: 涨跌幅\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_AKSHARE_SECTOR_THS",
+                "protocol": "akshare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  -4.91
+                ],
+                "error": ""
+              },
+              "elapsed": 4.22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-06",
+      "query": "上证指数今天的涨跌幅",
+      "mode": "full",
+      "success": false,
+      "chain": false,
+      "summary": "0/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": false,
+          "result": [],
+          "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据",
+          "entity_value": "000001.SH",
+          "field_id": "FIELD_INDEX_PCT_CHG",
+          "datasource": {
+            "id": "DS_TUSHARE_INDEX_DAILY",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "上证指数"
+                ],
+                "var": "涨跌幅",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_INDEX_PCT_CHG",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_PCT_CHG",
+                    "name": "板块涨跌幅",
+                    "scope": "板块级别(同花顺(akshare))",
+                    "protocol": "akshare"
+                  },
+                  {
+                    "id": "FIELD_LHB_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_INDEX_PCT_CHG"
+              },
+              "elapsed": 3.54
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_INDEX_PCT_CHG",
+                "obj": [
+                  "上证指数"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "000001.SH",
+                "entity_type": "index_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+                "protocol": "tushare",
+                "api_column": "pct_chg",
+                "condition_text": "  主体: 指数: 000001.SH\n  指标: pct_chg\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_INDEX_DAILY",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": false,
+                "result": [],
+                "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据"
+              },
+              "elapsed": 17.46
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-07",
+      "query": "宁德时代所在的板块今天的涨跌幅",
+      "mode": "route",
+      "success": true,
+      "chain": true,
+      "summary": "2/2 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "300750.SZ",
+          "field_id": "FIELD_DC_DAILY_CATEGORY",
+          "datasource": {
+            "id": "DS_TUSHARE_DC_DAILY",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "板块",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_DC_DAILY_CATEGORY",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDUSTRY_L1_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INDUSTRY_L2_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_IND_DC_CLOSE",
+                    "name": "板块最新指数",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INDUSTRY_L3_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_DC_DAILY_CATEGORY",
+                    "name": "category",
+                    "scope": "板块级别(东方财富)",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_DC_DAILY_CATEGORY"
+              },
+              "elapsed": 3.21
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_DC_DAILY_CATEGORY",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "300750.SZ",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_DC_DAILY",
+                "protocol": "tushare",
+                "api_column": "category",
+                "condition_text": "  主体: 宁德时代(300750.SZ)\n  指标: category\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        },
+        {
+          "req_id": "R_002",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "res0",
+          "field_id": "FIELD_QUOTE_PCT_CHG",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_002_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "res0"
+                ],
+                "var": "涨跌幅",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_002_router",
+              "output": {
+                "field_id": "FIELD_QUOTE_PCT_CHG",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_PCT_CHG",
+                    "name": "板块涨跌幅",
+                    "scope": "板块级别(同花顺(akshare))",
+                    "protocol": "akshare"
+                  },
+                  {
+                    "id": "FIELD_LHB_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_QUOTE_PCT_CHG"
+              },
+              "elapsed": 1.13
+            },
+            {
+              "step": "R_002_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_QUOTE_PCT_CHG",
+                "obj": [
+                  "res0"
+                ]
+              }
+            },
+            {
+              "step": "R_002_enrich",
+              "output": {
+                "entity_value": "res0",
+                "entity_type": "sector_name",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "pct_chg",
+                "condition_text": "  主体: 板块: res0\n  指标: pct_chg\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-08",
+      "query": "宁德时代最近5天的换手率",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            null
+          ],
+          "error": "",
+          "entity_value": "sz300750",
+          "field_id": "FIELD_TURNOVER_RATE",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "换手率",
+                "condition": [
+                  "最近5天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_TURNOVER_RATE",
+                "candidates_count": 6,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_TURNOVER",
+                    "name": "换手率",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_TURNOVER",
+                    "name": "板块换手率",
+                    "scope": "",
+                    "protocol": ""
+                  },
+                  {
+                    "id": "FIELD_LHB_TURNOVER",
+                    "name": "换手率",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_TURNOVER_RATE",
+                    "name": "换手率",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KPL_LIST_TURNOVER_RATE",
+                    "name": "换手率%",
+                    "scope": "市场级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_TURNOVER_RATE"
+              },
+              "elapsed": 2.63
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_TURNOVER_RATE",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "sz300750",
+                "entity_type": "stock_code",
+                "time_start": "20260712",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "turnover_rate",
+                "condition_text": "  主体: 宁德时代(sz300750)\n  指标: turnover_rate\n  时间: 20260712 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TENCENT_QUOTE",
+                "protocol": "tencent"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  null
+                ],
+                "error": ""
+              },
+              "elapsed": 7.7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-09",
+      "query": "贵州茅台今天的市盈率",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            18.9367
+          ],
+          "error": "",
+          "entity_value": "600519.SH",
+          "field_id": "FIELD_PE_TTM",
+          "datasource": {
+            "id": "DS_TUSHARE_DAILY_BASIC",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "贵州茅台"
+                ],
+                "var": "市盈率",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_PE_TTM",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PE",
+                    "name": "市盈率",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_PE_TTM",
+                    "name": "市盈率TTM",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_VAL_PE_TTM",
+                    "name": "PE_TTM",
+                    "scope": "",
+                    "protocol": ""
+                  },
+                  {
+                    "id": "FIELD_INDEX_DAILYBASIC_PE_TTM",
+                    "name": "市盈率TTM",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_DAILY_INFO_PE",
+                    "name": "平均市盈率",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_PE_TTM"
+              },
+              "elapsed": 3.33
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_PE_TTM",
+                "obj": [
+                  "贵州茅台"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "600519.SH",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_DAILY_BASIC",
+                "protocol": "tushare",
+                "api_column": "pe_ttm",
+                "condition_text": "  主体: 贵州茅台(600519.SH)\n  指标: pe_ttm\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_DAILY_BASIC",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  18.9367
+                ],
+                "error": ""
+              },
+              "elapsed": 5.37
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-10",
+      "query": "沪深300今天的涨跌幅",
+      "mode": "full",
+      "success": false,
+      "chain": false,
+      "summary": "0/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": false,
+          "result": [],
+          "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据",
+          "entity_value": "000300.SH",
+          "field_id": "FIELD_INDEX_PCT_CHG",
+          "datasource": {
+            "id": "DS_TUSHARE_INDEX_DAILY",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "沪深300"
+                ],
+                "var": "涨跌幅",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_INDEX_PCT_CHG",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_PCT_CHG",
+                    "name": "板块涨跌幅",
+                    "scope": "板块级别(同花顺(akshare))",
+                    "protocol": "akshare"
+                  },
+                  {
+                    "id": "FIELD_LHB_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_INDEX_PCT_CHG"
+              },
+              "elapsed": 2.85
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_INDEX_PCT_CHG",
+                "obj": [
+                  "沪深300"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "000300.SH",
+                "entity_type": "index_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+                "protocol": "tushare",
+                "api_column": "pct_chg",
+                "condition_text": "  主体: 指数: 000300.SH\n  指标: pct_chg\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_INDEX_DAILY",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": false,
+                "result": [],
+                "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据"
+              },
+              "elapsed": 14.53
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-11",
+      "query": "宁德时代今天的大单资金流向",
+      "mode": "route",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "300750.SZ",
+          "field_id": "FIELD_FLOW_LARGE_BUY_AMT",
+          "datasource": {
+            "id": "DS_TUSHARE_MONEYFLOW",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "大单资金流向",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_FLOW_LARGE_BUY_AMT",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_MONEYFLOW_DC_BUY_LG_AMOUNT",
+                    "name": "大单买入金额（万元）",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_MKT_DC_BUY_LG_AMOUNT",
+                    "name": "大单买入金额（万元）",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_IND_DC_BUY_LG_AMOUNT",
+                    "name": "大单买入金额（万元）",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FLOW_LARGE_BUY_AMT",
+                    "name": "大单买入金额（万元）",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_MKT_DC_BUY_ELG_AMOUNT",
+                    "name": "特大单买入金额（万元）",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_FLOW_LARGE_BUY_AMT"
+              },
+              "elapsed": 3.09
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_FLOW_LARGE_BUY_AMT",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "300750.SZ",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_MONEYFLOW",
+                "protocol": "tushare",
+                "api_column": "buy_lg_amount",
+                "condition_text": "  主体: 宁德时代(300750.SZ)\n  指标: buy_lg_amount\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-12",
+      "query": "宁德时代今天的股价",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            23.0688
+          ],
+          "error": "",
+          "entity_value": "300750.SZ",
+          "field_id": "FIELD_DAILY_BASIC_PE",
+          "datasource": {
+            "id": "DS_TUSHARE_DAILY_BASIC",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "股价",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_DAILY_BASIC_PE",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_STOCK_COMPANY_PROVINCE",
+                    "name": "所在省份",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_DAILY_BASIC_PE",
+                    "name": "pe",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INDUSTRY_L1_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_IND_DC_CLOSE",
+                    "name": "板块最新指数",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_THS_HOT_RANK",
+                    "name": "排行",
+                    "scope": "板块级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_DAILY_BASIC_PE"
+              },
+              "elapsed": 3.84
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_DAILY_BASIC_PE",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "300750.SZ",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_DAILY_BASIC",
+                "protocol": "tushare",
+                "api_column": "pe",
+                "condition_text": "  主体: 宁德时代(300750.SZ)\n  指标: pe\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_DAILY_BASIC",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  23.0688
+                ],
+                "error": ""
+              },
+              "elapsed": 4.61
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-13",
+      "query": "宁德时代在今天收盘和上周收盘的换手率",
+      "mode": "route",
+      "success": true,
+      "chain": false,
+      "summary": "2/2 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "sz300750",
+          "field_id": "FIELD_TURNOVER_RATE",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "换手率",
+                "condition": [
+                  "今天收盘"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_TURNOVER_RATE",
+                "candidates_count": 6,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_TURNOVER",
+                    "name": "换手率",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_TURNOVER",
+                    "name": "板块换手率",
+                    "scope": "",
+                    "protocol": ""
+                  },
+                  {
+                    "id": "FIELD_LHB_TURNOVER",
+                    "name": "换手率",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_TURNOVER_RATE",
+                    "name": "换手率",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KPL_LIST_TURNOVER_RATE",
+                    "name": "换手率%",
+                    "scope": "市场级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_TURNOVER_RATE"
+              },
+              "elapsed": 3.36
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_TURNOVER_RATE",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "sz300750",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "turnover_rate",
+                "condition_text": "  主体: 宁德时代(sz300750)\n  指标: turnover_rate\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        },
+        {
+          "req_id": "R_002",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "300750.SZ",
+          "field_id": "FIELD_LHB_TURNOVER",
+          "datasource": {
+            "id": "DS_TUSHARE_TOP_LIST",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_002_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "换手率",
+                "condition": [
+                  "一周前收盘"
+                ]
+              }
+            },
+            {
+              "step": "R_002_router",
+              "output": {
+                "field_id": "FIELD_LHB_TURNOVER",
+                "candidates_count": 6,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_TURNOVER",
+                    "name": "换手率",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_TURNOVER",
+                    "name": "板块换手率",
+                    "scope": "",
+                    "protocol": ""
+                  },
+                  {
+                    "id": "FIELD_LHB_TURNOVER",
+                    "name": "换手率",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_TURNOVER_RATE",
+                    "name": "换手率",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KPL_LIST_TURNOVER_RATE",
+                    "name": "换手率%",
+                    "scope": "市场级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_LHB_TURNOVER"
+              },
+              "elapsed": 1.08
+            },
+            {
+              "step": "R_002_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_LHB_TURNOVER",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_002_enrich",
+              "output": {
+                "entity_value": "300750.SZ",
+                "entity_type": "stock_code",
+                "time_start": "",
+                "time_end": "",
+                "datasource_id": "DS_TUSHARE_TOP_LIST",
+                "protocol": "tushare",
+                "api_column": "turnover_rate",
+                "condition_text": "  主体: 宁德时代(300750.SZ)\n  指标: turnover_rate"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-14",
+      "query": "宁德时代所在板块今天的涨跌幅和成交量",
+      "mode": "route",
+      "success": true,
+      "chain": true,
+      "summary": "3/3 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "300750.SZ",
+          "field_id": "FIELD_DC_DAILY_CATEGORY",
+          "datasource": {
+            "id": "DS_TUSHARE_DC_DAILY",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "板块",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_DC_DAILY_CATEGORY",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDUSTRY_L1_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INDUSTRY_L2_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_IND_DC_CLOSE",
+                    "name": "板块最新指数",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INDUSTRY_L3_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_DC_DAILY_CATEGORY",
+                    "name": "category",
+                    "scope": "板块级别(东方财富)",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_DC_DAILY_CATEGORY"
+              },
+              "elapsed": 3.68
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_DC_DAILY_CATEGORY",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "300750.SZ",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_DC_DAILY",
+                "protocol": "tushare",
+                "api_column": "category",
+                "condition_text": "  主体: 宁德时代(300750.SZ)\n  指标: category\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        },
+        {
+          "req_id": "R_002",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "res0",
+          "field_id": "FIELD_QUOTE_PCT_CHG",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_002_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "res0"
+                ],
+                "var": "涨跌幅",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_002_router",
+              "output": {
+                "field_id": "FIELD_QUOTE_PCT_CHG",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_SECTOR_PCT_CHG",
+                    "name": "板块涨跌幅",
+                    "scope": "板块级别(同花顺(akshare))",
+                    "protocol": "akshare"
+                  },
+                  {
+                    "id": "FIELD_LHB_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_PCT_CHG",
+                    "name": "涨跌幅",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_QUOTE_PCT_CHG"
+              },
+              "elapsed": 1.16
+            },
+            {
+              "step": "R_002_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_QUOTE_PCT_CHG",
+                "obj": [
+                  "res0"
+                ]
+              }
+            },
+            {
+              "step": "R_002_enrich",
+              "output": {
+                "entity_value": "res0",
+                "entity_type": "sector_name",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "pct_chg",
+                "condition_text": "  主体: 板块: res0\n  指标: pct_chg\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.25
+            }
+          ]
+        },
+        {
+          "req_id": "R_003",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "res0",
+          "field_id": "FIELD_QUOTE_VOL",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent"
+          },
+          "log": [
+            {
+              "step": "R_003_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "res0"
+                ],
+                "var": "成交量",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_003_router",
+              "output": {
+                "field_id": "FIELD_QUOTE_VOL",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_VOL",
+                    "name": "成交量",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_VOL",
+                    "name": "成交量",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_VOL",
+                    "name": "成交量",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_VOL",
+                    "name": "成交量",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_DETAIL_VOL",
+                    "name": "成交量",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_QUOTE_VOL"
+              },
+              "elapsed": 1.1
+            },
+            {
+              "step": "R_003_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_QUOTE_VOL",
+                "obj": [
+                  "res0"
+                ]
+              }
+            },
+            {
+              "step": "R_003_enrich",
+              "output": {
+                "entity_value": "res0",
+                "entity_type": "sector_name",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TENCENT_QUOTE",
+                "protocol": "tencent",
+                "api_column": "vol",
+                "condition_text": "  主体: 板块: res0\n  指标: vol\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.24
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-15",
+      "query": "最近一个月北向资金流向",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            "385055.84"
+          ],
+          "error": "",
+          "entity_value": "北向资金",
+          "field_id": "FIELD_NORTH_NET",
+          "datasource": {
+            "id": "DS_TUSHARE_HSGT",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "北向资金"
+                ],
+                "var": "资金流向",
+                "condition": [
+                  "最近一个月"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_NORTH_NET",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_NORTH_NET",
+                    "name": "北向资金净流入",
+                    "scope": "市场级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_HSGT_SOUTH_MONEY",
+                    "name": "south_money",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_HSGT_NORTH_MONEY",
+                    "name": "north_money",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_IND_DC_CONTENT_TYPE",
+                    "name": "数据类型",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FLOW_DATE",
+                    "name": "交易日期",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_NORTH_NET"
+              },
+              "elapsed": 2.99
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_NORTH_NET",
+                "obj": [
+                  "北向资金"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "北向资金",
+                "entity_type": "concept",
+                "time_start": "20260617",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_HSGT",
+                "protocol": "tushare",
+                "api_column": "north_money",
+                "condition_text": "  主体: 北向资金\n  指标: north_money\n  时间: 20260617 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_HSGT",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  "385055.84"
+                ],
+                "error": ""
+              },
+              "elapsed": 5.07
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-16",
+      "query": "恒生指数今天的收盘价",
+      "mode": "route",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "HSI.HK",
+          "field_id": "FIELD_INDEX_PRICE",
+          "datasource": {
+            "id": "DS_TUSHARE_INDEX_DAILY",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "恒生指数"
+                ],
+                "var": "收盘价",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_INDEX_PRICE",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_PRICE",
+                    "name": "当前点位",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_KLINE_CLOSE",
+                    "name": "收盘价",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_CLOSE",
+                    "name": "收盘价",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_CB_CLOSE",
+                    "name": "收盘价",
+                    "scope": "个券级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUND_CLOSE",
+                    "name": "收盘价",
+                    "scope": "基金级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_INDEX_PRICE"
+              },
+              "elapsed": 2.9
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_INDEX_PRICE",
+                "obj": [
+                  "恒生指数"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "HSI.HK",
+                "entity_type": "index_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+                "protocol": "tushare",
+                "api_column": "close",
+                "condition_text": "  主体: 指数: HSI.HK\n  指标: close\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-17",
+      "query": "招商银行最近一个季度的ROE",
+      "mode": "full",
+      "success": false,
+      "chain": false,
+      "summary": "0/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": false,
+          "result": [],
+          "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据",
+          "entity_value": "600036.SH",
+          "field_id": "FIELD_FIN_ROE_WAA",
+          "datasource": {
+            "id": "DS_TUSHARE_FINA_IND",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "招商银行"
+                ],
+                "var": "ROE",
+                "condition": [
+                  "最近一个季度"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_FIN_ROE_WAA",
+                "candidates_count": 3,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_FIN_ROE_WAA",
+                    "name": "ROE(加权)",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FINA_INDICATOR_ROE_YEARLY",
+                    "name": "年化净资产收益率",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FINA_INDICATOR_ROA",
+                    "name": "总资产报酬率",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_FIN_ROE_WAA"
+              },
+              "elapsed": 2.79
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_FIN_ROE_WAA",
+                "obj": [
+                  "招商银行"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "600036.SH",
+                "entity_type": "stock_code",
+                "time_start": "20260701",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_FINA_IND",
+                "protocol": "tushare",
+                "api_column": "roe",
+                "condition_text": "  主体: 招商银行(600036.SH)\n  指标: roe\n  时间: 20260701 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_FINA_IND",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": false,
+                "result": [],
+                "error": "取数失败（已重试3次）:\n代码执行成功但返回空数据"
+              },
+              "elapsed": 14.68
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-18",
+      "query": "茅台和五粮液今天的股价谁高？",
+      "mode": "route",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "600519.SH",
+          "field_id": "FIELD_DAILY_BASIC_PE",
+          "datasource": {
+            "id": "DS_TUSHARE_DAILY_BASIC",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "茅台",
+                  "五粮液"
+                ],
+                "var": "股价",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_DAILY_BASIC_PE",
+                "candidates_count": 5,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_STOCK_COMPANY_PROVINCE",
+                    "name": "所在省份",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_DAILY_BASIC_PE",
+                    "name": "pe",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INDUSTRY_L1_NAME",
+                    "name": "行业名称",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MONEYFLOW_IND_DC_CLOSE",
+                    "name": "板块最新指数",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_THS_HOT_RANK",
+                    "name": "排行",
+                    "scope": "板块级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_DAILY_BASIC_PE"
+              },
+              "elapsed": 3.04
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_DAILY_BASIC_PE",
+                "obj": [
+                  "茅台",
+                  "五粮液"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "600519.SH",
+                "entity_type": "stock_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_DAILY_BASIC",
+                "protocol": "tushare",
+                "api_column": "pe",
+                "condition_text": "  主体: 茅台(600519.SH), 五粮液(000858.SZ)\n  指标: pe\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-20",
+      "query": "创业板指今天的成交量",
+      "mode": "full",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [
+            48153424.03
+          ],
+          "error": "",
+          "entity_value": "399006.SZ",
+          "field_id": "FIELD_INDEX_VOL",
+          "datasource": {
+            "id": "DS_TUSHARE_INDEX_DAILY",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "创业板指"
+                ],
+                "var": "成交量",
+                "condition": [
+                  "今天"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_INDEX_VOL",
+                "candidates_count": 8,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_INDEX_VOL",
+                    "name": "成交量",
+                    "scope": "指数级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_QUOTE_VOL",
+                    "name": "成交量",
+                    "scope": "个股级别",
+                    "protocol": "tencent"
+                  },
+                  {
+                    "id": "FIELD_KLINE_VOL",
+                    "name": "成交量",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_VOL",
+                    "name": "成交量",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_FUT_DETAIL_VOL",
+                    "name": "成交量",
+                    "scope": "合约级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_INDEX_VOL"
+              },
+              "elapsed": 2.79
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_INDEX_VOL",
+                "obj": [
+                  "创业板指"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "399006.SZ",
+                "entity_type": "index_code",
+                "time_start": "20260717",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+                "protocol": "tushare",
+                "api_column": "vol",
+                "condition_text": "  主体: 指数: 399006.SZ\n  指标: vol\n  时间: 20260717 ~ 20260717"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_INDEX_DAILY",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": true,
+                "result": [
+                  48153424.03
+                ],
+                "error": ""
+              },
+              "elapsed": 3.68
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-21",
+      "query": "宁德时代最近一个季度的营业收入",
+      "mode": "route",
+      "success": true,
+      "chain": false,
+      "summary": "1/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": true,
+          "result": [],
+          "error": "",
+          "entity_value": "300750.SZ",
+          "field_id": "FIELD_FS_REVENUE",
+          "datasource": {
+            "id": "DS_TUSHARE_INCOME",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "宁德时代"
+                ],
+                "var": "营业收入",
+                "condition": [
+                  "最近一个季度"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_FS_REVENUE",
+                "candidates_count": 6,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_FS_REVENUE",
+                    "name": "营业收入",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INC_REVENUE",
+                    "name": "营业收入",
+                    "scope": "个股级别",
+                    "protocol": "html_scrape"
+                  },
+                  {
+                    "id": "FIELD_FS_TOTAL_REVENUE",
+                    "name": "营业总收入",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INCOME_OTH_B_INCOME",
+                    "name": "其他业务收入",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_INCOME_COMM_INCOME",
+                    "name": "手续费及佣金收入",
+                    "scope": "个股级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_FS_REVENUE"
+              },
+              "elapsed": 3.12
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_FS_REVENUE",
+                "obj": [
+                  "宁德时代"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "300750.SZ",
+                "entity_type": "stock_code",
+                "time_start": "20260701",
+                "time_end": "20260717",
+                "datasource_id": "DS_TUSHARE_INCOME",
+                "protocol": "tushare",
+                "api_column": "revenue",
+                "condition_text": "  主体: 宁德时代(300750.SZ)\n  指标: revenue\n  时间: 20260701 ~ 20260717"
+              },
+              "elapsed": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-22",
+      "query": "中国最新的综合PMI",
+      "mode": "full",
+      "success": false,
+      "chain": false,
+      "summary": "0/1 requests succeeded",
+      "requests": [
+        {
+          "req_id": "R_001",
+          "success": false,
+          "result": [],
+          "error": "取数失败（已重试3次）:\nTraceback (most recent call last):\n  File \"/tmp/tmpo5_zw1l7.py\", line 14, in <module>\n    df = pro.cn_macro(                      # 使用正确的接口名\n  File \"/home/stockagent/miniforge3/envs/stock_agent/lib/python3.10/site-packages/tushare/pro/client.py\", line 46, in query\n    raise Exception(result['msg'])\nException: 请指定正确的接口名",
+          "entity_value": "中国",
+          "field_id": "FIELD_MACRO_COMPOSITE_PMI",
+          "datasource": {
+            "id": "DS_TUSHARE_CN_MACRO",
+            "protocol": "tushare"
+          },
+          "log": [
+            {
+              "step": "R_001_router",
+              "action": "hybrid_query + LLM选字段",
+              "input": {
+                "obj": [
+                  "中国"
+                ],
+                "var": "综合PMI",
+                "condition": [
+                  "最近一个报告期"
+                ]
+              }
+            },
+            {
+              "step": "R_001_router",
+              "output": {
+                "field_id": "FIELD_MACRO_COMPOSITE_PMI",
+                "candidates_count": 3,
+                "top5_candidates": [
+                  {
+                    "id": "FIELD_MACRO_COMPOSITE_PMI",
+                    "name": "综合PMI",
+                    "scope": "国家级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MACRO_PMI_PRODUCTION",
+                    "name": "PMI生产指数",
+                    "scope": "国家级别",
+                    "protocol": "tushare"
+                  },
+                  {
+                    "id": "FIELD_MACRO_PMI",
+                    "name": "制造业PMI",
+                    "scope": "国家级别",
+                    "protocol": "tushare"
+                  }
+                ],
+                "llm_raw": "FIELD_MACRO_COMPOSITE_PMI"
+              },
+              "elapsed": 2.84
+            },
+            {
+              "step": "R_001_enrich",
+              "action": "Neo4j补全+实体解析+时间解析",
+              "input": {
+                "field_id": "FIELD_MACRO_COMPOSITE_PMI",
+                "obj": [
+                  "中国"
+                ]
+              }
+            },
+            {
+              "step": "R_001_enrich",
+              "output": {
+                "entity_value": "中国",
+                "entity_type": "concept",
+                "time_start": "",
+                "time_end": "",
+                "datasource_id": "DS_TUSHARE_CN_MACRO",
+                "protocol": "tushare",
+                "api_column": "综合PMI",
+                "condition_text": "  主体: 中国\n  指标: 综合PMI"
+              },
+              "elapsed": 0.01
+            },
+            {
+              "step": "R_001_coder",
+              "action": "LLM代码生成+执行",
+              "input": {
+                "prompt_dir": "DS_TUSHARE_CN_MACRO",
+                "protocol": "tushare"
+              }
+            },
+            {
+              "step": "R_001_coder",
+              "output": {
+                "success": false,
+                "result": [],
+                "error": "取数失败（已重试3次）:\nTraceback (most recent call last):\n  File \"/tmp/tmpo5_zw1l7.py\", line 14, in <module>\n    df = pro.cn_macro(                      # 使用正确的接口名\n  File \"/home/stockagent/miniforge3/envs/stock"
+              },
+              "elapsed": 19.24
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

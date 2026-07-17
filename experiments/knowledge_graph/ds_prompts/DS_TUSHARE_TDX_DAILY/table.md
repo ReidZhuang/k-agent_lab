@@ -1,0 +1,2 @@
+# DS_TUSHARE_TDX_DAILY
+tdx_daily

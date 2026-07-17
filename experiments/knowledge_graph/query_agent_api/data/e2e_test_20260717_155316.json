@@ -1,0 +1,70 @@
+{
+  "model": "qwen2.5:7b",
+  "fast": true,
+  "cases": [
+    {
+      "id": "E2E-07",
+      "query": "宁德时代所在的板块今天的涨跌幅",
+      "mode": "route",
+      "success": true,
+      "elapsed": 11.82,
+      "chain": true,
+      "requests": [
+        {
+          "req_id": "R_001",
+          "request": {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_DC_DAILY_CATEGORY",
+          "datasource": {
+            "id": "DS_TUSHARE_DC_DAILY",
+            "protocol": "tushare",
+            "prompt_dir": ""
+          },
+          "entity_value": "300750.SZ",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        },
+        {
+          "req_id": "R_002",
+          "request": {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          "success": true,
+          "result": [],
+          "output": "",
+          "error": "",
+          "field_id": "FIELD_QUOTE_PCT_CHG",
+          "datasource": {
+            "id": "DS_TENCENT_QUOTE",
+            "protocol": "tencent",
+            "prompt_dir": ""
+          },
+          "entity_value": "res0",
+          "time_start": "20260717",
+          "time_end": "20260717"
+        }
+      ],
+      "error": ""
+    }
+  ],
+  "summary": "1/1"
+}

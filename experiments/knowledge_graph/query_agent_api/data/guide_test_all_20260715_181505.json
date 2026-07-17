@@ -1,0 +1,402 @@
+{
+  "model": "qwen2.5:7b",
+  "summary": "14/14",
+  "cases": [
+    {
+      "id": "TC-01",
+      "query": "宁德时代今天的涨跌幅",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_9e4b",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-02",
+      "query": "查询宁德时代今天的最高价和最低价",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_9e4b7a8f",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "最高价",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "最低价",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-03",
+      "query": "我想知道比亚迪和宁德时代今天中午收盘的股价",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_0f1a2b3c",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "比亚迪",
+              "宁德时代"
+            ],
+            "var": "股价",
+            "condition": [
+              "今天中午收盘"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-04",
+      "query": "给我查一下宁德时代在今天收盘和上周收盘的换手率",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_3f9ebea7",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天收盘"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "换手率",
+            "condition": [
+              "一周前收盘"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-05",
+      "query": "宁德时代所在的版块今天的涨跌幅",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_3f9e",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      }
+    },
+    {
+      "id": "TC-06",
+      "query": "宁德时代所在的版块的涨跌幅和成交量",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_3f9ebea8",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "res0"
+            ],
+            "var": "成交量",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      }
+    },
+    {
+      "id": "TC-07",
+      "query": "电池板块今天的涨跌幅",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_2f3e4d5c",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "电池板块"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-08",
+      "query": "查一下上证指数今天的涨跌幅和成交量",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_3f9ebea5",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "成交量",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-09",
+      "query": "茅台和五粮液今天的股价谁高？",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_9e4b7a8c",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "茅台",
+              "五粮液"
+            ],
+            "var": "股价",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-10",
+      "query": "宁德时代的涨跌幅",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_9e4b3a5f",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-11",
+      "query": "查一下宁德时代所在的板块的龙头股的涨跌幅",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_3f9b",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "龙头股",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "res1"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      }
+    },
+    {
+      "id": "TC-12",
+      "query": "最近一个月北向资金流向",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_3f4e5f6a",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "北向资金"
+            ],
+            "var": "资金流向",
+            "condition": [
+              "最近一个月"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    },
+    {
+      "id": "TC-13",
+      "query": "宁德时代所在板块今天的涨跌幅和主力资金流入",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_9e4b3a5c",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "主力资金流入",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      }
+    },
+    {
+      "id": "TC-14",
+      "query": "新能源汽车板块最近5天的涨跌幅",
+      "status": "PASS",
+      "output": {
+        "query_id": "Q_4e5f6a7b",
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "新能源汽车板块"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "最近5天"
+            ]
+          }
+        ],
+        "chain": false
+      }
+    }
+  ]
+}

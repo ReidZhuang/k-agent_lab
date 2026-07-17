@@ -1,0 +1,2 @@
+# DS_TUSHARE_FUT_SETTLE
+fut_settle

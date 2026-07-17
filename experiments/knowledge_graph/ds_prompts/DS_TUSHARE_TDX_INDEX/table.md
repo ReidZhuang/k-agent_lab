@@ -1,0 +1,2 @@
+# DS_TUSHARE_TDX_INDEX
+tdx_index

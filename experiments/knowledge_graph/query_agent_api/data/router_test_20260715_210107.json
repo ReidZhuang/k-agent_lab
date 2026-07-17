@@ -1,0 +1,228 @@
+{
+  "model": "qwen2.5:7b",
+  "cases": [
+    {
+      "id": "RR-01",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_KLINE_PCT_CHG",
+        "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回结果，`granularity` 为 `日频,个股级别` 的字段与 `entity_type=stock_code` 匹配：\n\n- `FIELD_QUOTE_PCT_CHG` (alias=simple) — granularity: 实时,个股级别\n- `FIELD_KLINE_PCT_CHG` (alias=simple) — granularity: 日频,个股级别\n\n选择 `granularity` 为 `日频,个股级别` 的字段 `FIELD_KLINE_PCT_CHG`。\n\n因此，最终答案是：\n\n```json\n{\n  \"field_id\": \"FIELD_KLINE_PCT_CHG\",\n  \"datasource_id\": \"DS_TUSHARE_INDEX_DAILY\",\n  \"protocol\": \"tushare\"\n}\n```\n\n[FINAL_ANSWER]"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-02",
+      "request": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_QUOTE_VOL",
+        "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "从返回结果来看，`granularity` 与 `entity_type` 的匹配情况如下：\n\n1. **FIELD_INDEX_VOL**:\n   - entity_type: index_code\n   - granularity: 日频,指数级别\n\n2. **FIELD_QUOTE_VOL**:\n   - entity_type: stock_code\n   - granularity: 实时,个股级别\n\n3. **FIELD_KLINE_VOL**:\n   - entity_type: stock_code\n   - granularity: 日频,个股级别\n\n4. **FIELD_FUT_VOL**:\n   - entity_type: index_code 或 contract_code\n   - granularity: 日频,合约级别\n\n5. **FIELD_FUT_DETAIL_VOL**:\n   - entity_type: index_code 或 contract_code\n   - granularity: 日频,合约级别\n\n6. **FIELD_CB_VOL**:\n   - entity_type: stock_code\n   - granularity: 日频,个券级别\n\n7. **FIELD_FUND_VOL**:\n   - entity_type: fund_code\n   - granularity: 日频,基金级别\n\n根据 `entity_type` 为 `stock_code`，我们需要选择 `granularity` 为 `个股级别` 的字段。因此，`FIELD_QUOTE_VOL` 是最合适的。\n\n### 分析结果：\n- **granularity=实时,个股级别** 匹配 entity_type=stock_code\n- **alias=simple** 可能有歧义\n\n由于 `granularity` 匹配且 `entity_type` 一致，我们选择 `FIELD_QUOTE_VOL`。\n\n### 输出 [FINAL_ANSWER]：\n```json\n{\n  \"field_id\": \"FIELD_QUOTE_VOL\",\n  \"datasource_id\": \"DS_TUSHARE_INDEX_DAILY\",\n  \"protocol\": \"tushare\"\n}\n```\n\n因此，最终答案为：\n\n```json\n[FINAL_ANSWER]\n{\n  \"field_id\": \"FIELD_QUOTE_VOL\",\n  \"datasource_id\": \"DS_TUSHARE_INDEX_DAILY\",\n  \"protocol\": \"tushare\"\n}\n```"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-03",
+      "request": {
+        "obj": [
+          "上证指数"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_PCT_CHG",
+        "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回结果，`granularity=\"日频,指数级别\"` 与 `entity_type=\"index_code\"` 匹配。\n\n因此，我们找到了精确匹配的字段：\n\n```json\n{\"field_id\": \"FIELD_INDEX_PCT_CHG\", \"datasource_id\": \"DS_TUSHARE_INDEX_DAILY\", \"protocol\": \"tushare\"}\n```\n\n输出 [FINAL_ANSWER]：\n\n[FINAL_ANSWER]\n\n```json\n{\n  \"field_id\": \"FIELD_INDEX_PCT_CHG\",\n  \"datasource_id\": \"DS_TUSHARE_INDEX_DAILY\",\n  \"protocol\": \"tushare\"\n}\n```"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-04",
+      "request": {
+        "obj": [
+          "电池板块"
+        ],
+        "var": "板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_SECTOR_PCT_CHG",
+        "datasource_id": "DS_AKSHARE_SECTOR_SPOT",
+        "protocol": "akshare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回结果：\n\n- **entity_type**: `sector_name`（板块）\n- **granularity**: `日频,板块级别`\n\n路由结果的 `granularity` 与 `entity_type` 完全匹配，因此可以确认为精确命中。\n\n输出 [FINAL_ANSWER] 并附带选择：\n\n```json\n{\n  \"field_id\": \"FIELD_SECTOR_PCT_CHG\",\n  \"datasource_id\": \"DS_AKSHARE_SECTOR_SPOT\",\n  \"protocol\": \"akshare\"\n}\n```\n\n[FINAL_ANSWER]"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-05",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_QUOTE_HIGH",
+        "datasource_id": "DS_TENCENT_QUOTE",
+        "protocol": "tencent",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回结果，`granularity=\"实时,个股级别\"` 与 `entity_type=\"stock_code\"` 匹配。\n\n因此，我们选择 Field #1 `FIELD_QUOTE_HIGH` 作为最终答案。\n\n```json\n{\n  \"field_id\": \"FIELD_QUOTE_HIGH\",\n  \"datasource_id\": \"DS_TENCENT_QUOTE\",\n  \"protocol\": \"tencent\"\n}\n```\n\n[FINAL_ANSWER]"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-06",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "换手率",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_LHB_TURNOVER",
+        "datasource_id": "DS_TUSHARE_INDEX_DB",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "从返回结果来看：\n\n- `FIELD_INDEX_TURNOVER` 的 granularity 是 \"日频,指数级别\"，与 entity_type=\"stock_code\"（个股）不匹配。\n- `FIELD_SECTOR_TURNOVER` 的 granularity 是 \"日频,板块级别\"，与 entity_type=\"stock_code\" 不匹配。\n- `FIELD_LHB_TURNOVER` 的 granularity 是 \"日频,个股级别\"，与 entity_type=\"stock_code\" 匹配。\n- `FIELD_TURNOVER_RATE` 的 granularity 是 \"实时,个股级别\"，与 entity_type=\"stock_code\" 也匹配。\n\n由于 `FIELD_LHB_TURNOVER` 和 `FIELD_TURNOVER_RATE` 都符合要求，但 `FIELD_TURNOVER_RATE` 是实时数据，而题目中条件是“最近5天”，因此选择 `FIELD_LHB_TURNOVER` 更合适。\n\n所以，最终选择 `FIELD_LHB_TURNOVER` 作为匹配字段。输出如下：\n\n```json\n{\n  \"field_id\": \"FIELD_LHB_TURNOVER\",\n  \"datasource_id\": \"DS_TUSHARE_INDEX_DB\",\n  \"protocol\": \"tushare\"\n}\n```\n\n[FINAL_ANSWER]"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_TURNOVER*，实际 FIELD_LHB_TURNOVER"
+      ]
+    },
+    {
+      "id": "RR-07",
+      "request": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_PE_TTM",
+        "datasource_id": "DS_TUSHARE_INDEX_DB",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "从返回结果来看：\n\n- `FIELD_INDEX_PE` 的 `granularity` 为 `日频,指数级别`，与 `entity_type=stock_code`（个股）不匹配。\n- `FIELD_PE_TTM` 和 `FIELD_VAL_PE_TTM` 的 `granularity` 均为 `日频,个股级别`，与 `entity_type=stock_code` 匹配。\n\n因此，我们选择 `FIELD_PE_TTM` 或 `FIELD_VAL_PE_TTM` 作为最终答案。由于它们的 alias 都是 simple 级别，我们可以从中任选一个。这里我们选择 `FIELD_PE_TTM`。\n\n[FINAL_ANSWER]\n\n```json\n{\"field_id\": \"FIELD_PE_TTM\", \"datasource_id\": \"DS_TUSHARE_INDEX_DB\", \"protocol\": \"tushare\"}\n```\n\n重新调用 route_query 时，我们将使用限定后的关键词 `\"市盈率\"`：\n\n```json\n{\n  \"obj\": [\n    \"中国平安\"\n  ],\n  \"var\": \"市盈率\",\n  \"condition\": [\n    \"今天\"\n  ]\n}\n```\n\n现在我们再次调用 `route_query` 来确认选择的正确性。\n"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-08",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "板块",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_SECTOR_NAME",
+        "datasource_id": "DS_SINA_CASHFLOW",
+        "protocol": "html_scrape",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回结果，`granularity` 为 `日频,板块级别` 的字段是 `FIELD_SECTOR_NAME`，其 `entity_type` 是 `stock_code`（股票），这与我们的预期实体类型一致。\n\n因此，我们确认这个字段是精确匹配的。\n\n输出 [FINAL_ANSWER] 并附带选择：\n\n```json\n{\n  \"field_id\": \"FIELD_SECTOR_NAME\",\n  \"datasource_id\": \"DS_SINA_CASHFLOW\",\n  \"protocol\": \"html_scrape\"\n}\n```\n\n最终答案为：\n```json\n{\n  \"field_id\": \"FIELD_SECTOR_NAME\",\n  \"datasource_id\": \"DS_SINA_CASHFLOW\",\n  \"protocol\": \"html_scrape\"\n}\n```"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-09",
+      "request": {
+        "obj": [
+          "宁德时代",
+          "比亚迪"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_QUOTE_PCT_CHG",
+        "datasource_id": "DS_TUSHARE_INDEX_DAILY",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据返回结果，`FIELD_QUOTE_PCT_CHG` 的 `granularity` 为 `实时,个股级别`，与 `entity_type=\"stock_code\"` 匹配。\n\n因此，我们选择 `FIELD_QUOTE_PCT_CHG` 作为最终答案。\n\n```json\n{\n  \"field_id\": \"FIELD_QUOTE_PCT_CHG\",\n  \"datasource_id\": \"DS_TUSHARE_INDEX_DAILY\",\n  \"protocol\": \"tushare\"\n}\n```\n\n[FINAL_ANSWER]"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-10",
+      "request": {
+        "obj": [
+          "北向资金"
+        ],
+        "var": "资金流向",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_NORTH_NET",
+        "datasource_id": "DS_TUSHARE_HSGT",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 2,
+        "final_answer": "根据返回结果，`granularity=日频,市场级别` 与 `entity_type=index_code` 匹配。\n\n因此，我们已经找到了精确匹配的字段：\n\n```json\n{\"field_id\": \"FIELD_NORTH_NET\", \"datasource_id\": \"DS_TUSHARE_HSGT\", \"protocol\": \"tushare\"}\n```\n\n最终答案为：\n[FINAL_ANSWER]\n\n```json\n{\n  \"field_id\": \"FIELD_NORTH_NET\",\n  \"datasource_id\": \"DS_TUSHARE_HSGT\",\n  \"protocol\": \"tushare\"\n}\n```"
+      },
+      "errors": []
+    }
+  ]
+}

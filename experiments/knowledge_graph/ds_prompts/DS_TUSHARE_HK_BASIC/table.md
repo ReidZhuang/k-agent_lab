@@ -1,0 +1,2 @@
+# DS_TUSHARE_HK_BASIC
+hk_basic

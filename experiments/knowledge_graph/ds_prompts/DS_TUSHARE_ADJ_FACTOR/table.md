@@ -1,0 +1,2 @@
+# DS_TUSHARE_ADJ_FACTOR
+adj_factor

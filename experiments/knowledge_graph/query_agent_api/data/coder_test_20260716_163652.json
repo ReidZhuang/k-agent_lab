@@ -1,0 +1,194 @@
+{
+  "cases": [
+    {
+      "id": "CG-01",
+      "desc": "Tushare日线-涨跌幅",
+      "success": true,
+      "result": [
+        2.4697
+      ],
+      "error": "",
+      "time": 9.8
+    },
+    {
+      "id": "CG-02",
+      "desc": "Tushare换手率",
+      "success": true,
+      "result": [
+        0.8421
+      ],
+      "error": "",
+      "time": 4.6
+    },
+    {
+      "id": "CG-03",
+      "desc": "Akshare板块涨跌幅",
+      "success": true,
+      "result": [],
+      "error": "",
+      "time": 9.5
+    },
+    {
+      "id": "CG-04",
+      "desc": "Tencent实时行情-涨跌幅",
+      "success": true,
+      "result": [
+        -1.82
+      ],
+      "error": "",
+      "time": 3.7
+    },
+    {
+      "id": "CG-05",
+      "desc": "Levistock市场热度",
+      "success": true,
+      "result": [
+        "41"
+      ],
+      "error": "",
+      "time": 2.2
+    },
+    {
+      "id": "CG-06",
+      "desc": "Sina HTML利润表-营业收入",
+      "success": true,
+      "result": [
+        12913104.1
+      ],
+      "error": "",
+      "time": 4.6
+    },
+    {
+      "id": "CG-07",
+      "desc": "Tushare利润表-净利润",
+      "success": true,
+      "result": [
+        28153831489.89
+      ],
+      "error": "",
+      "time": 5.2
+    },
+    {
+      "id": "CG-08",
+      "desc": "Tushare财务指标-ROE",
+      "success": true,
+      "result": [
+        11.8508
+      ],
+      "error": "",
+      "time": 5.8
+    },
+    {
+      "id": "CG-09",
+      "desc": "Tushare资金流向-大单净买入",
+      "success": true,
+      "result": [
+        122633
+      ],
+      "error": "",
+      "time": 11.0
+    },
+    {
+      "id": "CG-10",
+      "desc": "Tushare涨跌停价",
+      "success": true,
+      "result": [
+        54.56
+      ],
+      "error": "",
+      "time": 4.5
+    },
+    {
+      "id": "CG-11",
+      "desc": "Akshare板块成分股",
+      "success": true,
+      "result": [],
+      "error": "",
+      "time": 8.8
+    },
+    {
+      "id": "CG-12",
+      "desc": "Levistock板块行情",
+      "success": true,
+      "result": [
+        6.42
+      ],
+      "error": "",
+      "time": 3.6
+    },
+    {
+      "id": "CG-13",
+      "desc": "新浪实时行情-最新价",
+      "success": true,
+      "result": [
+        366.2
+      ],
+      "error": "",
+      "time": 3.6
+    },
+    {
+      "id": "CG-14",
+      "desc": "Sina HTML资产负债表-总资产",
+      "success": true,
+      "result": [
+        104632903.6
+      ],
+      "error": "",
+      "time": 8.9
+    },
+    {
+      "id": "CG-15",
+      "desc": "Sina HTML现金流-经营现金流",
+      "success": true,
+      "result": [
+        13201725.4
+      ],
+      "error": "",
+      "time": 4.9
+    },
+    {
+      "id": "CG-16",
+      "desc": "交易日历",
+      "success": true,
+      "result": [
+        1
+      ],
+      "error": "",
+      "time": 9.9
+    },
+    {
+      "id": "CG-17",
+      "desc": "股东户数",
+      "success": true,
+      "result": [
+        788295
+      ],
+      "error": "",
+      "time": 9.9
+    },
+    {
+      "id": "CG-18",
+      "desc": "限售股解禁",
+      "success": true,
+      "result": [],
+      "error": "",
+      "time": 5.0
+    },
+    {
+      "id": "CG-19",
+      "desc": "指数权重",
+      "success": true,
+      "result": [],
+      "error": "",
+      "time": 4.4
+    },
+    {
+      "id": "CG-20",
+      "desc": "国际指数收盘",
+      "success": true,
+      "result": [],
+      "error": "",
+      "time": 4.5
+    }
+  ]
+}

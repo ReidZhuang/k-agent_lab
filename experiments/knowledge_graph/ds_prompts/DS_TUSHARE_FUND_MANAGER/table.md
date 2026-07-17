@@ -1,0 +1,2 @@
+# DS_TUSHARE_FUND_MANAGER
+fund_manager

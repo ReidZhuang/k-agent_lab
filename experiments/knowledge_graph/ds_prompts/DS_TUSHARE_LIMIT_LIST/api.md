@@ -1,1 +1,4 @@
-注意：Token 通过 os.getenv('TUSHARE_TOKEN') 读取
+## 函数
+pro.limit_list_d(trade_date)
+## 参数
+- trade_date: 交易日期 YYYYMMDD，必填

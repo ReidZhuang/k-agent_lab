@@ -8,7 +8,7 @@
 | volume | float | 6 | 成交量(手) | 462907 |
 | change | float | 31 | 涨跌额 | 10.30 |
 | pct_chg | float | 32 | 涨跌幅% | 2.95 |
-| high | float | 33 | 最高价 | ≥349.00 |
-| low | float | 34 | 最低价 | ≤349.00 |
+| high | float | 33 | 最高价 | 375.24 |
+| low | float | 34 | 最低价 | 360.00 |
 | amount | float | ? | 成交额(万元) | 索引未知，返回数据中按顺序查找 |
 | turnover_rate | float | ? | 换手率% | 索引未知，返回数据中按顺序查找 |

@@ -1,0 +1,2 @@
+# DS_TUSHARE_FUT_DAILY
+fut_daily

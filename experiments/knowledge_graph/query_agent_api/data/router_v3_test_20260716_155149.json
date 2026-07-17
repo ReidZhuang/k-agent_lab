@@ -1,0 +1,3046 @@
+{
+  "model": "qwen2.5:7b",
+  "cases": [
+    {
+      "id": "RR-01",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 3.4,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": "FIELD_QUOTE_PCT_CHG"
+    },
+    {
+      "id": "RR-02",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_VOL",
+        "candidates_count": 8,
+        "time": 1.5,
+        "raw": "FIELD_QUOTE_VOL"
+      },
+      "expect": "FIELD_QUOTE_VOL"
+    },
+    {
+      "id": "RR-03",
+      "req": {
+        "obj": [
+          "上证指数"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_INDEX_PCT_CHG"
+      },
+      "expect": "FIELD_INDEX_PCT_CHG"
+    },
+    {
+      "id": "RR-04",
+      "req": {
+        "obj": [
+          "电池板块"
+        ],
+        "var": "板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_PCT_CHG",
+        "candidates_count": 4,
+        "time": 1.1,
+        "raw": "FIELD_SECTOR_PCT_CHG"
+      },
+      "expect": "FIELD_SECTOR_PCT_CHG"
+    },
+    {
+      "id": "RR-05",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_HIGH",
+        "candidates_count": 8,
+        "time": 1.6,
+        "raw": "FIELD_QUOTE_HIGH"
+      },
+      "expect": "FIELD_QUOTE_HIGH"
+    },
+    {
+      "id": "RR-06",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "换手率",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_LHB_TURNOVER",
+        "candidates_count": 6,
+        "time": 1.2,
+        "raw": "FIELD_LHB_TURNOVER"
+      },
+      "expect": "FIELD_TURNOVER_RATE"
+    },
+    {
+      "id": "RR-07",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PE_TTM",
+        "candidates_count": 5,
+        "time": 1.2,
+        "raw": "FIELD_PE_TTM"
+      },
+      "expect": "FIELD_PE_TTM"
+    },
+    {
+      "id": "RR-08",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "板块",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DC_DAILY_CATEGORY",
+        "candidates_count": 5,
+        "time": 1.9,
+        "raw": "FIELD_DC_DAILY_CATEGORY"
+      },
+      "expect": "FIELD_DC_DAILY_CATEGORY"
+    },
+    {
+      "id": "RR-09",
+      "req": {
+        "obj": [
+          "宁德时代",
+          "比亚迪"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.6,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": "FIELD_QUOTE_PCT_CHG"
+    },
+    {
+      "id": "RR-10",
+      "req": {
+        "obj": [
+          "北向资金"
+        ],
+        "var": "资金流向",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_NORTH_NET",
+        "candidates_count": 5,
+        "time": 1.2,
+        "raw": "FIELD_NORTH_NET"
+      },
+      "expect": "FIELD_NORTH_NET"
+    },
+    {
+      "id": "RR-11",
+      "req": {
+        "obj": [
+          "恒生指数"
+        ],
+        "var": "收盘价",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_PRICE",
+        "candidates_count": 8,
+        "time": 1.0,
+        "raw": "FIELD_INDEX_PRICE"
+      },
+      "expect": "FIELD_INDEX_PRICE"
+    },
+    {
+      "id": "RR-12",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "股价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DAILY_BASIC_PE",
+        "candidates_count": 5,
+        "time": 1.4,
+        "raw": "FIELD_DAILY_BASIC_PE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-13",
+      "req": {
+        "obj": [
+          "万科A"
+        ],
+        "var": "最低价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_LOW",
+        "candidates_count": 8,
+        "time": 1.1,
+        "raw": "FIELD_QUOTE_LOW"
+      },
+      "expect": "FIELD_QUOTE_LOW"
+    },
+    {
+      "id": "RR-14",
+      "req": {
+        "obj": [
+          "格力电器"
+        ],
+        "var": "开盘价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_OPEN",
+        "candidates_count": 7,
+        "time": 1.0,
+        "raw": "FIELD_QUOTE_OPEN"
+      },
+      "expect": "FIELD_QUOTE_OPEN"
+    },
+    {
+      "id": "RR-15",
+      "req": {
+        "obj": [
+          "东方财富"
+        ],
+        "var": "成交额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_AMOUNT",
+        "candidates_count": 8,
+        "time": 1.1,
+        "raw": "FIELD_QUOTE_AMOUNT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-16",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "涨跌额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_CHG",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_QUOTE_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-17",
+      "req": {
+        "obj": [
+          "招商银行"
+        ],
+        "var": "每股净资产",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_BPS",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_FIN_BPS"
+      },
+      "expect": "FIELD_FIN_BPS"
+    },
+    {
+      "id": "RR-18",
+      "req": {
+        "obj": [
+          "海康威视"
+        ],
+        "var": "市净率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PB",
+        "candidates_count": 4,
+        "time": 1.1,
+        "raw": "FIELD_PB"
+      },
+      "expect": "FIELD_PB"
+    },
+    {
+      "id": "RR-19",
+      "req": {
+        "obj": [
+          "大秦铁路"
+        ],
+        "var": "股息率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DIVIDEND_YIELD",
+        "candidates_count": 3,
+        "time": 1.2,
+        "raw": "FIELD_DIVIDEND_YIELD"
+      },
+      "expect": "FIELD_DIVIDEND_YIELD"
+    },
+    {
+      "id": "RR-20",
+      "req": {
+        "obj": [
+          "半导体板块"
+        ],
+        "var": "板块成交额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_AMOUNT",
+        "candidates_count": 4,
+        "time": 1.1,
+        "raw": "FIELD_SECTOR_AMOUNT"
+      },
+      "expect": "FIELD_SECTOR_AMOUNT"
+    },
+    {
+      "id": "RR-21",
+      "req": {
+        "obj": [
+          "银行板块"
+        ],
+        "var": "板块振幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_AMPLITUDE",
+        "candidates_count": 4,
+        "time": 1.1,
+        "raw": "FIELD_SECTOR_AMPLITUDE"
+      },
+      "expect": "FIELD_SECTOR_AMPLITUDE"
+    },
+    {
+      "id": "RR-22",
+      "req": {
+        "obj": [
+          "银行板块"
+        ],
+        "var": "行业平均PE",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_VAL_IND_PE",
+        "candidates_count": 3,
+        "time": 1.4,
+        "raw": "FIELD_VAL_IND_PE"
+      },
+      "expect": "FIELD_VAL_IND_PE"
+    },
+    {
+      "id": "RR-23",
+      "req": {
+        "obj": [
+          "白酒板块"
+        ],
+        "var": "行业平均ROE",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_VAL_IND_ROE",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_VAL_IND_ROE"
+      },
+      "expect": "FIELD_VAL_IND_ROE"
+    },
+    {
+      "id": "RR-24",
+      "req": {
+        "obj": [
+          "中国"
+        ],
+        "var": "综合PMI",
+        "condition": [
+          "最新"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_COMPOSITE_PMI",
+        "candidates_count": 3,
+        "time": 1.2,
+        "raw": "FIELD_MACRO_COMPOSITE_PMI"
+      },
+      "expect": "FIELD_MACRO_COMPOSITE_PMI"
+    },
+    {
+      "id": "RR-25",
+      "req": {
+        "obj": [
+          "中国"
+        ],
+        "var": "CPI环比",
+        "condition": [
+          "最新"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_CPI_MOM",
+        "candidates_count": 3,
+        "time": 1.2,
+        "raw": "FIELD_MACRO_CPI_MOM"
+      },
+      "expect": "FIELD_MACRO_CPI_MOM"
+    },
+    {
+      "id": "RR-26",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "北向资金净流入",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_NORTH_NET",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_NORTH_NET"
+      },
+      "expect": "FIELD_NORTH_NET"
+    },
+    {
+      "id": "RR-27",
+      "req": {
+        "obj": [
+          "创业板指"
+        ],
+        "var": "指数成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_VOL",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_INDEX_VOL"
+      },
+      "expect": "FIELD_INDEX_VOL"
+    },
+    {
+      "id": "RR-28",
+      "req": {
+        "obj": [
+          "科创50"
+        ],
+        "var": "指数涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_PCT_CHG",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_INDEX_PCT_CHG"
+      },
+      "expect": "FIELD_INDEX_PCT_CHG"
+    },
+    {
+      "id": "RR-29",
+      "req": {
+        "obj": [
+          "五粮液"
+        ],
+        "var": "K线收盘价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_KLINE_CLOSE",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_KLINE_CLOSE"
+      },
+      "expect": "FIELD_KLINE_CLOSE"
+    },
+    {
+      "id": "RR-30",
+      "req": {
+        "obj": [
+          "海康威视"
+        ],
+        "var": "应收账款周转率",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_AR_TURN",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_FIN_AR_TURN"
+      },
+      "expect": "FIELD_FIN_AR_TURN"
+    },
+    {
+      "id": "RR-31",
+      "req": {
+        "obj": [
+          "比亚迪"
+        ],
+        "var": "涨跌额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_CHG",
+        "candidates_count": 4,
+        "time": 0.9,
+        "raw": "FIELD_QUOTE_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-32",
+      "req": {
+        "obj": [
+          "交通银行"
+        ],
+        "var": "每股收益",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FS_BASIC_EPS",
+        "candidates_count": 5,
+        "time": 0.9,
+        "raw": "FIELD_FS_BASIC_EPS"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-33",
+      "req": {
+        "obj": [
+          "恒瑞医药"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-34",
+      "req": {
+        "obj": [
+          "迈瑞医疗"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_VOL",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_VOL"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-35",
+      "req": {
+        "obj": [
+          "药明康德"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_HIGH",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_HIGH"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-36",
+      "req": {
+        "obj": [
+          "中兴通讯"
+        ],
+        "var": "最低价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_LOW",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_LOW"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-37",
+      "req": {
+        "obj": [
+          "京东方A"
+        ],
+        "var": "成交额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_AMOUNT",
+        "candidates_count": 8,
+        "time": 1.5,
+        "raw": "FIELD_QUOTE_AMOUNT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-38",
+      "req": {
+        "obj": [
+          "科大讯飞"
+        ],
+        "var": "涨跌额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_CHG",
+        "candidates_count": 4,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-39",
+      "req": {
+        "obj": [
+          "顺丰控股"
+        ],
+        "var": "换手率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_TURNOVER_RATE",
+        "candidates_count": 6,
+        "time": 1.2,
+        "raw": "FIELD_TURNOVER_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-40",
+      "req": {
+        "obj": [
+          "伊利股份"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PE_TTM",
+        "candidates_count": 5,
+        "time": 1.2,
+        "raw": "FIELD_PE_TTM"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-41",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "毛利率",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_GROSS_MARGIN",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_FIN_GROSS_MARGIN"
+      },
+      "expect": "FIELD_FIN_GROSS_MARGIN"
+    },
+    {
+      "id": "RR-42",
+      "req": {
+        "obj": [
+          "海康威视"
+        ],
+        "var": "存货周转率",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_INV_TURN",
+        "candidates_count": 3,
+        "time": 1.3,
+        "raw": "FIELD_FIN_INV_TURN"
+      },
+      "expect": "FIELD_FIN_INV_TURN"
+    },
+    {
+      "id": "RR-43",
+      "req": {
+        "obj": [
+          "招商银行"
+        ],
+        "var": "总资产周转率",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_ASSETS_TURN",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_FIN_ASSETS_TURN"
+      },
+      "expect": "FIELD_FIN_ASSETS_TURN"
+    },
+    {
+      "id": "RR-44",
+      "req": {
+        "obj": [
+          "万科A"
+        ],
+        "var": "资产负债率",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_DEBT_RATIO",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_FIN_DEBT_RATIO"
+      },
+      "expect": "FIELD_FIN_DEBT_RATIO"
+    },
+    {
+      "id": "RR-45",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "ROIC",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_ROIC",
+        "candidates_count": 4,
+        "time": 1.1,
+        "raw": "FIELD_FIN_ROIC"
+      },
+      "expect": "FIELD_FIN_ROIC"
+    },
+    {
+      "id": "RR-46",
+      "req": {
+        "obj": [
+          "泸州老窖"
+        ],
+        "var": "K线最高价",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_KLINE_HIGH",
+        "candidates_count": 3,
+        "time": 1.4,
+        "raw": "FIELD_KLINE_HIGH"
+      },
+      "expect": "FIELD_KLINE_HIGH"
+    },
+    {
+      "id": "RR-47",
+      "req": {
+        "obj": [
+          "山西汾酒"
+        ],
+        "var": "K线最低价",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_KLINE_LOW",
+        "candidates_count": 3,
+        "time": 1.3,
+        "raw": "FIELD_KLINE_LOW"
+      },
+      "expect": "FIELD_KLINE_LOW"
+    },
+    {
+      "id": "RR-48",
+      "req": {
+        "obj": [
+          "洋河股份"
+        ],
+        "var": "K线成交量",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_KLINE_VOL",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_KLINE_VOL"
+      },
+      "expect": "FIELD_KLINE_VOL"
+    },
+    {
+      "id": "RR-49",
+      "req": {
+        "obj": [
+          "长春高新"
+        ],
+        "var": "K线成交额",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_KLINE_AMOUNT",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_KLINE_AMOUNT"
+      },
+      "expect": "FIELD_KLINE_AMOUNT"
+    },
+    {
+      "id": "RR-50",
+      "req": {
+        "obj": [
+          "医疗器械板块"
+        ],
+        "var": "板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_PCT_CHG",
+        "candidates_count": 4,
+        "time": 1.1,
+        "raw": "FIELD_SECTOR_PCT_CHG"
+      },
+      "expect": "FIELD_SECTOR_PCT_CHG"
+    },
+    {
+      "id": "RR-51",
+      "req": {
+        "obj": [
+          "芯片板块"
+        ],
+        "var": "板块换手率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_THS_DAILY_TURNOVER_RATE",
+        "candidates_count": 4,
+        "time": 1.3,
+        "raw": "FIELD_THS_DAILY_TURNOVER_RATE"
+      },
+      "expect": "FIELD_THS_DAILY_TURNOVER_RATE"
+    },
+    {
+      "id": "RR-52",
+      "req": {
+        "obj": [
+          "人工智能板块"
+        ],
+        "var": "板块振幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_AMPLITUDE",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_SECTOR_AMPLITUDE"
+      },
+      "expect": "FIELD_SECTOR_AMPLITUDE"
+    },
+    {
+      "id": "RR-53",
+      "req": {
+        "obj": [
+          "沪深300"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.3,
+        "raw": "FIELD_INDEX_PCT_CHG"
+      },
+      "expect": "FIELD_INDEX_PCT_CHG"
+    },
+    {
+      "id": "RR-54",
+      "req": {
+        "obj": [
+          "中证500"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_VOL",
+        "candidates_count": 8,
+        "time": 1.0,
+        "raw": "FIELD_INDEX_VOL"
+      },
+      "expect": "FIELD_INDEX_VOL"
+    },
+    {
+      "id": "RR-55",
+      "req": {
+        "obj": [
+          "深证成指"
+        ],
+        "var": "收盘价",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_PRICE",
+        "candidates_count": 8,
+        "time": 1.4,
+        "raw": "FIELD_INDEX_PRICE"
+      },
+      "expect": "FIELD_INDEX_PRICE"
+    },
+    {
+      "id": "RR-56",
+      "req": {
+        "obj": [
+          "沪深300"
+        ],
+        "var": "指数开盘价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_OPEN",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_INDEX_OPEN"
+      },
+      "expect": "FIELD_INDEX_OPEN"
+    },
+    {
+      "id": "RR-57",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "龙虎榜净买入",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_LHB_NET",
+        "candidates_count": 5,
+        "time": 1.7,
+        "raw": "FIELD_LHB_NET"
+      },
+      "expect": "FIELD_LHB_NET"
+    },
+    {
+      "id": "RR-58",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "龙虎榜买入额",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_LHB_BUY",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_LHB_BUY"
+      },
+      "expect": "FIELD_LHB_BUY"
+    },
+    {
+      "id": "RR-59",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "港股通(沪)",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_NORTH_GGT_SS",
+        "candidates_count": 3,
+        "time": 1.2,
+        "raw": "FIELD_NORTH_GGT_SS"
+      },
+      "expect": "FIELD_NORTH_GGT_SS"
+    },
+    {
+      "id": "RR-60",
+      "req": {
+        "obj": [
+          "比亚迪"
+        ],
+        "var": "港股通(深)",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_NORTH_GGT_SZ",
+        "candidates_count": 3,
+        "time": 0.9,
+        "raw": "FIELD_NORTH_GGT_SZ"
+      },
+      "expect": "FIELD_NORTH_GGT_SZ"
+    },
+    {
+      "id": "RR-61",
+      "req": {
+        "obj": [
+          "中国中免"
+        ],
+        "var": "股价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DAILY_BASIC_PE",
+        "candidates_count": 5,
+        "time": 1.3,
+        "raw": "FIELD_DAILY_BASIC_PE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-62",
+      "req": {
+        "obj": [
+          "双汇发展"
+        ],
+        "var": "市净率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PB",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_PB"
+      },
+      "expect": "FIELD_PB"
+    },
+    {
+      "id": "RR-63",
+      "req": {
+        "obj": [
+          "中国神华"
+        ],
+        "var": "股息率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DIVIDEND_YIELD",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_DIVIDEND_YIELD"
+      },
+      "expect": "FIELD_DIVIDEND_YIELD"
+    },
+    {
+      "id": "RR-64",
+      "req": {
+        "obj": [
+          "中国建筑"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-65",
+      "req": {
+        "obj": [
+          "三一重工"
+        ],
+        "var": "换手率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_TURNOVER_RATE",
+        "candidates_count": 6,
+        "time": 1.2,
+        "raw": "FIELD_TURNOVER_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-66",
+      "req": {
+        "obj": [
+          "紫金矿业"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_HIGH",
+        "candidates_count": 8,
+        "time": 1.4,
+        "raw": "FIELD_QUOTE_HIGH"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-67",
+      "req": {
+        "obj": [
+          "万华化学"
+        ],
+        "var": "成交额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_AMOUNT",
+        "candidates_count": 8,
+        "time": 1.4,
+        "raw": "FIELD_QUOTE_AMOUNT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-68",
+      "req": {
+        "obj": [
+          "立讯精密"
+        ],
+        "var": "涨跌额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_CHG",
+        "candidates_count": 4,
+        "time": 0.9,
+        "raw": "FIELD_QUOTE_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-69",
+      "req": {
+        "obj": [
+          "海天味业"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PE_TTM",
+        "candidates_count": 5,
+        "time": 1.2,
+        "raw": "FIELD_PE_TTM"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-70",
+      "req": {
+        "obj": [
+          "牧原股份"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_VOL",
+        "candidates_count": 8,
+        "time": 1.3,
+        "raw": "FIELD_QUOTE_VOL"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-71",
+      "req": {
+        "obj": [
+          "中信证券"
+        ],
+        "var": "涨停价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_LIMIT_UP_PRICE",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_LIMIT_UP_PRICE"
+      },
+      "expect": "FIELD_LIMIT_UP_PRICE"
+    },
+    {
+      "id": "RR-72",
+      "req": {
+        "obj": [
+          "保利发展"
+        ],
+        "var": "跌停价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_LIMIT_DOWN_PRICE",
+        "candidates_count": 4,
+        "time": 1.1,
+        "raw": "FIELD_LIMIT_DOWN_PRICE"
+      },
+      "expect": "FIELD_LIMIT_DOWN_PRICE"
+    },
+    {
+      "id": "RR-73",
+      "req": {
+        "obj": [
+          "隆基绿能"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.3,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-74",
+      "req": {
+        "obj": [
+          "通威股份"
+        ],
+        "var": "换手率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_TURNOVER_RATE",
+        "candidates_count": 6,
+        "time": 1.1,
+        "raw": "FIELD_TURNOVER_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-75",
+      "req": {
+        "obj": [
+          "中芯国际"
+        ],
+        "var": "成交额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_AMOUNT",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_AMOUNT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-76",
+      "req": {
+        "obj": [
+          "北方华创"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_HIGH",
+        "candidates_count": 8,
+        "time": 1.4,
+        "raw": "FIELD_QUOTE_HIGH"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-77",
+      "req": {
+        "obj": [
+          "兆易创新"
+        ],
+        "var": "最低价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_LOW",
+        "candidates_count": 8,
+        "time": 1.1,
+        "raw": "FIELD_QUOTE_LOW"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-78",
+      "req": {
+        "obj": [
+          "金山办公"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PE_TTM",
+        "candidates_count": 5,
+        "time": 1.1,
+        "raw": "FIELD_PE_TTM"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-79",
+      "req": {
+        "obj": [
+          "云南白药"
+        ],
+        "var": "市净率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PB",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_PB"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-80",
+      "req": {
+        "obj": [
+          "中国核电"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_VOL",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_VOL"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-81",
+      "req": {
+        "obj": [
+          "海尔智家"
+        ],
+        "var": "收盘价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_KLINE_CLOSE",
+        "candidates_count": 8,
+        "time": 1.1,
+        "raw": "FIELD_KLINE_CLOSE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-82",
+      "req": {
+        "obj": [
+          "中国太保"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-83",
+      "req": {
+        "obj": [
+          "青岛啤酒"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PE_TTM",
+        "candidates_count": 5,
+        "time": 1.2,
+        "raw": "FIELD_PE_TTM"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-84",
+      "req": {
+        "obj": [
+          "海螺水泥"
+        ],
+        "var": "成交额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_AMOUNT",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_AMOUNT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-85",
+      "req": {
+        "obj": [
+          "中微公司"
+        ],
+        "var": "涨跌额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_CHG",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_QUOTE_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-86",
+      "req": {
+        "obj": [
+          "华大基因"
+        ],
+        "var": "换手率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_TURNOVER_RATE",
+        "candidates_count": 6,
+        "time": 1.3,
+        "raw": "FIELD_TURNOVER_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-87",
+      "req": {
+        "obj": [
+          "复星医药"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_HIGH",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_HIGH"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-88",
+      "req": {
+        "obj": [
+          "中国人寿"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_VOL",
+        "candidates_count": 8,
+        "time": 1.4,
+        "raw": "FIELD_QUOTE_VOL"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-89",
+      "req": {
+        "obj": [
+          "中航光电"
+        ],
+        "var": "最低价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_LOW",
+        "candidates_count": 8,
+        "time": 1.3,
+        "raw": "FIELD_QUOTE_LOW"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-90",
+      "req": {
+        "obj": [
+          "中国联通"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.3,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-91",
+      "req": {
+        "obj": [
+          "TCL科技"
+        ],
+        "var": "成交额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_AMOUNT",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_AMOUNT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-92",
+      "req": {
+        "obj": [
+          "宝钢股份"
+        ],
+        "var": "换手率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_TURNOVER_RATE",
+        "candidates_count": 6,
+        "time": 1.2,
+        "raw": "FIELD_TURNOVER_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-93",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "昨收价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PRE_CLOSE",
+        "candidates_count": 7,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_PRE_CLOSE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-94",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "市销率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PS_TTM",
+        "candidates_count": 4,
+        "time": 1.0,
+        "raw": "FIELD_PS_TTM"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-95",
+      "req": {
+        "obj": [
+          "招商银行"
+        ],
+        "var": "每股资本公积",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_CAPITAL_RESERVE",
+        "candidates_count": 3,
+        "time": 1.2,
+        "raw": "FIELD_FIN_CAPITAL_RESERVE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-96",
+      "req": {
+        "obj": [
+          "恒瑞医药"
+        ],
+        "var": "毛利率",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_GROSS_MARGIN",
+        "candidates_count": 3,
+        "time": 0.8,
+        "raw": "FIELD_FIN_GROSS_MARGIN"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-97",
+      "req": {
+        "obj": [
+          "长江电力"
+        ],
+        "var": "股息率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DIVIDEND_YIELD",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_DIVIDEND_YIELD"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-98",
+      "req": {
+        "obj": [
+          "创业板指"
+        ],
+        "var": "指数开盘价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_OPEN",
+        "candidates_count": 3,
+        "time": 0.9,
+        "raw": "FIELD_INDEX_OPEN"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-99",
+      "req": {
+        "obj": [
+          "沪深300"
+        ],
+        "var": "指数成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_VOL",
+        "candidates_count": 3,
+        "time": 0.9,
+        "raw": "FIELD_INDEX_VOL"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-100",
+      "req": {
+        "obj": [
+          "北向资金"
+        ],
+        "var": "北向资金净流入",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_NORTH_NET",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_NORTH_NET"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-101",
+      "req": {
+        "obj": [
+          "半导体板块"
+        ],
+        "var": "板块换手率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_THS_DAILY_TURNOVER_RATE",
+        "candidates_count": 4,
+        "time": 1.3,
+        "raw": "FIELD_THS_DAILY_TURNOVER_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-102",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "K线涨跌幅",
+        "condition": [
+          "昨天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_KLINE_PCT_CHG",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_KLINE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-103",
+      "req": {
+        "obj": [
+          "中国建筑"
+        ],
+        "var": "涨幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 6,
+        "time": 1.1,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-104",
+      "req": {
+        "obj": [
+          "中国神华"
+        ],
+        "var": "跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-105",
+      "req": {
+        "obj": [
+          "长江电力"
+        ],
+        "var": "每股现金流",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FIN_OCFPS",
+        "candidates_count": 4,
+        "time": 1.2,
+        "raw": "FIELD_FIN_OCFPS"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-106",
+      "req": {
+        "obj": [
+          "比亚迪"
+        ],
+        "var": "涨幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 6,
+        "time": 1.3,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-107",
+      "req": {
+        "obj": [
+          "五粮液"
+        ],
+        "var": "跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_QUOTE_PCT_CHG",
+        "candidates_count": 8,
+        "time": 1.2,
+        "raw": "FIELD_QUOTE_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-108",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "营业利润",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FS_OPER_PROFIT",
+        "candidates_count": 4,
+        "time": 0.9,
+        "raw": "FIELD_FS_OPER_PROFIT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-109",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "利润总额",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FS_TOTAL_PROFIT",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_FS_TOTAL_PROFIT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-110",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "研发费用",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FS_RD_EXP",
+        "candidates_count": 3,
+        "time": 0.9,
+        "raw": "FIELD_FS_RD_EXP"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-111",
+      "req": {
+        "obj": [
+          "五粮液"
+        ],
+        "var": "销售费用",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FS_SELL_EXP",
+        "candidates_count": 4,
+        "time": 0.9,
+        "raw": "FIELD_FS_SELL_EXP"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-112",
+      "req": {
+        "obj": [
+          "海康威视"
+        ],
+        "var": "管理费用",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FS_ADMIN_EXP",
+        "candidates_count": 3,
+        "time": 0.8,
+        "raw": "FIELD_FS_ADMIN_EXP"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-113",
+      "req": {
+        "obj": [
+          "中国"
+        ],
+        "var": "GDP增速",
+        "condition": [
+          "最新"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_GDP_YOY",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_MACRO_GDP_YOY"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-114",
+      "req": {
+        "obj": [
+          "中国"
+        ],
+        "var": "CPI同比",
+        "condition": [
+          "最新"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_CPI_YOY",
+        "candidates_count": 3,
+        "time": 1.1,
+        "raw": "FIELD_MACRO_CPI_YOY"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-115",
+      "req": {
+        "obj": [
+          "中国"
+        ],
+        "var": "制造业PMI",
+        "condition": [
+          "最新"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_PMI",
+        "candidates_count": 3,
+        "time": 1.0,
+        "raw": "FIELD_MACRO_PMI"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-116",
+      "req": {
+        "obj": [
+          "中国"
+        ],
+        "var": "社会融资规模",
+        "condition": [
+          "最新"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_SF_STOCK",
+        "candidates_count": 5,
+        "time": 1.5,
+        "raw": "FIELD_MACRO_SF_STOCK"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-117",
+      "req": {
+        "obj": [
+          "300750.SZ"
+        ],
+        "var": "神奇九转",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_STK_NINETURN_NINE_DOWN_TURN",
+        "candidates_count": 5,
+        "time": 1.6,
+        "raw": "FIELD_STK_NINETURN_NINE_DOWN_TURN"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-118",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "股票代码",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PROFILE_CODE",
+        "candidates_count": 6,
+        "time": 1.4,
+        "raw": "FIELD_PROFILE_CODE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-119",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "上市日期",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PROFILE_LIST_DATE",
+        "candidates_count": 5,
+        "time": 0.8,
+        "raw": "FIELD_PROFILE_LIST_DATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-120",
+      "req": {
+        "obj": [
+          "平安银行"
+        ],
+        "var": "所属行业",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PROFILE_INDUSTRY",
+        "candidates_count": 4,
+        "time": 7.3,
+        "raw": "FIELD_PROFILE_INDUSTRY"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-121",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "龙虎榜卖出额",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_LHB_SELL",
+        "candidates_count": 3,
+        "time": 16.4,
+        "raw": "FIELD_LHB_SELL"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-122",
+      "req": {
+        "obj": [
+          "上证指数"
+        ],
+        "var": "指数成分股",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_MEMBER_ALL_NAME",
+        "candidates_count": 5,
+        "time": 34.6,
+        "raw": "FIELD_INDEX_MEMBER_ALL_NAME"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-123",
+      "req": {
+        "obj": [
+          "工商银行"
+        ],
+        "var": "股东户数",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_STK_HOLDERNUMBER_HOLDER_NUM",
+        "candidates_count": 5,
+        "time": 35.5,
+        "raw": "FIELD_STK_HOLDERNUMBER_HOLDER_NUM"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-124",
+      "req": {
+        "obj": [
+          "格力电器"
+        ],
+        "var": "限售股解禁",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PLEDGE_STAT_REST_PLEDGE",
+        "candidates_count": 5,
+        "time": 34.4,
+        "raw": "FIELD_PLEDGE_STAT_REST_PLEDGE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-125",
+      "req": {
+        "obj": [
+          "银行板块"
+        ],
+        "var": "万申板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SW_DAILY_PCT_CHANGE",
+        "candidates_count": 5,
+        "time": 33.0,
+        "raw": "FIELD_SW_DAILY_PCT_CHANGE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-126",
+      "req": {
+        "obj": [
+          "半导体板块"
+        ],
+        "var": "中信板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_CI_DAILY_PCT_CHANGE",
+        "candidates_count": 5,
+        "time": 32.5,
+        "raw": "FIELD_CI_DAILY_PCT_CHANGE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-127",
+      "req": {
+        "obj": [
+          "新能源板块"
+        ],
+        "var": "同花顺板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_SECTOR_PCT_CHG",
+        "candidates_count": 5,
+        "time": 33.8,
+        "raw": "FIELD_SECTOR_PCT_CHG"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-128",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "散户净流入",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MONEYFLOW_IND_THS_NET_AMOUNT",
+        "candidates_count": 5,
+        "time": 34.9,
+        "raw": "FIELD_MONEYFLOW_IND_THS_NET_AMOUNT"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-129",
+      "req": {
+        "obj": [
+          "隆基绿能"
+        ],
+        "var": "超大单净流入",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MONEYFLOW_MKT_DC_BUY_ELG_AMOUNT_RATE",
+        "candidates_count": 5,
+        "time": 34.0,
+        "raw": "FIELD_MONEYFLOW_MKT_DC_BUY_ELG_AMOUNT_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-130",
+      "req": {
+        "obj": [
+          "全市场"
+        ],
+        "var": "大盘资金流向",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_NORTH_NET",
+        "candidates_count": 5,
+        "time": 33.2,
+        "raw": "FIELD_NORTH_NET"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-131",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "复权因子",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_ADJ_FACTOR",
+        "candidates_count": 4,
+        "time": 17.1,
+        "raw": "FIELD_ADJ_FACTOR"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-132",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "技术因子涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_STK_FACTOR_PCT_CHANGE",
+        "candidates_count": 5,
+        "time": 33.4,
+        "raw": "FIELD_STK_FACTOR_PCT_CHANGE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-133",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "市盈率TTM",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_PE_TTM",
+        "candidates_count": 3,
+        "time": 17.0,
+        "raw": "FIELD_PE_TTM"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-134",
+      "req": {
+        "obj": [
+          "全市场"
+        ],
+        "var": "融资余额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MARGIN_BALANCE",
+        "candidates_count": 3,
+        "time": 16.3,
+        "raw": "FIELD_MARGIN_BALANCE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-135",
+      "req": {
+        "obj": [
+          "全市场"
+        ],
+        "var": "融券余额",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MARGIN_SHORT_BALANCE",
+        "candidates_count": 3,
+        "time": 16.9,
+        "raw": "FIELD_MARGIN_SHORT_BALANCE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-136",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "融资融券标的",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MARGIN_TOTAL",
+        "candidates_count": 5,
+        "time": 32.9,
+        "raw": "FIELD_MARGIN_TOTAL"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-137",
+      "req": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "前十大股东",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_HOLDER_NAME",
+        "candidates_count": 5,
+        "time": 31.4,
+        "raw": "FIELD_HOLDER_NAME"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-138",
+      "req": {
+        "obj": [
+          "招商银行"
+        ],
+        "var": "机构调研记录",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_STK_SURV_FUND_VISITORS",
+        "candidates_count": 5,
+        "time": 31.0,
+        "raw": "FIELD_STK_SURV_FUND_VISITORS"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-139",
+      "req": {
+        "obj": [
+          "腾讯控股"
+        ],
+        "var": "港股通持股",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_HK_HOLD_EXCHANGE",
+        "candidates_count": 5,
+        "time": 31.5,
+        "raw": "FIELD_HK_HOLD_EXCHANGE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-140",
+      "req": {
+        "obj": [
+          "浦发转债"
+        ],
+        "var": "转债收盘价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_BOND_BLK_PRICE",
+        "candidates_count": 5,
+        "time": 32.1,
+        "raw": "FIELD_BOND_BLK_PRICE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-141",
+      "req": {
+        "obj": [
+          "浦发转债"
+        ],
+        "var": "转股溢价率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_CB_CB_OVER_RATE",
+        "candidates_count": 4,
+        "time": 17.1,
+        "raw": "FIELD_CB_CB_OVER_RATE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-142",
+      "req": {
+        "obj": [
+          "浦发转债"
+        ],
+        "var": "纯债价值",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_CB_BOND_VALUE",
+        "candidates_count": 4,
+        "time": 15.9,
+        "raw": "FIELD_CB_BOND_VALUE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-143",
+      "req": {
+        "obj": [
+          "螺纹钢"
+        ],
+        "var": "期货收盘价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FUT_CLOSE",
+        "candidates_count": 3,
+        "time": 14.6,
+        "raw": "FIELD_FUT_CLOSE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-144",
+      "req": {
+        "obj": [
+          "黄金"
+        ],
+        "var": "期货持仓量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_FUT_OI",
+        "candidates_count": 3,
+        "time": 14.8,
+        "raw": "FIELD_FUT_OI"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-145",
+      "req": {
+        "obj": [
+          "美国"
+        ],
+        "var": "国债收益率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_US_",
+        "candidates_count": 5,
+        "time": 32.9,
+        "raw": "FIELD_MACRO_US_5Y"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-146",
+      "req": {
+        "obj": [
+          "美国"
+        ],
+        "var": "长期国债利率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_MACRO_US_",
+        "candidates_count": 3,
+        "time": 17.9,
+        "raw": "FIELD_MACRO_US_5Y"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-147",
+      "req": {
+        "obj": [
+          "浦发转债"
+        ],
+        "var": "强赎条款",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_CB_CALL_CLAUSE",
+        "candidates_count": 3,
+        "time": 18.5,
+        "raw": "FIELD_CB_CALL_CLAUSE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-148",
+      "req": {
+        "obj": [
+          "浦发转债"
+        ],
+        "var": "回售条款",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_CB_PUT_CLAUSE",
+        "candidates_count": 3,
+        "time": 16.7,
+        "raw": "FIELD_CB_PUT_CLAUSE"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-149",
+      "req": {
+        "obj": [
+          "招商银行"
+        ],
+        "var": "股息率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DIVIDEND_YIELD",
+        "candidates_count": 3,
+        "time": 17.7,
+        "raw": "FIELD_DIVIDEND_YIELD"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-150",
+      "req": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "每股股利",
+        "condition": [
+          "最近一年"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_DIV_CASH_TAX",
+        "candidates_count": 5,
+        "time": 34.9,
+        "raw": "FIELD_DIV_CASH_TAX"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-151",
+      "req": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "大股东持股比例",
+        "condition": [
+          "最近一个季度"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_HOLDER_RATIO",
+        "candidates_count": 5,
+        "time": 33.6,
+        "raw": "FIELD_HOLDER_RATIO"
+      },
+      "expect": ""
+    },
+    {
+      "id": "RR-152",
+      "req": {
+        "obj": [
+          "沪深300"
+        ],
+        "var": "指数权重",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "chosen_id": "FIELD_INDEX_WEIGHT_WEIGHT",
+        "candidates_count": 4,
+        "time": 17.2,
+        "raw": "FIELD_INDEX_WEIGHT_WEIGHT"
+      },
+      "expect": ""
+    }
+  ]
+}

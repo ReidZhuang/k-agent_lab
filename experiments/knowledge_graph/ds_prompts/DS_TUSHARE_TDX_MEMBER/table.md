@@ -1,0 +1,2 @@
+# DS_TUSHARE_TDX_MEMBER
+tdx_member

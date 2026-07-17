@@ -1,2 +1,10 @@
 ## 函数
-pro.moneyflow(ts_code, trade_date, start_date, end_date)
+pro.moneyflow(ts_code, start_date, end_date)
+
+## 参数说明
+- ts_code: 股票代码（如 000001.SZ）
+- start_date: 起始日期 YYYYMMDD
+- end_date: 结束日期 YYYYMMDD
+
+## 描述
+

@@ -1,0 +1,2 @@
+# DS_TUSHARE_CI_DAILY
+ci_daily

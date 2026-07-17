@@ -1,0 +1,893 @@
+{
+  "model": "qwen2.5:7b",
+  "cases": [
+    {
+      "id": "CX-01",
+      "query": "宁德时代所在板块的龙头股的所属概念",
+      "desc": "3-level chain",
+      "exp_chain": true,
+      "exp_count": 3,
+      "act_chain": null,
+      "act_count": null,
+      "output": null,
+      "raw_snippet": "{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"宁德时代\"], \"var\": \"板块\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"res0\"], \"var\": \"龙头股\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": [\"res1\"], \"var\": \"所属概念\", \"condition\": []}\n    ],\n    \"chain\": true\n}",
+      "status": "❌ [2] condition 为空"
+    },
+    {
+      "id": "CX-02",
+      "query": "茅台所在行业的平均市盈率排名",
+      "desc": "chain: 行业→平均市盈率排名",
+      "exp_chain": true,
+      "exp_count": 2,
+      "act_chain": true,
+      "act_count": 2,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "茅台"
+            ],
+            "var": "行业",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "平均市盈率排名",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"茅台\"], \"var\": \"行业\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"res0\"], \"var\": \"平均市盈率排名\", \"condition\": [\"今天\"]}\n    ],\n    \"chain\": true\n}",
+      "status": "✅"
+    },
+    {
+      "id": "CX-03",
+      "query": "比亚迪所在的板块的龙头股的资金流向",
+      "desc": "chain: 板块→龙头股→资金流向",
+      "exp_chain": true,
+      "exp_count": 3,
+      "act_chain": true,
+      "act_count": 3,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "比亚迪"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "龙头股",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "res1"
+            ],
+            "var": "资金流向",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "raw_snippet": "根据提供的示例和规则，我们可以逐步解析并生成对应的取数请求。\n\n### 第一步：语义补全与显化\n\n用户说：\"比亚迪所在的板块的龙头股的资金流向\"\n\n理解补全为：\n\"我想查股票比亚迪所在的行业板块今天(最近一个交易日)的龙头股的资金流向指标\"\n\n### 第二步：分类与识别\n\n这个 query 包含了以下信息：\n- 主体：比亚迪\n- 指标：资金流向\n- 中间查询需求：\"所在板块\" → \"比亚迪所在的板块\"\n- 依赖于中间结果的后续查询：\"龙头股的资金流向\"\n\n因此，这是一个链式请求。\n\n### 第三步：输出结构化结果\n\n根据解析规则，我们需要生成两个 request，并且设置 chain 为 true。\n\n```json\n{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"比亚迪\"]",
+      "status": "✅"
+    },
+    {
+      "id": "CX-04",
+      "query": "药明康德所在行业的平均毛利率",
+      "desc": "chain: 行业→毛利率",
+      "exp_chain": true,
+      "exp_count": 2,
+      "act_chain": true,
+      "act_count": 2,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "药明康德"
+            ],
+            "var": "行业",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "平均毛利率",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"药明康德\"], \"var\": \"行业\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"res0\"], \"var\": \"平均毛利率\", \"condition\": [\"今天\"]}\n    ],\n    \"chain\": true\n}",
+      "status": "✅"
+    },
+    {
+      "id": "CX-05",
+      "query": "三一重工所属行业的龙头股的最新收盘价",
+      "desc": "chain: 行业→龙头股→收盘价",
+      "exp_chain": true,
+      "exp_count": 3,
+      "act_chain": true,
+      "act_count": 3,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "三一重工"
+            ],
+            "var": "行业",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "龙头股",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "res1"
+            ],
+            "var": "收盘价",
+            "condition": [
+              "最新"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"三一重工\"], \"var\": \"行业\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"res0\"], \"var\": \"龙头股\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": [\"res1\"], \"var\": \"收盘价\", \"condition\": [\"最新\"]}\n    ],\n    \"chain\": true\n}",
+      "status": "✅"
+    },
+    {
+      "id": "CX-06",
+      "query": "宁德时代今天的成交量、换手率、振幅、成交额",
+      "desc": "4 parallel metrics",
+      "exp_chain": false,
+      "exp_count": 4,
+      "act_chain": false,
+      "act_count": 4,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "成交量",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "振幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_004",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "成交额",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "```json\n{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"宁德时代\"],\n            \"var\": \"成交量\",\n            \"condition\": [\"今天\"]\n        },\n        {\n            \"req_id\": \"R_002\",\n            \"obj\": [\"宁德时代\"],\n            \"var\": \"换手率\",\n            \"condition\": [\"今天\"]\n        },\n        {\n            \"req_id\": \"R_003\",\n            \"obj\": [\"宁德时代\"],\n            \"var\": \"振幅\",",
+      "status": "✅"
+    },
+    {
+      "id": "CX-07",
+      "query": "上证指数今天的开盘价、收盘价、最高价、最低价、成交量",
+      "desc": "5 parallel metrics",
+      "exp_chain": false,
+      "exp_count": 5,
+      "act_chain": false,
+      "act_count": 5,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "开盘价",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "收盘价",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "最高价",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_004",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "最低价",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_005",
+            "obj": [
+              "上证指数"
+            ],
+            "var": "成交量",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "```json\n{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"上证指数\"], \"var\": \"开盘价\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"上证指数\"], \"var\": \"收盘价\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": [\"上证指数\"], \"var\": \"最高价\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_004\", \"obj\": [\"上证指数\"], \"var\": \"最低价\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_005\", \"obj\": [\"上证指数\"], \"va",
+      "status": "✅"
+    },
+    {
+      "id": "CX-08",
+      "query": "茅台今天的PE、PB、PS、ROE、营收增长率",
+      "desc": "5 financial metrics",
+      "exp_chain": false,
+      "exp_count": 5,
+      "act_chain": false,
+      "act_count": 5,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "贵州茅台"
+            ],
+            "var": "PE",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "贵州茅台"
+            ],
+            "var": "PB",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "贵州茅台"
+            ],
+            "var": "PS",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_004",
+            "obj": [
+              "贵州茅台"
+            ],
+            "var": "ROE",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_005",
+            "obj": [
+              "贵州茅台"
+            ],
+            "var": "营收增长率",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"贵州茅台\"], \"var\": \"PE\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"贵州茅台\"], \"var\": \"PB\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": [\"贵州茅台\"], \"var\": \"PS\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_004\", \"obj\": [\"贵州茅台\"], \"var\": \"ROE\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_005\", \"obj\": [\"贵州茅台\"], \"var\": \"营收增长率\"",
+      "status": "✅"
+    },
+    {
+      "id": "CX-09",
+      "query": "沪深300、上证50、中证500今天的涨跌幅",
+      "desc": "3 indexes",
+      "exp_chain": false,
+      "exp_count": 3,
+      "act_chain": false,
+      "act_count": 3,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "沪深300"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "上证50"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "中证500"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "```json\n{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"沪深300\"], \"var\": \"涨跌幅\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"上证50\"], \"var\": \"涨跌幅\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": [\"中证500\"], \"var\": \"涨跌幅\", \"condition\": [\"今天\"]}\n    ],\n    \"chain\": false\n}\n```",
+      "status": "✅"
+    },
+    {
+      "id": "CX-10",
+      "query": "招商银行今年的净利润、营业收入、ROE、不良率",
+      "desc": "4 financial",
+      "exp_chain": false,
+      "exp_count": 4,
+      "act_chain": false,
+      "act_count": 4,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "招商银行"
+            ],
+            "var": "净利润",
+            "condition": [
+              "今年以来"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "招商银行"
+            ],
+            "var": "营业收入",
+            "condition": [
+              "今年以来"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "招商银行"
+            ],
+            "var": "ROE",
+            "condition": [
+              "最近一个报告期"
+            ]
+          },
+          {
+            "req_id": "R_004",
+            "obj": [
+              "招商银行"
+            ],
+            "var": "不良率",
+            "condition": [
+              "最近一个报告期"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"招商银行\"],\n            \"var\": \"净利润\",\n            \"condition\": [\"今年以来\"]\n        },\n        {\n            \"req_id\": \"R_002\",\n            \"obj\": [\"招商银行\"],\n            \"var\": \"营业收入\",\n            \"condition\": [\"今年以来\"]\n        },\n        {\n            \"req_id\": \"R_003\",\n            \"obj\": [\"招商银行\"],\n            \"var\": \"ROE\",\n ",
+      "status": "✅"
+    },
+    {
+      "id": "CX-11",
+      "query": "宁德时代、比亚迪、长城汽车、上汽集团、广汽集团今天的涨跌幅",
+      "desc": "5 stocks, 1 metric",
+      "exp_chain": false,
+      "exp_count": 1,
+      "act_chain": false,
+      "act_count": 1,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代",
+              "比亚迪",
+              "长城汽车",
+              "上汽集团",
+              "广汽集团"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"宁德时代\", \"比亚迪\", \"长城汽车\", \"上汽集团\", \"广汽集团\"],\n            \"var\": \"涨跌幅\",\n            \"condition\": [\"今天\"]\n        }\n    ],\n    \"chain\": false\n}",
+      "status": "✅"
+    },
+    {
+      "id": "CX-12",
+      "query": "贵州茅台、五粮液、泸州老窖、山西汾酒、洋河股份今天的股价",
+      "desc": "5 baijiu stocks, 1 metric",
+      "exp_chain": false,
+      "exp_count": 1,
+      "act_chain": false,
+      "act_count": 1,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "贵州茅台",
+              "五粮液",
+              "泸州老窖",
+              "山西汾酒",
+              "洋河股份"
+            ],
+            "var": "股价",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"贵州茅台\", \"五粮液\", \"泸州老窖\", \"山西汾酒\", \"洋河股份\"],\n            \"var\": \"股价\",\n            \"condition\": [\"今天\"]\n        }\n    ],\n    \"chain\": false\n}",
+      "status": "✅"
+    },
+    {
+      "id": "CX-13",
+      "query": "工商银行、建设银行、农业银行、中国银行、招商银行今天的涨跌幅",
+      "desc": "5 banks, 1 metric",
+      "exp_chain": false,
+      "exp_count": 1,
+      "act_chain": false,
+      "act_count": 1,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "工商银行",
+              "建设银行",
+              "农业银行",
+              "中国银行",
+              "招商银行"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"工商银行\", \"建设银行\", \"农业银行\", \"中国银行\", \"招商银行\"],\n            \"var\": \"涨跌幅\",\n            \"condition\": [\"今天\"]\n        }\n    ],\n    \"chain\": false\n}",
+      "status": "✅"
+    },
+    {
+      "id": "CX-14",
+      "query": "宁德时代、阳光电源、隆基绿能、通威股份、TCL中环今天的换手率",
+      "desc": "5 solar stocks",
+      "exp_chain": false,
+      "exp_count": 1,
+      "act_chain": false,
+      "act_count": 5,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "阳光电源"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "隆基绿能"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_004",
+            "obj": [
+              "通威股份"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_005",
+            "obj": [
+              "TCL中环"
+            ],
+            "var": "换手率",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"宁德时代\"], \"var\": \"换手率\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"阳光电源\"], \"var\": \"换手率\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": [\"隆基绿能\"], \"var\": \"换手率\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_004\", \"obj\": [\"通威股份\"], \"var\": \"换手率\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_005\", \"obj\": [\"TCL中环\"], \"var\": \"换手",
+      "status": "⚠️ count/chain 不符"
+    },
+    {
+      "id": "CX-15",
+      "query": "中国平安、中国人寿、中国太保、新华保险、中国人保今天的涨跌幅",
+      "desc": "5 insurance",
+      "exp_chain": false,
+      "exp_count": 1,
+      "act_chain": false,
+      "act_count": 1,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "中国平安",
+              "中国人寿",
+              "中国太保",
+              "新华保险",
+              "中国人保"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"中国平安\", \"中国人寿\", \"中国太保\", \"新华保险\", \"中国人保\"],\n            \"var\": \"涨跌幅\",\n            \"condition\": [\"今天\"]\n        }\n    ],\n    \"chain\": false\n}",
+      "status": "✅"
+    },
+    {
+      "id": "CX-16",
+      "query": "宁德时代所属板块的龙头股以及比亚迪今天的涨跌幅",
+      "desc": "chain + parallel mixed",
+      "exp_chain": true,
+      "exp_count": 3,
+      "act_chain": true,
+      "act_count": 3,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代"
+            ],
+            "var": "板块",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "龙头股",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "比亚迪"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "raw_snippet": "根据您的查询，我们需要进行链式请求来解析出宁德时代所属的板块，并使用该板块信息进一步查询其龙头股和比亚迪今天的涨跌幅。\n\n### 分析步骤：\n1. **第一步**：先查出“宁德时代”所在的板块。\n2. **第二步**：用第一步的结果（即板块名称）去查找该板块的龙头股。\n3. **第三步**：直接查询比亚迪今天的涨跌幅。\n\n### 输出结构化结果：\n\n```json\n{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"宁德时代\"], \"var\": \"板块\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"res0\"], \"var\": \"龙头股\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": ",
+      "status": "✅"
+    },
+    {
+      "id": "CX-17",
+      "query": "查一下茅台所在行业的平均PE和五粮液的PE",
+      "desc": "chain + independent",
+      "exp_chain": true,
+      "exp_count": 3,
+      "act_chain": true,
+      "act_count": 3,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "茅台"
+            ],
+            "var": "行业",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "平均PE",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "五粮液"
+            ],
+            "var": "PE",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"茅台\"],\n            \"var\": \"行业\",\n            \"condition\": [\"今天\"]\n        },\n        {\n            \"req_id\": \"R_002\",\n            \"obj\": [\"res0\"],\n            \"var\": \"平均PE\",\n            \"condition\": [\"今天\"]\n        },\n        {\n            \"req_id\": \"R_003\",\n            \"obj\": [\"五粮液\"],\n            \"var\": \"PE\",\n          ",
+      "status": "✅"
+    },
+    {
+      "id": "CX-18",
+      "query": "沪深300、中证500、创业板指今天的涨跌幅和成交额",
+      "desc": "3 indexes * 2 metrics",
+      "exp_chain": false,
+      "exp_count": 6,
+      "act_chain": false,
+      "act_count": 6,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "沪深300"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "沪深300"
+            ],
+            "var": "成交额",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_003",
+            "obj": [
+              "中证500"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_004",
+            "obj": [
+              "中证500"
+            ],
+            "var": "成交额",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_005",
+            "obj": [
+              "创业板指"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_006",
+            "obj": [
+              "创业板指"
+            ],
+            "var": "成交额",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "```json\n{\n    \"requests\": [\n        {\"req_id\": \"R_001\", \"obj\": [\"沪深300\"], \"var\": \"涨跌幅\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_002\", \"obj\": [\"沪深300\"], \"var\": \"成交额\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_003\", \"obj\": [\"中证500\"], \"var\": \"涨跌幅\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_004\", \"obj\": [\"中证500\"], \"var\": \"成交额\", \"condition\": [\"今天\"]},\n        {\"req_id\": \"R_005\", \"obj\": [\"创业板指\"],",
+      "status": "✅"
+    },
+    {
+      "id": "CX-19",
+      "query": "宁德时代、比亚迪、长城汽车所属行业的板块涨跌幅",
+      "desc": "3 entities each chain",
+      "exp_chain": true,
+      "exp_count": 6,
+      "act_chain": true,
+      "act_count": 2,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "宁德时代",
+              "比亚迪",
+              "长城汽车"
+            ],
+            "var": "行业",
+            "condition": [
+              "今天"
+            ]
+          },
+          {
+            "req_id": "R_002",
+            "obj": [
+              "res0"
+            ],
+            "var": "板块涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": true
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"宁德时代\", \"比亚迪\", \"长城汽车\"],\n            \"var\": \"行业\",\n            \"condition\": [\"今天\"]\n        },\n        {\n            \"req_id\": \"R_002\",\n            \"obj\": [\"res0\"],\n            \"var\": \"板块涨跌幅\",\n            \"condition\": [\"今天\"]\n        }\n    ],\n    \"chain\": true\n}",
+      "status": "⚠️ count/chain 不符"
+    },
+    {
+      "id": "CX-20",
+      "query": "白酒板块、医药板块、新能源板块、银行板块、半导体板块今天的涨跌幅",
+      "desc": "5 sectors",
+      "exp_chain": false,
+      "exp_count": 1,
+      "act_chain": false,
+      "act_count": 1,
+      "output": {
+        "requests": [
+          {
+            "req_id": "R_001",
+            "obj": [
+              "白酒板块",
+              "医药板块",
+              "新能源板块",
+              "银行板块",
+              "半导体板块"
+            ],
+            "var": "涨跌幅",
+            "condition": [
+              "今天"
+            ]
+          }
+        ],
+        "chain": false
+      },
+      "raw_snippet": "{\n    \"requests\": [\n        {\n            \"req_id\": \"R_001\",\n            \"obj\": [\"白酒板块\", \"医药板块\", \"新能源板块\", \"银行板块\", \"半导体板块\"],\n            \"var\": \"涨跌幅\",\n            \"condition\": [\"今天\"]\n        }\n    ],\n    \"chain\": false\n}",
+      "status": "✅"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# DS_TUSHARE_INDEX_MEMBER_ALL
+index_member_all

@@ -1,0 +1,62 @@
+{
+  "cases": [
+    {
+      "id": "CG-01",
+      "desc": "Tushare日线-涨跌幅",
+      "success": true,
+      "result": [
+        2.4697
+      ],
+      "error": "",
+      "time": 10.2
+    },
+    {
+      "id": "CG-02",
+      "desc": "Tushare换手率",
+      "success": true,
+      "result": [
+        1.0874
+      ],
+      "error": "",
+      "time": 4.6
+    },
+    {
+      "id": "CG-03",
+      "desc": "Akshare板块涨跌幅",
+      "success": true,
+      "result": [],
+      "error": "",
+      "time": 9.3
+    },
+    {
+      "id": "CG-04",
+      "desc": "Tencent实时行情-涨跌幅",
+      "success": true,
+      "result": [
+        -0.77
+      ],
+      "error": "",
+      "time": 4.2
+    },
+    {
+      "id": "CG-05",
+      "desc": "Levistock市场热度",
+      "success": true,
+      "result": [
+        "58"
+      ],
+      "error": "",
+      "time": 2.1
+    },
+    {
+      "id": "CG-06",
+      "desc": "Sina HTML利润表-营业收入",
+      "success": true,
+      "result": [
+        12913104.1
+      ],
+      "error": "",
+      "time": 3.8
+    }
+  ]
+}

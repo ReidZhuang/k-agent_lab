@@ -1,0 +1,241 @@
+{
+  "model": "qwen2.5:7b",
+  "cases": [
+    {
+      "id": "RR-01",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_LHB_PCT_CHG",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "stop",
+        "rounds": 1,
+        "final_answer": "根据提供的路由结果，匹配到的字段如下：\n\n1. **FIELD_LHB_PCT_CHG**\n   - alias: simple\n   - data_type: float\n   - unit: %\n   - granularity: 日频,个股级别\n   - refresh_time: daily_20:00\n   - datasource: TuShare 指数日线\n   - protocol: tushare\n\n该字段的 `alias` 为 simple，虽然不是 qualified（精确匹配），但它是唯一且与实体类型 `stock_code` 匹配的字段。因此，我们选择这个字段作为最终结果。\n\n**最终答案：**\n\n```json\n{\n    \"field\": \"FIELD_LHB_PCT_CHG\",\n    \"entity_type\": \"stock_code\",\n    \"entity_value\": \"宁德时代\",\n    \"time_start\": \"20260715\",\n    \"time_end\": \"20260715\"\n}\n```"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_QUOTE*，实际 FIELD_LHB_PCT_CHG",
+        "数据源不符：期望包含 DS_TUSHARE，实际 "
+      ]
+    },
+    {
+      "id": "RR-02",
+      "request": {
+        "obj": [
+          "贵州茅台"
+        ],
+        "var": "成交量",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_QUOTE_VOL",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "stop",
+        "rounds": 1,
+        "final_answer": "根据路由结果，匹配到的字段如下：\n\n1. **FIELD_QUOTE_VOL**\n   - alias: simple\n   - data_type: float\n   - unit: 手\n   - granularity: 实时,个股级别\n   - refresh_time: realtime\n\n2. **FIELD_KLINE_VOL**\n   - alias: simple\n   - data_type: float\n   - unit: 手\n   - granularity: 日频,个股级别\n   - refresh_time: daily_17:00\n\n由于 `贵州茅台` 是个股，我们选择 `granularity` 为 \"日频,个股级别\" 的字段。因此，最终匹配的字段是 **FIELD_KLINE_VOL**。\n\n返回结果如下：\n\n```json\n{\n    \"field\": \"FIELD_KLINE_VOL\",\n    \"alias\": \"simple\",\n    \"data_type\": \"float\",\n    \"unit\": \"手\",\n    \"granularity\": \"日频,个股级别\"\n}\n```\n\n最终答案为：`FIELD_KLINE_VOL`。"
+      },
+      "errors": [
+        "数据源不符：期望包含 DS_TUSHARE，实际 "
+      ]
+    },
+    {
+      "id": "RR-03",
+      "request": {
+        "obj": [
+          "上证指数"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_PCT_CHG",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据路由结果，匹配到的字段为 `FIELD_INDEX_PCT_CHG`。该字段的详细信息如下：\n\n- **alias**: simple\n- **data_type**: float\n- **unit**: %\n- **granularity**: 日频,指数级别\n- **refresh_time**: daily_17:00\n\n因此，最终结果是：\n\n```json\n{\n  \"field\": \"FIELD_INDEX_PCT_CHG\",\n  \"entity_type\": \"index_code\",\n  \"entity_value\": \"上证指数\",\n  \"time_start\": \"20260715\",\n  \"time_end\": \"20260715\"\n}\n```\n\n这个字段满足我们的需求，其 granularity 与 entity_type 匹配。因此，我们可以使用 `FIELD_INDEX_PCT_CHG` 来获取上证指数今天的涨跌幅数据。\n\n[FINAL_ANSWER]"
+      },
+      "errors": [
+        "数据源不符：期望包含 DS_TUSHARE，实际 "
+      ]
+    },
+    {
+      "id": "RR-04",
+      "request": {
+        "obj": [
+          "电池板块"
+        ],
+        "var": "板块涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_SECTOR_PCT_CHG",
+        "datasource_id": "",
+        "protocol": "akshare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "[FINAL_ANSWER]\n\n字段 `FIELD_SECTOR_PCT_CHG` 为 \"电池板块\" 的 \"今天\" 板块涨跌幅，数据源为 akshare 板块实时行情。"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-05",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "最高价",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_QUOTE_HIGH",
+        "datasource_id": "",
+        "protocol": "tencent",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据路由结果，匹配到的字段如下：\n\n1. **FIELD_QUOTE_HIGH**\n   - alias: simple\n   - data_type: float\n   - unit: 元\n   - granularity: 实时,个股级别\n   - refresh_time: realtime\n\n2. **FIELD_KLINE_HIGH**\n   - alias: simple\n   - data_type: float\n   - unit: 元\n   - granularity: 日频,个股级别\n   - refresh_time: daily_17:00\n\n由于 `entity_type` 为 `stock_code`，我们选择 `granularity` 为 \"实时,个股级别\" 的字段 `FIELD_QUOTE_HIGH`。\n\n因此，最终结果是：\n\n```json\n{\n    \"field\": \"FIELD_QUOTE_HIGH\",\n    \"alias\": \"simple\",\n    \"data_type\": \"float\",\n    \"unit\": \"元\",\n    \"granularity\": \"实时,个股级别\",\n    \"refresh_time\": \"realtime\",\n    \"datasource\": \"腾讯财经实时行情\",\n    \"protocol\": \"tencent\"\n}\n```\n\n[FINAL_ANSWER]"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-06",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "换手率",
+        "condition": [
+          "最近5天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_LHB_TURNOVER",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "stop",
+        "rounds": 1,
+        "final_answer": "根据提供的路由结果，我们有多个字段匹配 \"换手率\"。我们需要选择一个最符合需求的字段。\n\n- **FIELD_LHB_TURNOVER**：\n  - alias: `simple`\n  - granularity: `日频,个股级别`\n  - refresh_time: `daily_20:00`\n\n这个字段的 `granularity` 是 `个股级别`，与我们的实体类型 `宁德时代 (stock_code)` 匹配。\n\n因此，最终选择 `FIELD_LHB_TURNOVER` 字段作为结果。其 alias 为 `simple`，虽然不是 `qualified`，但已经是最精确匹配的字段了。\n\n**最终答案：**\n\n```json\n{\n    \"field\": \"FIELD_LHB_TURNOVER\",\n    \"alias\": \"简单匹配换手率\",\n    \"data_type\": \"float\",\n    \"unit\": \"%\",\n    \"granularity\": \"日频,个股级别\",\n    \"refresh_time\": \"daily_20:00\"\n}\n```\n\n这个字段代表宁德时代的最近5天的换手率数据。"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_QUOTE*，实际 FIELD_LHB_TURNOVER"
+      ]
+    },
+    {
+      "id": "RR-07",
+      "request": {
+        "obj": [
+          "中国平安"
+        ],
+        "var": "市盈率",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_INDEX_PE",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据路由结果，匹配到以下三个字段：\n\n1. **FIELD_INDEX_PE**\n   - alias: simple\n   - data_type: float\n   - unit: 倍\n   - granularity: 日频,指数级别\n   - refresh_time: daily_17:00\n\n2. **FIELD_PE_TTM**\n   - alias: simple\n   - data_type: float\n   - unit: 倍\n   - granularity: 日频,个股级别\n   - refresh_time: daily_17:00\n\n3. **FIELD_VAL_PE_TTM**\n   - alias: simple\n   - data_type: float\n   - unit: 倍\n   - granularity: 日频,个股级别\n   - refresh_time: daily_17:00\n\n由于 entity_type 为 `stock_code`，我们选择 granularity 为 \"个股级别\" 的字段。在这些字段中，`FIELD_PE_TTM` 和 `FIELD_VAL_PE_TTM` 都符合要求。\n\n最终选择 **FIELD_PE_TTM**（市盈率TTM），因为它更精确地匹配了“今天”的时间范围和“个股级别”。\n\n因此，最终结果为：\n\n```json\n{\n  \"field\": \"FIELD_PE_TTM\",\n  \"entity_type\": \"stock_code\",\n  \"entity_value\": \"中国平安\",\n  \"time_start\": \"20260715\",\n  \"time_end\": \"20260715\"\n}\n```\n\n[FINAL_ANSWER]"
+      },
+      "errors": [
+        "字段前缀不符：期望 FIELD_FIN*，实际 FIELD_INDEX_PE"
+      ]
+    },
+    {
+      "id": "RR-08",
+      "request": {
+        "obj": [
+          "宁德时代"
+        ],
+        "var": "板块",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": true,
+        "field_id": "FIELD_SECTOR_NAME",
+        "datasource_id": "",
+        "protocol": "html_scrape",
+        "stop_reason": "final_answer",
+        "rounds": 1,
+        "final_answer": "根据路由结果，匹配到的字段如下：\n\n1. **FIELD_SECTOR_NAME**\n   - alias: fuzzy\n   - data_type: string\n   - unit: —\n   - granularity: 日频,板块级别\n   - refresh_time: intraday\n   - datasource: 新浪现金流量表\n\n该字段的 `alias` 为模糊匹配，但其 `granularity` 与实体类型 `stock_code` 匹配。因此，我们选择这个字段。\n\n最终结果是：宁德时代的**板块**信息在今天的数据为 **FIELD_SECTOR_NAME**。\n\n[FINAL_ANSWER]"
+      },
+      "errors": []
+    },
+    {
+      "id": "RR-09",
+      "request": {
+        "obj": [
+          "宁德时代",
+          "比亚迪"
+        ],
+        "var": "涨跌幅",
+        "condition": [
+          "今天"
+        ]
+      },
+      "result": {
+        "success": false,
+        "field_id": "",
+        "datasource_id": "",
+        "protocol": "tushare",
+        "stop_reason": "stop",
+        "rounds": 1,
+        "final_answer": "portun\n{\"name\": \"route_query\", \"arguments\": {\"entity_type\":\"stock_code\",\"entity_value\":\"比亚迪\",\"intent_type\":\"fact\",\"keywords\":[\"涨跌幅\"],\"time_end\":\"20260715\",\"time_start\":\"20260715\"}}\n</tool_call>"
+      },
+      "errors": [
+        "路由未收敛或未找到字段"
+      ]
+    },
+    {
+      "id": "RR-10",
+      "request": {
+        "obj": [
+          "北向资金"
+        ],
+        "var": "资金流向",
+        "condition": [
+          "最近一个月"
+        ]
+      },
+      "result": {
+        "success": false,
+        "field_id": "",
+        "datasource_id": "",
+        "protocol": "html_scrape",
+        "stop_reason": "stop",
+        "rounds": 1,
+        "final_answer": "既然当前关键词 \"资金流向\" 没有找到精确匹配的字段，我们可以尝试使用更具体的词汇来重新进行路由查询。\n\n### 选择新的关键词\n\n考虑到北向资金的资金流向可能包括流入和流出两个方向，我们尝试使用 \"净流入\" 或 \"净流出\" 这样的具体词汇来进行查询。这里我们选择 \"净流入\" 作为新的关键词。\n\n### 调用 route_query\n\n```python\nroute_query(\n    keywords=[\"净流入\"],\n    intent_type=\"fact\",\n    entity_type=\"stock_code\",\n    entity_value=\"北向资金\",\n    time_start=\"20260616\",\n    time_end=\"20260715\",\n    strict=True\n)\n```\n\n执行此查询以获取更精确的匹配字段。\n"
+      },
+      "errors": [
+        "路由未收敛或未找到字段"
+      ]
+    }
+  ]
+}

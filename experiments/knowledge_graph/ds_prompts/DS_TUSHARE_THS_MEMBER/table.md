@@ -1,0 +1,2 @@
+# DS_TUSHARE_THS_MEMBER
+ths_member

@@ -1,0 +1,2 @@
+# DS_TUSHARE_INDEX_BASIC
+index_basic

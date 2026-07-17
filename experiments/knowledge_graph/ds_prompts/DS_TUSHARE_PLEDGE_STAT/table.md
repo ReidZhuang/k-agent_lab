@@ -1,0 +1,2 @@
+# DS_TUSHARE_PLEDGE_STAT
+pledge_stat

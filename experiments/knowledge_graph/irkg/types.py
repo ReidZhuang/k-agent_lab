@@ -25,6 +25,7 @@ class FieldInfo:
     refresh_time: str = ""       # 数据刷新时间，如 "realtime"、"daily_17:00"
     similarity: float = 1.0
     match_type: str = "exact"
+    authority_level: str = ""        # 权威评级 S/A/B（用于同概念多数据源时优选）
 
 @dataclass
 class DataSourceInfo:

@@ -1,0 +1,2 @@
+# DS_TUSHARE_MARGIN_DETAIL
+margin_detail

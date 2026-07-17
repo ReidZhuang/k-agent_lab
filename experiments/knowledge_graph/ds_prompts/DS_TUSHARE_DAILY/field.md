@@ -1,13 +1,14 @@
-| 字段名 | 类型 | 说明 | 数据示例 |
-|--------|:----:|:-----|:--------:|
-| ts_code | str | 股票代码 | 000001.SZ |
-| trade_date | str | 交易日期 | 20260714 |
-| open | float | 开盘价 | 359.00 |
-| high | float | 最高价 | 364.63 |
-| low | float | 最低价 | 355.01 |
-| close | float | 收盘价 | 358.12 |
-| pre_close | float | 前收盘 | 348.76 |
-| change | float | 涨跌额 | 9.36 |
-| pct_chg | float | 涨跌幅% | 2.68 |
-| vol | float | 成交量(手) | 462907 |
-| amount | float | 成交额(千元) | 16621354.08 |
+# DS_TUSHARE_DAILY 字段映射
+
+| 字段名 | 类型 | 说明 |
+|--------|:----:|:-----|
+| open | float | 当日开盘价 |
+| vol | float | 成交量（手） |
+| trade_date | date | K线交易日期 |
+| close | float | 当日收盘价 |
+| pct_chg | float | 涨跌幅百分比 |
+| pre_close | float | 前收盘价（除权价） |
+| change | float | 涨跌金额 |
+| amount | float | 成交额（千元） |
+| low | float | 当日最低价 |
+| high | float | 当日最高价 |

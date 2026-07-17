@@ -1,8 +1,9 @@
-# DS_TUSHARE_THS_INDEX 可用字段
+# DS_TUSHARE_THS_INDEX 字段映射
 
-| 字段名 | 类型 | 说明 | 数据示例 |
-|--------|:----:|:-----|:--------:|
-| ts_code | — | 板块代码 | — |
-| name | — | 板块名称 | — |
-| count | — | 成分股数量 | — |
-| content | — | 板块简介 | — |
+| 字段名 | 类型 | 说明 |
+|--------|:----:|:-----|
+| type | float | type |
+| list_date | float | list_date |
+| exchange | float | exchange |
+| count | string | 同花顺概念成分数（数据粒度：个股级别） |
+| name | string | 同花顺概念名称（数据粒度：个股级别） |
