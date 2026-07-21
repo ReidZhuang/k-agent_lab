@@ -52,7 +52,7 @@
 | **id** | 字段唯一代号。命名前缀暗示类型：`QUOTE`=行情, `INDEX`=指数, `SECTOR`=板块, `FIN`=财务, `KLINE`=K线, `LHB`=龙虎榜, `TURNOVER`=换手率, `PE`=市盈率 | 快速缩小范围 |
 | **name** | 中文名 | 和 var 语义对照 |
 | **match** | 匹配级别：`qualified`=精确匹配, `simple`=基础匹配, `fuzzy`=模糊匹配 | qualified 优先 |
-| **time_gran** | 时间粒度：`实时`=tick级, `日频`=每天, `季频`=每季度 | 和 condition 时间要求对照 |
+| **time_gran** | 时间粒度：`实时`=tick级（当日数据可查）, `日频`=日终更新（当日数据不可查，最早只能查昨天）, `季频`=每季度 | 和 condition 时间要求对照 |
 | **scope** | 范围粒度：`个股级别`、`指数级别`、`板块级别`、`市场级别` | **最重要的筛选维度** |
 | **ds_name** | 数据源名称 | 辅助判断 |
 | **protocol** | 取数协议：tushare/akshare/tencent/sina | 辅助判断 |

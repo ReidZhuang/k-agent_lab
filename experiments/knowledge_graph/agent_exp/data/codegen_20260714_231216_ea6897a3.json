@@ -1,0 +1,10 @@
+{
+  "field_id": "FIELD_BOND_CURVE_10Y",
+  "entity_value": "",
+  "model": "qwen2.5:7b",
+  "protocol": "akshare",
+  "stop_reason": "exec_success",
+  "error_count": 2,
+  "has_result": true,
+  "result": "取数成功: ['中债国债收益率曲线', '2026-07-14', 1.09, 1.1197, 1.4477, 1.7402, 2.2555]"
+}

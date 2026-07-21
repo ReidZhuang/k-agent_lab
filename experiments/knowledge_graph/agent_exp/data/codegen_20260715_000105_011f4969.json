@@ -1,0 +1,10 @@
+{
+  "field_id": "FIELD_CF_OPER_FLOW",
+  "entity_value": "300750.SZ",
+  "model": "qwen2.5:7b",
+  "protocol": "sina",
+  "stop_reason": "exec_success",
+  "error_count": 0,
+  "has_result": true,
+  "result": "取数成功:\n"
+}

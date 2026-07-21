@@ -1,0 +1,10 @@
+{
+  "field_id": "FIELD_SECTOR_PCT_CHG",
+  "entity_value": "300750.SZ",
+  "model": "qwen2.5:7b",
+  "protocol": "akshare",
+  "stop_reason": "exec_success",
+  "error_count": 1,
+  "has_result": true,
+  "result": "取数成功:\n发生错误: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+}

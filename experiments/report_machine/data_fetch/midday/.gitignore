@@ -1,0 +1,5 @@
+# API Token / 密钥 — 不提交到版本控制
+config/*.json
+
+# 本地缓存
+.cache/

@@ -1,0 +1,10 @@
+{
+  "field_id": "FIELD_TURNOVER_RATE",
+  "entity_value": "300750.SZ",
+  "model": "qwen2.5:7b",
+  "protocol": "tencent",
+  "stop_reason": "exec_success",
+  "error_count": 0,
+  "has_result": true,
+  "result": "取数成功:\n20260714154809.0"
+}

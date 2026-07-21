@@ -1,0 +1,10 @@
+{
+  "field_id": "FIELD_MARKET_HEAT",
+  "entity_value": "",
+  "model": "qwen2.5:7b",
+  "protocol": "levistock",
+  "stop_reason": "exec_success",
+  "error_count": 0,
+  "has_result": true,
+  "result": "取数成功: ['70', '79.00%', '66%', '2.7万亿', {'一板': {'count': '75', 'continuous_rate': '26%'}, '二板': {'count': '5', 'continuous_rate': '17%'}, '三板': {'count': '1', 'continuous_rate': '0%'}, '高度板': {'count': '0', 'continuous_rate': '-'}}]"
+}

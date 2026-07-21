@@ -1,0 +1,10 @@
+{
+  "field_id": "FIELD_DIVIDEND_YIELD",
+  "entity_value": "000001.SZ",
+  "model": "qwen2.5:7b",
+  "protocol": "tushare",
+  "stop_reason": "exec_success",
+  "error_count": 0,
+  "has_result": true,
+  "result": "取数成功: [5.5754]"
+}

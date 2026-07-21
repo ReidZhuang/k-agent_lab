@@ -1,0 +1,10 @@
+{
+  "field_id": "FIELD_ANNOUNCE_TITLE",
+  "entity_value": "",
+  "model": "qwen2.5:7b",
+  "protocol": "akshare",
+  "stop_reason": "exec_success",
+  "error_count": 2,
+  "has_result": true,
+  "result": "取数成功:\n"
+}

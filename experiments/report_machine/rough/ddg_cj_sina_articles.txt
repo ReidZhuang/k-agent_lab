@@ -1,0 +1,107 @@
+[
+  {
+    "title": "宁德时代“秀肌肉”,新一代神行超充 麒麟等多款电池发布_新闻-新浪汽车",
+    "url": "https://cj.sina.cn/articles/view/7857201856/1d45362c001904mmqe?froms=ggmp",
+    "snippet": "April 22, 2026 - 编辑导语：面对动力电池领域的竞争加剧，宁德时代在其超级科技日上，发布了新一代的神行超充、麒麟、骁遥等电池，新一代电池在续航、补能速度等方面实现全面提升。"
+  },
+  {
+    "title": "宁德时代日赚2亿，造车不如造电池？-新浪汽车",
+    "url": "https://cj.sina.cn/articles/view/7857201856/1d45362c001904e2zw?froms=ggmp",
+    "snippet": "April 15, 2026 - 乘着行业东风，宁德时代动力电池销量实现541GWh，同比增长41.85%，全球市占率也突破历史新高。据SNE Research统计，2025年宁德时代全球动力电池使用量市占率提升1.2个百分点至39.2%，成功实现2017—2025年连续9年市占率全球第一。在“全域增量”战略下，其产品布局也从乘用车逐步延伸至商用车、电动船舶、电动航空等多个领域，进一步打开了市场空间。"
+  },
+  {
+    "title": "宁德时代：4月15日召开业绩说明会，投资者参与",
+    "url": "https://cj.sina.cn/articles/view/1850649324/6e4eaaec020028o5o?froms=ggmp",
+    "snippet": "April 15, 2026 - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "日赚2.3亿！宁德时代资产首破万亿大关",
+    "url": "https://cj.sina.cn/articles/view/6248544856/174713a5802002zit6?from=finance",
+    "snippet": "April 17, 2026 - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "新浪A股热点小时报丨2026年04月21日17时_今日实时A股热点速递|汇添富上证综合指数C|航空航天ETF|创新药相关基金|电力相关基金|煤炭相关基金_新浪新闻",
+    "url": "https://cj.sina.cn/articles/view/7857201856/1d45362c001904kfa8?froms=ggmp",
+    "snippet": "April 21, 2026 - 宁德时代第四大股东计划转让股份。具体来看，宁德时代4月17日发布公告称，公司股东宁波联合创新新能源投资管理合伙企业(有限合伙)(下称“宁波联合创新”)拟通过询价转让方式出让5800万股，占公司总股本的1.27%，转让..."
+  },
+  {
+    "title": "财经头条_为您发掘海量信息中的投资价值_新浪财...",
+    "url": "https://t.cj.sina.cn/articles/view/3604290361/d6d51b3902701z0hu",
+    "snippet": "4 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "张月凭借《乘风2026》的表现，其后续发展前景如何？",
+    "url": "https://cj.sina.cn/articles/view/7879776328/1d5abd84806801ouj0?froms=ggmp",
+    "snippet": "1 month ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "财经头条_新浪财经_金融信息服务商",
+    "url": "https://cj.sina.cn/articles/view/7880068201/1d5b04c69068022ng8",
+    "snippet": "1 month ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "国内专注余热回收与空压机节能的头部服务商推荐",
+    "url": "https://cj.sina.cn/articles/view/7623833240/1c66a769802001sqy0?from=finance&oid=7ball【01.CYOU】.gdbi&vt=4",
+    "snippet": "3 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "DRAM基金大调仓：三星电子跃居第一重仓，A股兆易创新 ...",
+    "url": "https://cj.sina.cn/articles/view/5115326071/130e5ae7702002wxws",
+    "snippet": "3 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "金安国纪(002636.SZ)：未与英伟达、华为有过接触",
+    "url": "https://cj.sina.cn/articles/view/5115326071/130e5ae7702002wl1o",
+    "snippet": "June 16, 2026 - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "疯狂囤金160亿，老铺黄金的豪赌，遭遇挑战",
+    "url": "https://cj.sina.cn/articles/view/6241116541/173ffe17d00101d19s",
+    "snippet": "3 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "一个季度赚走970亿美元，存储芯片凭什么比黄金还暴利？",
+    "url": "https://cj.sina.cn/articles/view/3912664953/e936877900103l6m2",
+    "snippet": "May 27, 2026 - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "哪里可以观看本届白玉兰奖颁奖典礼直播",
+    "url": "https://cj.sina.cn/articles/view/7879776328/1d5abd84806801qx3s?froms=ggmp&vt=4",
+    "snippet": "3 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "达实智能股价2日涨超20% 公司澄清AIoT",
+    "url": "https://cj.sina.cn/articles/view/7935425109/1d8fcfa5502001fl2i",
+    "snippet": "May 20, 2026 - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "曾沛慈和黄灿灿私下里是如何维持这份跨越十多年偶像与 ...",
+    "url": "https://cj.sina.cn/articles/view/7879776328/1d5abd84806801px8s?froms=ggmp",
+    "snippet": "3 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "陈瑶同款的7or9女鞋具体有哪些舒适设计？",
+    "url": "https://cj.sina.cn/articles/view/7879776328/1d5abd84806801opzc?froms=ggmp",
+    "snippet": "1 month ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "货基收益集体下探——2026年小额闲置资金流向观察",
+    "url": "https://cj.sina.cn/articles/view/7860326573/1d48310ad0010339i2",
+    "snippet": "4 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "世界杯看台夏奇拉被亲，乌龙后看呆网友",
+    "url": "https://cj.sina.cn/articles/view/7879776328/1d5abd84806801qmw4?froms=ggmp",
+    "snippet": "3 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "《披荆斩棘2026》（披哥第六季）的官方最终名单什么时候能 ...",
+    "url": "https://cj.sina.cn/articles/view/7879776328/1d5abd84806801pko0?froms=ggmp",
+    "snippet": "4 weeks ago - 财经头条 · 注册 · 登录 · 新浪财经APP · 宏观经济 · 港股 · 美股 · 基金 · 理财 · 黄金"
+  },
+  {
+    "title": "",
+    "url": "",
+    "snippet": ""
+  }
+]

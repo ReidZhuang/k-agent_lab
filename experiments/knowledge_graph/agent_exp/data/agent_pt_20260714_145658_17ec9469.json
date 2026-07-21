@@ -1,0 +1,11 @@
+{
+  "query": "宁德时代今天上午的涨跌幅如何？",
+  "model": "deepseek-r1:8b",
+  "run_id": "17ec9469",
+  "timestamp": "20260714_145658",
+  "total_route_calls": 0,
+  "stop_reason": "final_answer_tag",
+  "has_final_answer": true,
+  "final_answer": "\n```json\n{\n  \"field_id\": \"FIELD_QUOTE_PCT_CHG\",\n  \"entity_type\": \"stock_code\",\n  \"entity_value\": \"300750.SZ\"\n}\n```\n\n**字段属性：**\n- alias: qualified → ['个股涨跌幅', '实时涨跌幅']\n- granularity: {实时, 个股级别} \n- refresh_time: realtime\n\n[FINAL_ANSWER] 已确认唯一匹配的 DataField ID `FIELD_QUOTE_PCT_CHG`，符合查询意图和时间要求。",
+  "rounds": []
+}
