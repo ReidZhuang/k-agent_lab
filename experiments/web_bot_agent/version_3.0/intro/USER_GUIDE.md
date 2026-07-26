@@ -37,7 +37,7 @@ conda run -n stock_agent uvicorn api:app --host 0.0.0.0 --port 8300
 ```bash
 curl http://localhost:8300/
 # → {"service":"bot_search API","version":"3.0.0",
-#     "modes":["preview","full","list"],"engines":["ddg","sinafin","baidufin"]}
+#     "modes":["preview","full","list"],"engines":["ddg","sinafin","baidufin","thsfin","dcfin"]}
 ```
 
 ---
@@ -46,20 +46,20 @@ curl http://localhost:8300/
 
 ### `POST /search` — 完整参数表
 
-| 参数 | 类型 | 默认 | ddg | sinafin | baidufin | 说明 |
-|------|------|------|-----|---------|----------|------|
-| `query` | str | **必填** | 搜索关键词 | 股票代码或名称 | **股票代码** | DDG: `"固态电池"`；Sinafin: `"宁德时代"`；Baidufin: `"300436"` |
-| `engine` | str | `"ddg"` | ✅ 默认值 | ✅ 需显式设为 `"sinafin"` | ✅ 需显式设为 `"baidufin"` | 搜索引擎选择 |
-| `mode` | str | `"full"` | ✅ | ✅ | ✅ | 执行模式：`"preview"` / `"full"` / `"list"` |
-| `llm_mode` | str | `"segments"` | preview/full 有效 | preview/full 有效 | ❌ 强制 none | LLM 处理模式 |
-| `max_results` | int | 5 | 返回条数 | 翻页页数 | 最大条数 | |
-| `site` | str | `null` | ✅ 站内限定 | ❌ | ❌ | |
-| `timelimit` | str | `null` | ✅ d/w/m/y | ❌ | ❌ | |
-| `filter_days` | int | `null` | ✅ 提取正文后过滤 | ❌ | ❌ | |
-| `filter_title` | str | `null` | ✅ | ✅ | ✅ | |
-| `start_date` | str | `null` | ❌ | ✅ 服务端过滤 | ✅ 服务端过滤 | |
-| `end_date` | str | `null` | ❌ | ✅ 服务端过滤 | ✅ 服务端过滤 | |
-| `keyword` | str | `""` | ✅ | ✅ | ❌ | |
+| 参数 | 类型 | 默认 | ddg | sinafin | baidufin | thsfin | dcfin | 说明 |
+|------|------|------|-----|---------|----------|--------|-------|
+| `query` | str | **必填** | 搜索关键词 | 股票代码或名称 | **股票代码** | **股票代码** | **股票代码** | DDG: `"固态电池"`；Sinafin: `"宁德时代"`；Baidufin/thsfin: `"300436"` |
+| `engine` | str | `"ddg"` | ✅ 默认值 | ✅ 需显式设为 `"sinafin"` | ✅ 需显式设为 `"baidufin"` | ✅ 需显式设为 `"thsfin"` | ✅ 需显式设为 `"dcfin"` | 搜索引擎选择 |
+| `mode` | str | `"full"` | ✅ | ✅ | ✅ | ✅ | 执行模式：`"preview"` / `"full"` / `"list"` |
+| `llm_mode` | str | `"segments"` | preview/full 有效 | preview/full 有效 | ❌ 强制 none | ❌ 强制 none | LLM 处理模式 |
+| `max_results` | int | 5 | 返回条数 | 翻页页数 | 最大条数 | 最大条数 | |
+| `site` | str | `null` | ✅ 站内限定 | ❌ | ❌ | ❌ | |
+| `timelimit` | str | `null` | ✅ d/w/m/y | ❌ | ❌ | ❌ | |
+| `filter_days` | int | `null` | ✅ 提取正文后过滤（上下界包夹，未来日期剔除，含时间精确到分钟） | ❌ | ❌ | ❌ | |
+| `filter_title` | str | `null` | ✅ | ✅ | ✅ | ✅ | |
+| `start_date` | str | `null` | ❌ | ✅ 服务端过滤 | ✅ 服务端过滤 | ✅ 搜索引擎层过滤 | |
+| `end_date` | str | `null` | ❌ | ✅ 服务端过滤 | ✅ 服务端过滤 | ✅ 搜索引擎层过滤 | |
+| `keyword` | str | `""` | ✅ | ✅ | ❌ | ❌ | |
 
 ### `response.empty` 字段
 
@@ -183,7 +183,7 @@ curl -X POST http://localhost:8300/search \
 
 ---
 
-## 两种搜索引擎（engine）
+## 搜索引擎（engine）
 
 ### engine=ddg（默认）
 
@@ -195,10 +195,14 @@ curl -X POST http://localhost:8300/search \
 ```
 DDG 搜索 → fetch HTML → trafilatura 提取正文
         → 分层日期提取（JSON-LD / meta / URL / 正文前缀）
-        → filter_days 时间过滤 → filter_title 标题过滤
+        → filter_days 时间过滤（上下界包夹，未来日期自动剔除，含时间精确到分钟）
+        → filter_title 标题过滤
         → 返回预览：{title, date, snippet, word_count, source}
-        → 正文已就绪，/article 立即可取
+        → 正常 HTML 正文已就绪，/article 立即可取
+        → PDF 公告页：后台异步提取（15s 超时），/article 返回 processing 待就绪
 ```
+
+**PDF 公告处理**：Phase 1 跳过 PDF 下载（快返回列表），后台线程异步提取。调用 `/article` 时若 PDF 未加载完返回 `processing`（不计入调用次数），加载完返回 `ready`。15 秒超时未提取成功则返回原始占位正文。
 
 **参数差异**：
 - `timelimit` — DDG 搜索端的时间过滤（d/w/m/y）
@@ -227,7 +231,7 @@ sinafin API → 返回文章列表（含精确发布时间）
 - **提前停翻页**：翻页时发现最新文章日期 < `start_date` 立即停止
 - **服务端过滤**：`start_date` / `end_date` 在 sinafin 服务端生效
 
-### engine=baidufin（v3.0 新增）
+### engine=baidufin
 
 通过百度股市通获取个股资讯（Playwright 浏览器）。
 
@@ -266,6 +270,40 @@ playwright install chromium
 - **情绪分类**：每篇文章带利好/中性/利空标签
 - **自动提取**：返回后立即后台提取全部正文，无需手动 /extract
 - **双重兜底**：httpx 失败自动降级到 Playwright 渲染
+
+### engine=thsfin（v3.0 新增）
+
+通过同花顺 F10 页面获取个股"近期重要事件"（Playwright 浏览器）。
+
+**工作流**（以 mode=list 为例）：
+```
+同花顺 F10 → Playwright 浏览器渲染 → 提取事件列表
+           → 返回列表（含日期、事件类型、详情、URL）
+           → 后台自动提取有 URL 的文章正文：
+               第1步: httpx + trafilatura 并行
+               第2步: 失败的 Playwright 兜底渲染
+               第3步: 空白治理 + 截断
+           → 正文就绪后 status=done
+```
+
+**返回的预览字段**：
+
+| 字段 | 说明 | 示例 |
+|------|------|------|
+| `id` | 事件 ID | `"a_01"` |
+| `date` | 事件日期 | `"2026-07-20"` |
+| `title` | 事件类型 | `"发布公告"` |
+| `snippet` | 事件详情 | `"菲利华：2026年半年度业绩预告"` |
+| `url` | 原文链接 | `"http://news.10jqka.com.cn/..."` |
+
+**特性**：
+- **精确日期**：同花顺页面直接展示的事件日期
+- **URL 自动过滤**：无外部链接的事件（如高管增减持）正文返回空
+- **自动提取**：返回后立即后台提取有 URL 的文章正文
+- **双重兜底**：httpx 失败自动降级到 Playwright 渲染
+- **日期过滤**：搜索引擎层支持 start_date/end_date 上下界包夹
+
+---
 - **空白治理**：模板页面自动检测+清洗大段空白
 
 ---
@@ -275,7 +313,7 @@ playwright install chromium
 | 端点 | 方法 | 说明 |
 |------|------|------|
 | `/search` | POST | 发起搜索（所有 mode/engine） |
-| `/extract` | POST | 提交需要提取正文的文章 ID（仅 list + sinafin） |
+| `/extract` | POST | 提交需要提取正文的文章 ID（仅 list + sinafin；baidufin/thsfin/ddg/dcfin 自动提取无需调用） |
 | `/article` | POST | 获取单篇文章正文（仅 list 模式） |
 | `/poll/{session_id}` | GET | 轮询搜索进度 |
 | `/status/{session_id}` | GET | 查询会话状态（精简版） |
@@ -295,13 +333,34 @@ playwright install chromium
 
 ### POST /article
 
-获取单篇文章正文（仅 list 模式）。
+获取单篇文章正文（仅 list 模式）。DDG 引擎下 PDF 公告页在后台异步提取，未完成时返回 `processing`。
+
+**请求参数：**
+
+| 参数 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `session_id` | str | - | session_id |
+| `article_id` | str | - | 文章 ID |
+| `close` | bool | false | 设为 `true` 时，本次返回后关闭 session |
+
+**响应 status 值：**
 
 | status | 含义 |
 |--------|------|
-| `"processing"` | 正文尚未提取完成 |
+| `"processing"` | 正文尚未提取完成（PDF 页后台提取中，不计入调用次数） |
 | `"ready"` | 正文已就绪 |
-| `"error"` | 提取失败（httpx + Playwright 均无法提取） |
+| `"error"` | 提取失败（httpx + Playwright 均无法提取，或 PDF 超时） |
+
+**响应附加字段：**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `session_closed` | bool | 本次返回后 session 是否已关闭 |
+
+**list 模式会话生命周期：**
+- 累计 `/search`(1) + `/article`(2) = 3 次后自动关闭
+- `processing` 不计入次数，`close:true` 可提前关闭
+- 从列表返回起 15 分钟未操作自动超时关闭
 
 ### GET /poll/{session_id}
 
@@ -395,7 +454,22 @@ curl -X POST http://localhost:8300/search \
   }'
 ```
 
-### 场景 5：搜索无结果时
+### 场景 5：同花顺 F10 公司大事查询
+
+```bash
+curl -X POST http://localhost:8300/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query":"300395",
+    "engine":"thsfin",
+    "mode":"list",
+    "max_results":10,
+    "start_date":"2026-07-15",
+    "end_date":"2026-07-22"
+  }'
+```
+
+### 场景 6：搜索无结果时
 
 ```bash
 curl -s -X POST http://localhost:8300/search \
@@ -408,7 +482,7 @@ curl -s -X POST http://localhost:8300/search \
 
 ---
 
-## 正文截断与空白治理
+## 正文截断、空白治理与 PDF 自动提取
 
 ### 截断
 文章正文超过 `max_body_chars`（默认 **8000** 字符）时自动截断，末尾加 `[截断 全文长于8000字]`，响应中 `truncated: true`。
@@ -421,6 +495,45 @@ curl -s -X POST http://localhost:8300/search \
 - `word_count` 始终统计治理后的非空白字符数
 
 空白治理在所有引擎（ddg / sinafin / baidufin）的正文提取路径中均生效，包括 Playwright 兜底提取。
+
+### PDF 公告自动提取
+
+部分网页（如同花顺公告页、巨潮资讯网等）不包含 HTML 正文，仅提供一个 PDF 文件查看器。v3.0 根据执行模式采用两种策略：
+
+**同步提取**（DDG list 以外的模式 / Playwright 兜底）：
+```
+检测 → 扫描 PDF 链接 → 下载 PDF → pypdf 提取 → 空白治理 → 返回
+```
+提取完成后再返回列表，正文即时就绪。
+
+**异步后台提取**（DDG list 模式 — 默认）：
+```
+Phase 1（同步，快）          后台线程（异步，15s 超时）
+  trafilatura 提取              │
+    ↓                           ├─ 扫描 HTML 找 PDF URL
+  检测到 PDF 占位正文           ├─ requests.download(pdf)
+    ↓                           ├─ pypdf.PdfReader.extract()
+  跳过 PDF，标记 _is_pdf        ├─ 空白治理 + 截断
+    ↓                           └─ 覆盖 article_bodies
+  返回列表（不等待 PDF）
+```
+
+核心流程：
+
+1. **检测**：正文为空、少于 50 字、或包含"无法在线阅读""下载原文"等占位文字
+2. **扫描**：从页面 HTML 中提取 PDF 下载链接（`<a href>`、`<iframe>`、JavaScript `pdfsource` 等）
+3. **下载**：使用 `requests` 下载 PDF，自动处理中文字符 URL 编码，**15 秒超时**
+4. **提取**：使用 `pypdf` 逐页提取文字，拼接为完整正文
+5. **后处理**：应用空白治理和正文截断规则（8000 字）
+
+此 fallback 在以下路径中均生效：
+- **DDG list Phase 1**（`skip_pdf=True`）：跳过 PDF，仅标记，由后台线程异步提取
+- **DDG list 后台线程**：15 秒超时，提取完覆盖占位正文
+- **非 list 模式**（`skip_pdf=False`）：同步提取后返回
+- **Playwright 兜底**：渲染后仍无正文时，httpx 取原始 HTML → 同步 PDF 提取
+
+> **/article 调用说明**：DDG list 模式下 PDF 公告页正文在后台异步加载，加载期间 `/article` 返回 `status=processing`（不计入 3 次调用限制），加载完成后返回 `ready`。若 15 秒超时，保留原始 trafilatura 占位正文，`/article` 返回 `status=error`。
+- **Playwright 兜底路径**：浏览器渲染后仍无正文时，额外用 httpx 获取原始 HTML 再尝试 PDF 提取
 
 ---
 
@@ -435,11 +548,26 @@ A: 每次搜索需要启动 headless Chromium 浏览器，这是正常耗时。�
 **Q: baidufin 需要代理吗？**
 A: 不需要。百度股市通是国内服务，Playwright 直接访问。
 
+**Q: filter_days=3 为什么还看到未来日期的文章？**
+A: 不会。`filter_days` 有上下界包夹保护，超过今天日期的文章自动剔除。如果文章带具体时间（`HH:MM`），精确到分钟比较。若仍有异常，检查服务端日志是否有 `[filter] N articles with future date (dropped)` 输出。
+
 **Q: /article 一直返回 processing？**
-A: baidufin 引擎后台自动提取约需 5~15 秒，若超过 30 秒仍未就绪则可能是全部提取失败，会返回 error 状态。
+A: 
+- **DDG list 模式**：正常 HTML 文章正文即时就绪；PDF 公告页在后台异步提取（15 秒超时），提取期间返回 `processing`（不计入调用次数），超时或完成后返回 `ready`/`error`
+- **baidufin 引擎**：后台自动提取约需 5~15 秒，若超过 30 秒仍未就绪则可能全部提取失败
+- **sinafin 引擎**：需先调用 `/extract` 触发提取
 
 **Q: 提取失败的文章会怎样？**
-A: 返回 `status="error"` + `fetch_error="httpx + Playwright 均无法提取正文"`。文章依然在列表中可见（有标题/摘要/情绪），只是正文为空。
+A: 返回 `status="error"` + `fetch_error` 说明失败原因。DDG list 模式下 PDF 提取超时保留原有 trafilatura 占位正文。文章依然在列表中可见（有标题/摘要/情绪），只是正文为空或为占位文本。
+
+**Q: 同花顺公告页只返回"无法在线阅读"几个字？**
+A: 这是 PDF 公告页面。v3.0 自动处理：
+- **DDG list 模式**：列表快速返回（不等待 PDF），后台异步下载（15 秒超时），`/article` 返回 `processing` 直到提取完成
+- **其他模式**：同步提取 PDF，返回时正文已就绪
+确保已安装 `pypdf`：`pip install pypdf`。部分上交所官网 PDF 有 JS Challenge 反爬保护，同花顺代理可自动处理，但 SSE 直链可能失败。
+
+**Q: 调用 3 次 /article 后收到 404？**
+A: 这是 list 模式的设计。每个会话有调用次数限制（默认 3 次，含 `/search`），第 3 次 `/article` 返回后 session 自动关闭。可在 `/article` 请求中设 `close: true` 提前关闭。从列表返回起 15 分钟未操作也会自动超时。
 
 **Q: baidufin 的 sentiment/情绪标签可靠吗？**
 A: 标签来自百度股市通 AI 分析，仅供参考。

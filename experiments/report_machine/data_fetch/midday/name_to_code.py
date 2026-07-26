@@ -210,6 +210,6 @@ if __name__ == "__main__":
             symbol = ts_code.split(".")[0]
             tencent = ts_code_to_tencent(ts_code)
             xueqiu = ts_code_to_xueqiu(ts_code)
-            print(f"{name:　<6}  {ts_code:　<10}  腾讯: {tencent}  雪球: {xueqiu}")
+            print(f"{name:　<6}  ts_code: {ts_code:　<10}  symbol: {symbol}  腾讯: {tencent}  雪球: {xueqiu}")
         else:
             print(f"❌ 未找到: {name}")

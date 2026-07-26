@@ -1,5 +1,9 @@
-"""ddgs 搜索后端"""
-import os
+"""ddgs 搜索后端
+
+注意：DuckDuckGo 被墙，必须走代理。但代理只传给 DDGS 实例本身，
+不设置环境变量，避免影响同一进程中其他引擎（sinafin/thsfin 等）
+的 HTTP 请求。它们直连国内金融站点，走代理反而会被 RST。
+"""
 from ddgs import DDGS
 from .base import SearchBackend
 from ..config import PROXY
@@ -14,28 +18,12 @@ class DDGSSearchBackend(SearchBackend):
         if site:
             query = f"{query} site:{site}"
 
-        # 设置代理
-        old_http = os.environ.get("http_proxy")
-        old_https = os.environ.get("https_proxy")
-        os.environ["http_proxy"] = PROXY
-        os.environ["https_proxy"] = PROXY
-
-        try:
-            with DDGS() as ddgs:
-                kwargs = {"max_results": max_results}
-                if timelimit:
-                    kwargs["timelimit"] = timelimit
-                raw = list(ddgs.text(query, **kwargs))
-        finally:
-            # 还原代理环境变量
-            if old_http:
-                os.environ["http_proxy"] = old_http
-            else:
-                os.environ.pop("http_proxy", None)
-            if old_https:
-                os.environ["https_proxy"] = old_https
-            else:
-                os.environ.pop("https_proxy", None)
+        # 直接传 proxy 给 DDGS，不设环境变量
+        with DDGS(proxy=PROXY) as ddgs:
+            kwargs = {"max_results": max_results}
+            if timelimit:
+                kwargs["timelimit"] = timelimit
+            raw = list(ddgs.text(query, **kwargs))
 
         # 统一字段映射
         results = []
