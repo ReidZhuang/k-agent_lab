@@ -18,6 +18,17 @@ from datetime import datetime
 import requests
 from openai import OpenAI
 
+# ── MD→DOCX 转换 ──
+from output import md_to_docx
+
+# ── 共享 HTTP 连接池（大连接池防耗尽） ──
+_HTTP_SESSION = requests.Session()
+_HTTP_ADAPTER = requests.adapters.HTTPAdapter(
+    pool_connections=200, pool_maxsize=200, max_retries=0
+)
+_HTTP_SESSION.mount("http://", _HTTP_ADAPTER)
+_HTTP_SESSION.mount("https://", _HTTP_ADAPTER)
+
 # ── sys.path ──
 _OFFICE_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 if _OFFICE_DIR not in sys.path:
@@ -194,7 +205,9 @@ def _fetch_article_bodies(article_ids: list[str],
     # ── 建立 article_id → (engine, session_id, body_avail) 映射 ──
     id_map = {}  # article_id -> {engine, session_id, body_avail}
     for engine, result in articles_meta.items():
-        preview = result.get("preview", {})
+        preview = result.get("preview")
+        if not preview:
+            continue
         articles = preview.get("articles", [])
         session_id = result.get("session_id", "")
         for art in articles:
@@ -234,7 +247,7 @@ def _fetch_article_bodies(article_ids: list[str],
     with ThreadPoolExecutor(max_workers=len(engine_groups)) as pool:
         def _fetch(engine, eg):
             try:
-                resp = requests.post(
+                resp = _HTTP_SESSION.post(
                     f"{MIDDLEMAN_URL}/api/v1/article",
                     json={
                         "report_id": "",
@@ -284,13 +297,21 @@ def _save_report(stock_name: str, ts_code: str, content: str) -> str:
     stock_dir = os.path.join(_OUTPUT_DIR, stock_name)
     os.makedirs(stock_dir, exist_ok=True)
 
-    filename = f"{today}_{stock_name}_midday.md"
-    filepath = os.path.join(stock_dir, filename)
-
-    with open(filepath, "w", encoding="utf-8") as f:
+    # 保存 .md 版本
+    filename = f"{today}_{stock_name}_midday"
+    md_path = os.path.join(stock_dir, filename + ".md")
+    with open(md_path, "w", encoding="utf-8") as f:
         f.write(content)
 
-    return filepath
+    # 同步生成 .docx 版本
+    try:
+        docx_path = os.path.join(stock_dir, filename + ".docx")
+        doc = md_to_docx.md_to_docx(content)
+        doc.save(docx_path)
+    except Exception as e:
+        print(f"  ⚠️  docx 生成失败: {e}")
+
+    return md_path
 
 
 # ======================================================================

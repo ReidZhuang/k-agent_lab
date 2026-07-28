@@ -17,6 +17,7 @@ import sys
 import json
 import glob
 import argparse
+import requests
 
 _OFFICE_DIR = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
 if _OFFICE_DIR not in sys.path:
@@ -24,6 +25,14 @@ if _OFFICE_DIR not in sys.path:
 
 from models import ReportContext
 from cfg import load_config
+
+# ── 共享 HTTP 连接池 ──
+_HTTP_SESSION = requests.Session()
+_HTTP_ADAPTER = requests.adapters.HTTPAdapter(
+    pool_connections=200, pool_maxsize=200, max_retries=0
+)
+_HTTP_SESSION.mount("http://", _HTTP_ADAPTER)
+_HTTP_SESSION.mount("https://", _HTTP_ADAPTER)
 
 _cfg = load_config()
 _reporter_cfg = _cfg.get("reporter", {})
@@ -56,7 +65,7 @@ def retry(filepath: str) -> bool:
     context = ReportContext(**data)
     import requests
     try:
-        resp = requests.post(
+        resp = _HTTP_SESSION.post(
             f"{_REPORTER_URL}/api/v1/generate",
             json=context.model_dump(),
             timeout=120,

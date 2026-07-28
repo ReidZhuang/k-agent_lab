@@ -12,6 +12,7 @@ import sys
 import json
 import time
 import random
+import asyncio
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -32,6 +33,14 @@ from models import TypeARequest, TypeAResponse, TypeBRequest, TypeBResponse
 from cfg import load_config
 from database import log_office_error
 
+# ── 共享 HTTP 连接池 ──
+_HTTP_SESSION = requests.Session()
+_HTTP_ADAPTER = requests.adapters.HTTPAdapter(
+    pool_connections=200, pool_maxsize=200, max_retries=0
+)
+_HTTP_SESSION.mount("http://", _HTTP_ADAPTER)
+_HTTP_SESSION.mount("https://", _HTTP_ADAPTER)
+
 # ── 配置加载 ──
 _cfg = load_config()
 _middleman_cfg = _cfg.get("middleman", {})
@@ -40,10 +49,30 @@ _MT_BASE = _mt_cfg.get("base_url", "http://localhost:8300")
 _POLL_INTERVAL = _mt_cfg.get("poll_interval", 3)
 _MAX_POLL = _mt_cfg.get("max_poll_attempts", 100)
 
-# ── 并发控制 ──
-_type_a_pool = ThreadPoolExecutor(
-    max_workers=_middleman_cfg.get("type_a_max_workers", 24)
-)
+# ── 并发控制（延迟创建，fork-safe） ──
+_TYPE_A_POOL = None
+_TYPE_B_POOL = None
+_POOL_LOCK = threading.Lock()
+
+def _get_type_a_pool():
+    global _TYPE_A_POOL
+    if _TYPE_A_POOL is None:
+        with _POOL_LOCK:
+            if _TYPE_A_POOL is None:
+                _TYPE_A_POOL = ThreadPoolExecutor(
+                    max_workers=_middleman_cfg.get("type_a_max_workers", 24)
+                )
+    return _TYPE_A_POOL
+
+def _get_type_b_pool():
+    global _TYPE_B_POOL
+    if _TYPE_B_POOL is None:
+        with _POOL_LOCK:
+            if _TYPE_B_POOL is None:
+                _TYPE_B_POOL = ThreadPoolExecutor(
+                    max_workers=_middleman_cfg.get("type_b_max_workers", 64)
+                )
+    return _TYPE_B_POOL
 
 # ── 引擎配置 ──
 _ENGINE_CONFIG = {
@@ -119,7 +148,7 @@ def _call_mail_tower_search(engine: str, stock_code: str) -> dict:
 
     # ── POST /search（带重试） ──
     def _do_search():
-        r = requests.post(f"{_MT_BASE}/search", json=body, timeout=30)
+        r = _HTTP_SESSION.post(f"{_MT_BASE}/search", json=body, timeout=30)
         return r
 
     resp = _retry_http(_do_search, engine, "search")
@@ -163,7 +192,7 @@ def _poll_session(engine: str, session_id: str,
     for attempt in range(max_attempts):
         time.sleep(_POLL_INTERVAL)
         try:
-            pr = requests.get(f"{_MT_BASE}/poll/{session_id}", timeout=30)
+            pr = _HTTP_SESSION.get(f"{_MT_BASE}/poll/{session_id}", timeout=30)
             pj = pr.json() if pr.ok else {}
         except Exception as e:
             if attempt < 3:
@@ -204,7 +233,7 @@ def _call_mail_tower_article(engine: str, session_id: str,
     ROUND1_TIMEOUT = 20  # 每轮等待 20s
 
     def _post_article(sid, aids):
-        return requests.post(
+        return _HTTP_SESSION.post(
             f"{_MT_BASE}/article",
             json={"session_id": sid, "article_ids": aids},
             timeout=ROUND1_TIMEOUT + 10,
@@ -233,7 +262,7 @@ def _call_mail_tower_article(engine: str, session_id: str,
             for poll_attempt in range(4):  # 20s / 5s = 4次
                 time.sleep(POLL_SECONDS)
                 try:
-                    pr = requests.get(
+                    pr = _HTTP_SESSION.get(
                         f"{_MT_BASE}/poll/{session_id}", timeout=30
                     )
                     pj = pr.json() if pr.ok else {}
@@ -260,7 +289,7 @@ def _call_mail_tower_article(engine: str, session_id: str,
 
     # ── 关闭 session ──
     try:
-        requests.post(f"{_MT_BASE}/close/{session_id}", timeout=10)
+        _HTTP_SESSION.post(f"{_MT_BASE}/close/{session_id}", timeout=10)
     except Exception:
         pass
 
@@ -385,8 +414,17 @@ def _retry_http(fn, engine: str, label: str) -> requests.Response | None:
 
 @app.post("/api/v1/search")
 async def search_aggregate(req: TypeARequest):
-    """聚合搜索：并发 5 个 engine，聚合后返回"""
+    """聚合搜索：并发 5 个 engine，聚合后返回（非阻塞版）"""
     log = get_logger("middleman_type_a")
+    pool = _get_type_a_pool()
+    loop = asyncio.get_event_loop()
+
+    result = await loop.run_in_executor(pool, _run_type_a_search, req, log)
+    return TypeAResponse(writer_id=req.writer_id, results=result)
+
+
+def _run_type_a_search(req: TypeARequest, log) -> dict:
+    """Type A 同步执行函数（在 _type_a_pool 线程中运行）"""
     t0 = time.time()
     engines = list(_ENGINE_CONFIG.keys())
 
@@ -410,7 +448,7 @@ async def search_aggregate(req: TypeARequest):
     log("search_aggregate_done", writer_id=req.writer_id, stock_code=req.stock_code,
         engines_ok=engines_ok, engines_err=engines_err, _elapsed=time.time()-t0)
 
-    return TypeAResponse(writer_id=req.writer_id, results=results)
+    return results
 
 
 # ======================================================================
@@ -419,8 +457,25 @@ async def search_aggregate(req: TypeARequest):
 
 @app.post("/api/v1/article")
 async def article_body(req: TypeBRequest):
-    """获取文章正文 — Reporter 按 engine 分别发送请求"""
+    """获取文章正文（非阻塞版）"""
     log = get_logger("middleman_type_b")
+    pool = _get_type_b_pool()
+    loop = asyncio.get_event_loop()
+
+    result = await loop.run_in_executor(pool, _run_type_b_article, req, log)
+
+    return TypeBResponse(
+        report_id=req.report_id,
+        engine=req.engine,
+        session_id=req.session_id,
+        session_closed=result.get("session_closed", True),
+        articles=result.get("articles", []),
+        status=result.get("status", "timeout"),
+    )
+
+
+def _run_type_b_article(req: TypeBRequest, log) -> dict:
+    """Type B 同步执行函数（在 _type_b_pool 线程中运行）"""
     t0 = time.time()
     result = _call_mail_tower_article(
         engine=req.engine,
@@ -431,15 +486,7 @@ async def article_body(req: TypeBRequest):
         session_id=req.session_id[:20], requested=len(req.article_ids),
         returned=len(result.get("articles", [])),
         status=result.get("status"), _elapsed=time.time()-t0)
-
-    return TypeBResponse(
-        report_id=req.report_id,
-        engine=req.engine,
-        session_id=req.session_id,
-        session_closed=result.get("session_closed", True),
-        articles=result.get("articles", []),
-        status=result.get("status", "timeout"),
-    )
+    return result
 
 
 # ======================================================================
@@ -456,9 +503,7 @@ async def health():
 # ======================================================================
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.set_start_method("spawn", force=True)
     import uvicorn
     port = _middleman_cfg.get("port", 8311)
     host = _middleman_cfg.get("host", "0.0.0.0")
-    uvicorn.run("server:app", host=host, port=port, workers=1)
+    uvicorn.run("server:app", host=host, port=port, workers=4)

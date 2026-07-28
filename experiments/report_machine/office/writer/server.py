@@ -11,7 +11,9 @@ import sys
 import json
 import time
 import uuid
+import asyncio
 import random
+import threading
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -46,8 +48,30 @@ _middleman_cfg = _cfg.get("middleman", {})
 _MAX_WORKERS = _writer_cfg.get("sub_worker_max_workers", 64)
 _MIDDLEMAN_URL = f"http://{_middleman_cfg.get('host', 'localhost')}:{_middleman_cfg.get('port', 8311)}"
 _REPORTER_URL = f"http://{_reporter_cfg.get('host', 'localhost')}:{_reporter_cfg.get('port', 8312)}"
+
+# ── Writer 线程池（非阻塞，fork-safe） ──
+_WRITER_POOL = None
+_POOL_LOCK = threading.Lock()
+
+def _get_writer_pool():
+    global _WRITER_POOL
+    if _WRITER_POOL is None:
+        with _POOL_LOCK:
+            if _WRITER_POOL is None:
+                _WRITER_POOL = ThreadPoolExecutor(max_workers=4)
+    return _WRITER_POOL
+
+# ── 共享 HTTP 连接池（大连接池防耗尽） ──
+_HTTP_SESSION = requests.Session()
+_HTTP_ADAPTER = requests.adapters.HTTPAdapter(
+    pool_connections=200, pool_maxsize=200, max_retries=0
+)
+_HTTP_SESSION.mount("http://", _HTTP_ADAPTER)
+_HTTP_SESSION.mount("https://", _HTTP_ADAPTER)
+
 _FALLBACK_DIR = os.path.normpath(os.path.join(_OFFICE_DIR, "fallback"))
 os.makedirs(_FALLBACK_DIR, exist_ok=True)
+_OUTPUT_DIR = os.path.normpath(os.path.join(_OFFICE_DIR, "output"))
 _CONTEXT_SAMPLE_DIR = os.path.normpath(os.path.join(_OFFICE_DIR, "context_samples"))
 os.makedirs(_CONTEXT_SAMPLE_DIR, exist_ok=True)
 
@@ -82,7 +106,7 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
     def _call_type_a():
         """调用 middleman Type A"""
         try:
-            resp = requests.post(
+            resp = _HTTP_SESSION.post(
                 f"{_MIDDLEMAN_URL}/api/v1/search",
                 json={"writer_id": report_id, "stock_code": symbol},
                 timeout=180,
@@ -149,14 +173,15 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
     except Exception as e:
         print(f"  ⚠️  context 保存失败: {e}")
 
-    # ── POST reporter（480s 超时，3 次重试） ──
+    # ── POST reporter（超时 180s/90s/60s，3 次重试） ──
+    retry_timeouts = [180, 90, 60]
     log("post_reporter_start", stock_name=stock_name, context_size=len(json.dumps(context.model_dump())))
-    for attempt, delay in enumerate([2, 5, 10]):
+    for attempt, (delay, to) in enumerate(zip([2, 5, 10], retry_timeouts)):
         try:
-            resp = requests.post(
+            resp = _HTTP_SESSION.post(
                 f"{_REPORTER_URL}/api/v1/generate",
                 json=context.model_dump(),
-                timeout=480,
+                timeout=to,
             )
             if resp.ok:
                 result_data = resp.json()
@@ -185,6 +210,16 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
                 error_msg=f"POST reporter 超时（3 次）: {e}",
                 error_code="WRITER_REPORTER_TIMEOUT",
             )
+
+    # ── 响应丢失检查：reporter 实际已成功但响应没回来？ ──
+    today = time.strftime("%Y%m%d")
+    expected_path = os.path.join(
+        _OUTPUT_DIR, stock_name, f"{today}_{stock_name}_midday.md"
+    )
+    if os.path.exists(expected_path):
+        log("post_reporter_recovered", stock_name=stock_name,
+            output=expected_path, _elapsed=time.time()-t_sub)
+        return SubWorkerResult(stock_name=stock_name, success=True)
 
     # ── 兜底：保存 context ──
     fallback_path = os.path.join(
@@ -217,13 +252,15 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
 
 @app.post("/api/v1/report")
 async def create_report(req: ReportRequest):
-    """生成报告入口
+    """生成报告入口（非阻塞版）"""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        _get_writer_pool(), _sync_create_report, req
+    )
 
-    1. 转换股票名称 → 代码
-    2. Fetcher 取数
-    3. 启动 sub writer 池
-    4. 汇总返回
-    """
+
+def _sync_create_report(req: ReportRequest) -> ReportResponse:
+    """同步执行函数（在 _WRITER_POOL 线程中运行）"""
     report_id = uuid.uuid4().hex[:12]
     stock_names = req.stock_names
     log = get_logger("writer_api")
@@ -241,9 +278,9 @@ async def create_report(req: ReportRequest):
     # ── 2. Fetcher 取数 ──
     data_by_stock, warnings_by_tscode = fetcher.fetch_all(stock_names)
     if not data_by_stock:
-        raise HTTPException(
-            status_code=503,
-            detail="取数失败，所有股票数据均为空",
+        return ReportResponse(
+            report_id=report_id, total=0, success=0,
+            failed=stock_names, results=[],
         )
 
     # ── 3. 启动 sub writer ──
@@ -292,9 +329,7 @@ async def health():
 # ======================================================================
 
 if __name__ == "__main__":
-    import multiprocessing
-    multiprocessing.set_start_method("spawn", force=True)
     import uvicorn
     host = _writer_cfg.get("host", "0.0.0.0")
     port = _writer_cfg.get("port", 8310)
-    uvicorn.run("server:app", host=host, port=port, workers=1)
+    uvicorn.run("server:app", host=host, port=port, workers=4)
