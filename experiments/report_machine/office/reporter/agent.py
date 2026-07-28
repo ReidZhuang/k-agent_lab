@@ -303,10 +303,10 @@ def _save_report(stock_name: str, ts_code: str, content: str) -> str:
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(content)
 
-    # 同步生成 .docx 版本
+    # 同步生成 .docx 版本（商务排版）
     try:
         docx_path = os.path.join(stock_dir, filename + ".docx")
-        doc = md_to_docx.md_to_docx(content)
+        doc = md_to_docx.md_to_docx(content, stock_name=stock_name, trade_date=today)
         doc.save(docx_path)
     except Exception as e:
         print(f"  ⚠️  docx 生成失败: {e}")
