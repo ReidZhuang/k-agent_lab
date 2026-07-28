@@ -358,7 +358,7 @@ playwright install chromium
 | `session_closed` | bool | 本次返回后 session 是否已关闭 |
 
 **list 模式会话生命周期：**
-- 累计 `/search`(1) + `/article`(2) = 3 次后自动关闭
+- 累计 `/article` 正文返回达到 `max_body_returns`（默认 **10** 次）后自动关闭
 - `processing` 不计入次数，`close:true` 可提前关闭
 - 从列表返回起 15 分钟未操作自动超时关闭
 
@@ -532,7 +532,7 @@ Phase 1（同步，快）          后台线程（异步，15s 超时）
 - **非 list 模式**（`skip_pdf=False`）：同步提取后返回
 - **Playwright 兜底**：渲染后仍无正文时，httpx 取原始 HTML → 同步 PDF 提取
 
-> **/article 调用说明**：DDG list 模式下 PDF 公告页正文在后台异步加载，加载期间 `/article` 返回 `status=processing`（不计入 3 次调用限制），加载完成后返回 `ready`。若 15 秒超时，保留原始 trafilatura 占位正文，`/article` 返回 `status=error`。
+> **/article 调用说明**：DDG list 模式下 PDF 公告页正文在后台异步加载，加载期间 `/article` 返回 `status=processing`（不计入调用限制），加载完成后返回 `ready`。若 15 秒超时，保留原始 trafilatura 占位正文，`/article` 返回 `status=error`。
 - **Playwright 兜底路径**：浏览器渲染后仍无正文时，额外用 httpx 获取原始 HTML 再尝试 PDF 提取
 
 ---
@@ -566,8 +566,8 @@ A: 这是 PDF 公告页面。v3.0 自动处理：
 - **其他模式**：同步提取 PDF，返回时正文已就绪
 确保已安装 `pypdf`：`pip install pypdf`。部分上交所官网 PDF 有 JS Challenge 反爬保护，同花顺代理可自动处理，但 SSE 直链可能失败。
 
-**Q: 调用 3 次 /article 后收到 404？**
-A: 这是 list 模式的设计。每个会话有调用次数限制（默认 3 次，含 `/search`），第 3 次 `/article` 返回后 session 自动关闭。可在 `/article` 请求中设 `close: true` 提前关闭。从列表返回起 15 分钟未操作也会自动超时。
+**Q: 调用 /article 后收到 404？**
+A: 可能原因：1）session TTL（45分钟）已过期；2）session 已手动关闭。只要 session 未超时未关闭，可正常调用 `/article` 获取正文。`processing` 状态不消耗调用计数。超过 `max_body_returns`（10 次）后 session 自动关闭。
 
 **Q: baidufin 的 sentiment/情绪标签可靠吗？**
 A: 标签来自百度股市通 AI 分析，仅供参考。
