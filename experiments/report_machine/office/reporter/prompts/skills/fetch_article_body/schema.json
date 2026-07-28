@@ -1,0 +1,11 @@
+{
+    "type": "object",
+    "properties": {
+        "article_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "要获取全文的文章 ID 列表，如 ['a_01', 'a_02']。只应传入 body_avail='有' 的文章 ID。"
+        }
+    },
+    "required": ["article_ids"]
+}

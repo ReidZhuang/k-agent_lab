@@ -1,0 +1,40 @@
+# Office 报告生成系统 — 全局配置
+
+server:
+  host: "0.0.0.0"
+
+middleman:
+  host: "localhost"
+  port: 8311
+  type_a_max_workers: 24     # 匹配 mail_tower Semaphore 的并发槽位
+  type_a_queue_timeout: 300  # 排队超时（秒）
+  type_b_max_workers: 64     # 正文请求无需排队
+  type_b_queue_timeout: 120  # 排队超时（秒）
+
+writer:
+  host: "localhost"
+  port: 8310
+  sub_worker_max_workers: 64
+
+reporter:
+  host: "localhost"
+  port: 8312
+  max_loop_rounds: 8          # Agent loop 最大轮次
+  article_timeout: 120        # 获取正文全局超时（秒）
+  deepseek:
+    model: "deepseek-v4-flash"
+    max_tokens: 4000
+    api_base: "https://api.deepseek.com"
+    timeout: 130              # LLM API 请求超时
+
+database:
+  path: "/home/stockagent/project_space/database/report_market.db"
+
+logging:
+  level: "INFO"
+
+mail_tower:
+  base_url: "http://localhost:8300"
+  search_timeout: 150
+  poll_interval: 3
+  max_poll_attempts: 100

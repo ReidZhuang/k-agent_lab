@@ -1,0 +1,622 @@
+{
+  "test": "报文模型测试",
+  "timestamp": "2026-07-28 15:56:14",
+  "run_id": "20260728_155614",
+  "models": [
+    {
+      "case": "正常-4只股票",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": "",
+      "field_stock_names": "ok"
+    },
+    {
+      "case": "正常-1只股票",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": "",
+      "field_stock_names": "ok"
+    },
+    {
+      "case": "正常-带特殊字符",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": "",
+      "field_stock_names": "ok"
+    },
+    {
+      "case": "正常-含数字名称",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": "",
+      "field_stock_names": "ok"
+    },
+    {
+      "case": "边界-空列表",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": "",
+      "field_stock_names": "ok"
+    },
+    {
+      "case": "边界-超大列表",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": "",
+      "field_stock_names": "ok"
+    },
+    {
+      "case": "边界-重复名称",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": "",
+      "field_stock_names": "ok"
+    },
+    {
+      "case": "异常-字段缺失",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-类型错误-字符串",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-类型错误-数字",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-null值",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-混合类型",
+      "model": "ReportRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "正常-完整参数",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_stock_code": "ok"
+    },
+    {
+      "case": "正常-短ID",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_stock_code": "ok"
+    },
+    {
+      "case": "正常-纯数字代码",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_stock_code": "ok"
+    },
+    {
+      "case": "边界-超长ID",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_stock_code": "ok"
+    },
+    {
+      "case": "边界-超长code",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_stock_code": "ok"
+    },
+    {
+      "case": "异常-缺失writer_id",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-缺失stock_code",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-空字符串writer_id",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_stock_code": "ok"
+    },
+    {
+      "case": "异常-空字符串stock_code",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_stock_code": "ok"
+    },
+    {
+      "case": "异常-类型错误-null",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-类型错误-数字stock_code",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-所有字段缺失",
+      "model": "TypeARequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "正常-5引擎全结果",
+      "model": "TypeAResponse",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_results": "ok"
+    },
+    {
+      "case": "正常-空结果",
+      "model": "TypeAResponse",
+      "status": "pass",
+      "error": "",
+      "field_writer_id": "ok",
+      "field_results": "ok"
+    },
+    {
+      "case": "异常-缺失results",
+      "model": "TypeAResponse",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-缺失writer_id",
+      "model": "TypeAResponse",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-null results",
+      "model": "TypeAResponse",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "正常-单文章",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_article_ids": "ok"
+    },
+    {
+      "case": "正常-多文章",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_article_ids": "ok"
+    },
+    {
+      "case": "正常-空文章列表",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_article_ids": "ok"
+    },
+    {
+      "case": "正常-所有引擎",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_article_ids": "ok"
+    },
+    {
+      "case": "边界-超长article_ids",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_article_ids": "ok"
+    },
+    {
+      "case": "异常-缺失engine",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-缺失session_id",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-缺失article_ids",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-缺失report_id",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-空字符串engine",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_article_ids": "ok"
+    },
+    {
+      "case": "异常-类型错误-engine是数字",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-null report_id",
+      "model": "TypeBRequest",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "正常-ready有正文",
+      "model": "TypeBResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_session_closed": "ok",
+      "field_articles": "ok",
+      "field_status": "ok"
+    },
+    {
+      "case": "正常-全部error",
+      "model": "TypeBResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_session_closed": "ok",
+      "field_articles": "ok",
+      "field_status": "ok"
+    },
+    {
+      "case": "正常-timeout",
+      "model": "TypeBResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_session_closed": "ok",
+      "field_articles": "ok",
+      "field_status": "ok"
+    },
+    {
+      "case": "正常-多篇混合",
+      "model": "TypeBResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_session_closed": "ok",
+      "field_articles": "ok",
+      "field_status": "ok"
+    },
+    {
+      "case": "边界-超大正文",
+      "model": "TypeBResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_session_closed": "ok",
+      "field_articles": "ok",
+      "field_status": "ok"
+    },
+    {
+      "case": "边界-空status",
+      "model": "TypeBResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_engine": "ok",
+      "field_session_id": "ok",
+      "field_session_closed": "ok",
+      "field_articles": "ok",
+      "field_status": "ok"
+    },
+    {
+      "case": "正常-成功",
+      "model": "SubWorkerResult",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_success": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "正常-失败",
+      "model": "SubWorkerResult",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_success": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "正常-空error",
+      "model": "SubWorkerResult",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_success": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "边界-超长名称",
+      "model": "SubWorkerResult",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_success": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "边界-超长error",
+      "model": "SubWorkerResult",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_success": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "正常-全部成功",
+      "model": "ReportResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_total": "ok",
+      "field_success": "ok",
+      "field_failed": "ok",
+      "field_results": "ok"
+    },
+    {
+      "case": "正常-全部失败",
+      "model": "ReportResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_total": "ok",
+      "field_success": "ok",
+      "field_failed": "ok",
+      "field_results": "ok"
+    },
+    {
+      "case": "正常-部分成功",
+      "model": "ReportResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_total": "ok",
+      "field_success": "ok",
+      "field_failed": "ok",
+      "field_results": "ok"
+    },
+    {
+      "case": "边界-total=0",
+      "model": "ReportResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_total": "ok",
+      "field_success": "ok",
+      "field_failed": "ok",
+      "field_results": "ok"
+    },
+    {
+      "case": "边界-total != results长度",
+      "model": "ReportResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_total": "ok",
+      "field_success": "ok",
+      "field_failed": "ok",
+      "field_results": "ok"
+    },
+    {
+      "case": "正常-完整",
+      "model": "ReportContext",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_ts_code": "ok",
+      "field_fetch_data": "ok",
+      "field_fetch_message": "ok",
+      "field_fetch_warnings": "ok",
+      "field_articles": "ok",
+      "field_middleman_warnings": "ok"
+    },
+    {
+      "case": "正常-无消息",
+      "model": "ReportContext",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_ts_code": "ok",
+      "field_fetch_data": "ok",
+      "field_fetch_message": "ok",
+      "field_fetch_warnings": "ok",
+      "field_articles": "ok",
+      "field_middleman_warnings": "ok"
+    },
+    {
+      "case": "正常-有warning",
+      "model": "ReportContext",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_ts_code": "ok",
+      "field_fetch_data": "ok",
+      "field_fetch_message": "ok",
+      "field_fetch_warnings": "ok",
+      "field_articles": "ok",
+      "field_middleman_warnings": "ok"
+    },
+    {
+      "case": "边界-超长fetch_data",
+      "model": "ReportContext",
+      "status": "pass",
+      "error": "",
+      "field_stock_name": "ok",
+      "field_ts_code": "ok",
+      "field_fetch_data": "ok",
+      "field_fetch_message": "ok",
+      "field_fetch_warnings": "ok",
+      "field_articles": "ok",
+      "field_middleman_warnings": "ok"
+    },
+    {
+      "case": "异常-缺失stock_name",
+      "model": "ReportContext",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "异常-缺失ts_code",
+      "model": "ReportContext",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "case": "正常-成功",
+      "model": "ReporterResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_status": "ok",
+      "field_output_path": "ok",
+      "field_rounds": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "正常-部分",
+      "model": "ReporterResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_status": "ok",
+      "field_output_path": "ok",
+      "field_rounds": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "正常-错误",
+      "model": "ReporterResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_status": "ok",
+      "field_output_path": "ok",
+      "field_rounds": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "边界-空路径",
+      "model": "ReporterResponse",
+      "status": "pass",
+      "error": "",
+      "field_report_id": "ok",
+      "field_status": "ok",
+      "field_output_path": "ok",
+      "field_rounds": "ok",
+      "field_error": "ok"
+    },
+    {
+      "case": "异常-缺失status",
+      "model": "ReporterResponse",
+      "status": "pass",
+      "error": ""
+    }
+  ],
+  "serialization": [
+    {
+      "case": "ReportContext-JSON往返",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "case": "TypeAResponse-JSON往返",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "case": "TypeBResponse-JSON往返",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "case": "ReportResponse-JSON往返",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "case": "ReporterResponse-JSON往返",
+      "status": "pass",
+      "errors": []
+    }
+  ],
+  "summary": {
+    "model_tests_total": 68,
+    "model_tests_passed": 68,
+    "model_tests_failed": 0,
+    "model_tests_unexpected_pass": 0,
+    "serialization_pass": "5/5"
+  }
+}

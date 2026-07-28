@@ -1,0 +1,74 @@
+{
+  "test": "语法检查",
+  "timestamp": "2026-07-28 15:55:47",
+  "run_id": "20260728_155547",
+  "syntax": [
+    {
+      "file": "database.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "models.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "fetcher.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "retry_fallback.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "config/config.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "middleman/server.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "writer/server.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "reporter/server.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "reporter/agent.py",
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "file": "output/md_to_docx.py",
+      "status": "pass",
+      "errors": []
+    }
+  ],
+  "imports": [
+    {
+      "module": "models",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "module": "database",
+      "status": "pass",
+      "error": ""
+    }
+  ],
+  "summary": {
+    "syntax": "10/10 通过",
+    "imports": "2/2 通过",
+    "overall": "通过"
+  }
+}

@@ -1,0 +1,720 @@
+{
+  "test": "Fetcher 单体功能测试",
+  "timestamp": "2026-07-28 15:58:56",
+  "run_id": "20260728_155856",
+  "cases": [
+    {
+      "case": "正常-4只标准测试股票",
+      "input_count": 4,
+      "output_count": 4,
+      "with_data": 4,
+      "partial": 0,
+      "missing": 0,
+      "elapsed": 9.59,
+      "passed": true,
+      "error": "",
+      "stock_verifications": [
+        {
+          "stock": "淮北矿业",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4630,
+          "message_len": 518,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块"
+          ]
+        },
+        {
+          "stock": "博瑞医药",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4675,
+          "message_len": 2143,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        },
+        {
+          "stock": "凯莱英",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4684,
+          "message_len": 2239,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        },
+        {
+          "stock": "广生堂",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4627,
+          "message_len": 2388,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "正常-单只股票",
+      "input_count": 1,
+      "output_count": 1,
+      "with_data": 1,
+      "partial": 0,
+      "missing": 0,
+      "elapsed": 4.75,
+      "passed": true,
+      "error": "",
+      "stock_verifications": [
+        {
+          "stock": "凯莱英",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4684,
+          "message_len": 2239,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "边界-空列表",
+      "input_count": 0,
+      "output_count": 0,
+      "with_data": 0,
+      "partial": 0,
+      "missing": 0,
+      "elapsed": 0.0,
+      "passed": true,
+      "error": "",
+      "stock_verifications": []
+    },
+    {
+      "case": "异常-含未识别股票名",
+      "input_count": 3,
+      "output_count": 3,
+      "with_data": 2,
+      "partial": 0,
+      "missing": 0,
+      "elapsed": 4.8,
+      "passed": true,
+      "error": "",
+      "stock_verifications": [
+        {
+          "stock": "淮北矿业",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4630,
+          "message_len": 518,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块"
+          ]
+        },
+        {
+          "stock": "不存在的股票12345",
+          "has_data": false,
+          "has_message": true,
+          "data_len": 0,
+          "message_len": 32,
+          "status": "no_data",
+          "data_sections": [],
+          "data_section_count": 0,
+          "message_sections": []
+        },
+        {
+          "stock": "博瑞医药",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4675,
+          "message_len": 2143,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "边界-含特殊字符",
+      "input_count": 2,
+      "output_count": 2,
+      "with_data": 0,
+      "partial": 2,
+      "missing": 0,
+      "elapsed": 0.24,
+      "passed": true,
+      "error": "",
+      "stock_verifications": [
+        {
+          "stock": "ST华英",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 13,
+          "message_len": 18,
+          "status": "partial_data",
+          "data_sections": [],
+          "data_section_count": 0,
+          "message_sections": []
+        },
+        {
+          "stock": "N中芯",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 12,
+          "message_len": 17,
+          "status": "partial_data",
+          "data_sections": [],
+          "data_section_count": 0,
+          "message_sections": []
+        }
+      ]
+    },
+    {
+      "case": "极限-大量股票",
+      "input_count": 15,
+      "output_count": 15,
+      "with_data": 15,
+      "partial": 0,
+      "missing": 0,
+      "elapsed": 21.94,
+      "passed": true,
+      "error": "",
+      "stock_verifications": [
+        {
+          "stock": "淮北矿业",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4630,
+          "message_len": 518,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块"
+          ]
+        },
+        {
+          "stock": "博瑞医药",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4675,
+          "message_len": 2143,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        },
+        {
+          "stock": "凯莱英",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4684,
+          "message_len": 2239,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        },
+        {
+          "stock": "广生堂",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4627,
+          "message_len": 2388,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        },
+        {
+          "stock": "宁德时代",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4680,
+          "message_len": 6025,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块",
+            "异动"
+          ]
+        },
+        {
+          "stock": "比亚迪",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4602,
+          "message_len": 8717,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块",
+            "异动"
+          ]
+        },
+        {
+          "stock": "贵州茅台",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4636,
+          "message_len": 449,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "热门板块",
+            "异动"
+          ]
+        },
+        {
+          "stock": "中国平安",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4328,
+          "message_len": 2482,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯"
+          ]
+        },
+        {
+          "stock": "招商银行",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4589,
+          "message_len": 360,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "异动"
+          ]
+        },
+        {
+          "stock": "长江电力",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4615,
+          "message_len": 3308,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块"
+          ]
+        },
+        {
+          "stock": "海尔智家",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4591,
+          "message_len": 78,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "异动"
+          ]
+        },
+        {
+          "stock": "伊利股份",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4605,
+          "message_len": 275,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "热门板块"
+          ]
+        },
+        {
+          "stock": "恒瑞医药",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4677,
+          "message_len": 2143,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        },
+        {
+          "stock": "药明康德",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4678,
+          "message_len": 2143,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "跌停",
+            "异动"
+          ]
+        },
+        {
+          "stock": "紫金矿业",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4635,
+          "message_len": 1825,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯"
+          ]
+        }
+      ]
+    },
+    {
+      "case": "异常-重复名称（字典去重，1个entry）",
+      "input_count": 3,
+      "output_count": 1,
+      "with_data": 3,
+      "partial": 0,
+      "missing": 0,
+      "elapsed": 5.51,
+      "passed": true,
+      "error": "",
+      "stock_verifications": [
+        {
+          "stock": "淮北矿业",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4630,
+          "message_len": 518,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块"
+          ]
+        },
+        {
+          "stock": "淮北矿业",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4630,
+          "message_len": 518,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块"
+          ]
+        },
+        {
+          "stock": "淮北矿业",
+          "has_data": true,
+          "has_message": true,
+          "data_len": 4630,
+          "message_len": 518,
+          "status": "ok",
+          "data_sections": [
+            "行业关键词",
+            "收盘数据",
+            "上一个交易日",
+            "融资融券",
+            "资金流向",
+            "资金细分",
+            "板块排名",
+            "技术面"
+          ],
+          "data_section_count": 8,
+          "message_sections": [
+            "今日快讯",
+            "热门板块"
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_cases": 7,
+    "passed": 7,
+    "failed": 0,
+    "total_stocks_requested": 28,
+    "total_stocks_returned": 26
+  }
+}
