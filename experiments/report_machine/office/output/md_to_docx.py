@@ -68,10 +68,7 @@ def md_to_docx(md_text: str, stock_name: str = "",
     # ── 默认样式 ──
     _set_styles(doc)
 
-    # ── 封面页 ──
-    _add_cover(doc, stock_name, trade_date, md_text)
-
-    # ── 正文 ──
+    # ── 正文（无封面页，直接开始） ──
     lines = md_text.split('\n')
     i = 0
     while i < len(lines):

@@ -21,6 +21,9 @@ from openai import OpenAI
 # ── MD→DOCX 转换 ──
 from output import md_to_docx
 
+# ── 调试日志 ──
+from dlog.debug_logger import get_logger
+
 # ── 共享 HTTP 连接池（大连接池防耗尽） ──
 _HTTP_SESSION = requests.Session()
 _HTTP_ADAPTER = requests.adapters.HTTPAdapter(
@@ -243,9 +246,11 @@ def _fetch_article_bodies(article_ids: list[str],
         return {}, warnings + ["没有可获取正文的文章"]
 
     # ── 并发调 Type B ──
+    _dl = get_logger("reporter_type_b")
     results = {}
     with ThreadPoolExecutor(max_workers=len(engine_groups)) as pool:
         def _fetch(engine, eg):
+            t0 = time.time()
             try:
                 resp = _HTTP_SESSION.post(
                     f"{MIDDLEMAN_URL}/api/v1/article",
@@ -257,10 +262,23 @@ def _fetch_article_bodies(article_ids: list[str],
                     },
                     timeout=ARTICLE_TIMEOUT + 10,
                 )
+                el = time.time() - t0
                 if resp.ok:
-                    return engine, resp.json()
+                    data = resp.json()
+                    _dl("type_b_result", engine=engine,
+                        requested=len(eg["article_ids"]),
+                        returned=len(data.get("articles", [])),
+                        status=data.get("status"),
+                        _elapsed=el)
+                    return engine, data
+                _dl("type_b_result", engine=engine,
+                    requested=len(eg["article_ids"]),
+                    http=resp.status_code, _elapsed=el)
                 return engine, {"status": "error", "articles": []}
             except Exception as e:
+                _dl("type_b_result", engine=engine,
+                    requested=len(eg["article_ids"]),
+                    error=str(e)[:60], _elapsed=time.time()-t0)
                 return engine, {"status": "error", "articles": []}
 
         fut_map = {

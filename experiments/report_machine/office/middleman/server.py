@@ -230,7 +230,7 @@ def _call_mail_tower_article(engine: str, session_id: str,
     """
     MAX_ATTEMPTS = 3
     POLL_SECONDS = 5  # 每 5s 轮询一次 processing
-    ROUND1_TIMEOUT = 20  # 每轮等待 20s
+    ROUND1_TIMEOUT = 60  # 每轮等待 60s（sinafin按需加载较慢）
 
     def _post_article(sid, aids):
         return _HTTP_SESSION.post(
