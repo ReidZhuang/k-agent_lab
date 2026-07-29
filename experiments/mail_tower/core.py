@@ -40,7 +40,8 @@ except ImportError:
 
 OLLAMA_URL = f"{cfg['ollama']['endpoint']}/api/generate"
 MODEL = cfg["ollama"]["models"]["default"]
-MAX_PARALLEL = cfg["ollama"]["max_parallel"]
+MAX_PARALLEL = cfg.get("phase1", {}).get("fetch_parallel",
+                cfg.get("ollama", {}).get("max_parallel", 4))
 OLLAMA_TIMEOUT = cfg["ollama"]["timeout"]
 OLLAMA_TEMP = cfg["ollama"]["temperature"]
 OLLAMA_NUM_PREDICT = cfg["ollama"]["num_predict"]
@@ -1084,10 +1085,14 @@ async def run_search_pipeline(
         - Phase 0: 搜索 → 返回预览（仅列表，无正文）
         - 不执行 Phase 1/2
     """
-    # ── Phase 0: 搜索 ──
-    raw_results = search_web(
-        query, max_results=max_results, site=site, timelimit=timelimit,
-        engine=engine, start_date=start_date, end_date=end_date,
+    # ── Phase 0: 搜索（在线程中执行，不阻塞事件循环） ──
+    loop = asyncio.get_event_loop()
+    raw_results = await loop.run_in_executor(
+        None,  # 使用默认 ThreadPoolExecutor
+        lambda: search_web(
+            query, max_results=max_results, site=site, timelimit=timelimit,
+            engine=engine, start_date=start_date, end_date=end_date,
+        )
     )
     if not raw_results:
         if mode == "list":
@@ -1175,7 +1180,9 @@ async def run_search_pipeline(
             art = {
                 "id": f"a_{idx + 1:02d}",
                 "title": item.get("title", ""),
-                "body_avail": "有" if (has_url or engine in ("juchao", "qnainfo")) else "无",
+                "body_avail": "有" if (has_url or engine == "juchao") else "无",
+                # qnainfo: 问答内容在搜索时已通过 body_text 返回，session 在 search 完成后关闭，
+                # 设置 body_avail=无 防止 LLM 调用 get_article_body（会返回 404）。
                 "date": known_date,
                 "date": known_date,
                 "date_source": engine if known_date else "",

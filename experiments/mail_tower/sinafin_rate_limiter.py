@@ -1,10 +1,10 @@
 """
-sinafin 并发控制器 — 最多 10 个并发请求。
+sinafin 并发控制器 — 最多 N 个并发请求（从 config.json search.sinafin.max_concurrent 读取）。
 
 取代旧版 1.8s 固定间隔文件锁（串行化），新设计：
-  - Semaphore(10)：最多 10 个线程同时访问 sinafin
+  - Semaphore(N)：最多 N 个线程同时访问 sinafin
   - 请求之间无强制间隔，真正并行
-  - 10 的上限防止反爬
+  - N 由配置文件控制
 
 用法:
     from sinafin_rate_limiter import acquire_slot, release_slot
@@ -18,12 +18,19 @@ sinafin 并发控制器 — 最多 10 个并发请求。
 """
 import threading
 import contextlib
+import json
+import os
 
-# 全局并发上限 10（跨所有 worker 进程）
-# 每个 worker 独立计数，8 workers → 最多 80 并发
-# 但实际受 1.8s 旧锁串行化，不受此限
-# 新设计：每个 worker 最多 2 个并发，8 workers ≈ 16 总并发
-_SEM = threading.Semaphore(10)
+# 从 config.json 读取 max_concurrent，默认 40
+_config_path = os.path.join(os.path.dirname(__file__), "config", "config.json")
+try:
+    with open(_config_path) as f:
+        _cfg = json.load(f)
+    _MAX_CONCURRENT = _cfg.get("search", {}).get("sinafin", {}).get("max_concurrent", 40)
+except Exception:
+    _MAX_CONCURRENT = 40
+
+_SEM = threading.Semaphore(_MAX_CONCURRENT)
 
 
 def acquire_slot():

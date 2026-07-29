@@ -58,7 +58,8 @@ def _get_writer_pool():
     if _WRITER_POOL is None:
         with _POOL_LOCK:
             if _WRITER_POOL is None:
-                _WRITER_POOL = ThreadPoolExecutor(max_workers=4)
+                _WRITER_POOL = ThreadPoolExecutor(
+                    max_workers=_writer_cfg.get("main_pool_workers", 4))
     return _WRITER_POOL
 
 # ── 共享 HTTP 连接池（大连接池防耗尽） ──
@@ -332,4 +333,5 @@ if __name__ == "__main__":
     import uvicorn
     host = _writer_cfg.get("host", "0.0.0.0")
     port = _writer_cfg.get("port", 8310)
-    uvicorn.run("server:app", host=host, port=port, workers=4)
+    workers = _writer_cfg.get("workers", 4)
+    uvicorn.run("server:app", host=host, port=port, workers=workers)

@@ -38,7 +38,8 @@ def _get_pool():
     if _THREAD_POOL is None:
         with _POOL_LOCK:
             if _THREAD_POOL is None:
-                _THREAD_POOL = concurrent.futures.ThreadPoolExecutor(max_workers=64)
+                _THREAD_POOL = concurrent.futures.ThreadPoolExecutor(
+                    max_workers=_reporter_cfg.get("thread_pool_size", 64))
     return _THREAD_POOL
 
 app = FastAPI(title="Office Reporter", version="1.0.0")
@@ -107,4 +108,5 @@ if __name__ == "__main__":
     import uvicorn
     host = _reporter_cfg.get("host", "0.0.0.0")
     port = _reporter_cfg.get("port", 8312)
-    uvicorn.run("server:app", host=host, port=port, workers=4)
+    workers = _reporter_cfg.get("workers", 4)
+    uvicorn.run("server:app", host=host, port=port, workers=workers)

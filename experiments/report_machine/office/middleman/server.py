@@ -218,7 +218,17 @@ def _poll_session(engine: str, session_id: str,
 
 def _call_mail_tower_article(engine: str, session_id: str,
                                article_ids: list[str]) -> dict:
-    """调用 mail_tower /article，带 20s×3 + close + 20s×3 重试策略
+    """调用 mail_tower /article。
+
+    策略：
+      - 2xx(ready/error) → 直接返回
+      - 2xx(processing) → 5s 轮询最多 600s
+      - 5xx → 立即返回 error，不重试（服务端代码错误，重试无意义）
+      - 404 → 立即返回 error
+      - 其他 4xx/连接失败 → 重试 3 次
+      - 第二轮全新 session 做 fallback
+
+    所有返回都携带 http_status 字段反映真实 HTTP 状态码。
 
     Args:
         engine: 引擎名称（仅用于日志）
@@ -226,12 +236,13 @@ def _call_mail_tower_article(engine: str, session_id: str,
         article_ids: 要获取的文章 ID 列表
 
     Returns:
-        {articles: [...], status: "ready"|"error"|"timeout", session_closed: bool}
+        {articles: [...], status: "ready"|"error"|"timeout",
+         http_status: int, session_closed: bool}
     """
     MAX_ATTEMPTS = 3
-    POLL_SECONDS = 5  # 每 5s 轮询一次 processing
-    ROUND1_TIMEOUT = 60  # 每轮等待 60s
-    MAX_POLL_PER_ATTEMPT = 96  # 每次尝试最多轮询 96×5s=480s（匹配 reporter 超时）
+    POLL_SECONDS = 5
+    ROUND1_TIMEOUT = 60
+    MAX_POLL_PER_ATTEMPT = 120
 
     def _post_article(sid, aids):
         return _HTTP_SESSION.post(
@@ -240,27 +251,50 @@ def _call_mail_tower_article(engine: str, session_id: str,
             timeout=ROUND1_TIMEOUT + 10,
         )
 
-    # ── 第一轮：3 次尝试，每次 20s ──
+    def _resp(status: str, http_status: int,
+              articles: list | None = None,
+              session_closed: bool = True) -> dict:
+        return {"articles": articles or [], "status": status,
+                "http_status": http_status, "session_closed": session_closed}
+
+    # ── 第一轮 ──
     for attempt in range(MAX_ATTEMPTS):
         try:
             resp = _post_article(session_id, article_ids)
-            if resp.status_code == 404:
+            # 5xx — 服务端错误，不重试
+            if resp.status_code >= 500:
+                log_office_error(
+                    module="office.middleman",
+                    function="_call_mail_tower_article",
+                    level="WARNING",
+                    error_msg=f"{engine} /article {resp.status_code}",
+                    error_code="MIDDLEMAN_ENGINE_ERROR",
+                    data_snapshot=json.dumps(
+                        {"engine": engine, "status_code": resp.status_code,
+                         "resp_body": resp.text[:200]}),
+                )
                 return {"articles": [], "status": "error",
+                        "http_status": resp.status_code,
                         "session_closed": True}
+            # 404 — session 不存在
+            if resp.status_code == 404:
+                return _resp("error", 404)
+            # 其他 4xx — 重试
             if not resp.ok:
                 if attempt < MAX_ATTEMPTS - 1:
                     time.sleep(2 + random.random())
                     continue
-                break
+                return _resp("error", resp.status_code)
+            # 2xx
             data = resp.json()
             top_status = data.get("status", "")
-            # 如果 ready 或 error → 直接返回
             if top_status in ("ready", "error"):
+                resp_status = data.get("status", "error")
                 return {"articles": data.get("articles", []),
-                        "status": top_status,
+                        "status": resp_status, "http_status": 200,
                         "session_closed": data.get("session_closed", False)}
-            # 如果 processing → 5s 轮询
-            for poll_attempt in range(MAX_POLL_PER_ATTEMPT):  # 最多 200s
+            # processing → 轮询
+            for poll_attempt in range(MAX_POLL_PER_ATTEMPT):
                 time.sleep(POLL_SECONDS)
                 try:
                     pr = _HTTP_SESSION.get(
@@ -269,17 +303,18 @@ def _call_mail_tower_article(engine: str, session_id: str,
                     pj = pr.json() if pr.ok else {}
                     p_status = pj.get("status", "")
                     if p_status in ("list_ready", "done"):
-                        # 再调 /article
                         art_resp = _post_article(session_id, article_ids)
                         if art_resp.ok:
                             ad = art_resp.json()
                             return {"articles": ad.get("articles", []),
                                     "status": ad.get("status", "error"),
+                                    "http_status": art_resp.status_code,
                                     "session_closed": ad.get("session_closed", False)}
                     elif p_status == "error":
                         break
                 except Exception:
                     continue
+            # polling 超时 → 继续下一轮 attempt
         except requests.Timeout:
             if attempt < MAX_ATTEMPTS - 1:
                 continue
@@ -302,31 +337,31 @@ def _call_mail_tower_article(engine: str, session_id: str,
                 if attempt < MAX_ATTEMPTS - 1:
                     time.sleep(2 + random.random())
                     continue
-                break
+                return _resp("error", resp.status_code if 'resp' in dir() else 0)
             data = resp.json()
             top_status = data.get("status", "")
             if top_status in ("ready", "error"):
                 return {"articles": data.get("articles", []),
-                        "status": top_status,
+                        "status": top_status, "http_status": 200,
                         "session_closed": data.get("session_closed", False)}
-            # processing → 继续轮询
             time.sleep(POLL_SECONDS)
         except Exception:
             if attempt < MAX_ATTEMPTS - 1:
                 time.sleep(2)
                 continue
 
-    # 全部失败 → timeout
+    # 全部失败
     log_office_error(
         module="office.middleman",
         function="_call_mail_tower_article",
         level="WARNING",
-        error_msg=f"{engine} /article timeout after {MAX_ATTEMPTS*2} attempts",
+        error_msg=f"{engine} /article timeout after {MAX_ATTEMPTS*2} attempts, "
+                   f"last http_status={resp.status_code if 'resp' in dir() else 'N/A'}",
         error_code="MIDDLEMAN_ENGINE_TIMEOUT",
         data_snapshot=json.dumps({"engine": engine, "session_id": session_id,
                                    "article_ids": article_ids}),
     )
-    return {"articles": [], "status": "timeout", "session_closed": True}
+    return _resp("timeout", 0)
 
 
 def _retry_http(fn, engine: str, label: str) -> requests.Response | None:
@@ -472,6 +507,7 @@ async def article_body(req: TypeBRequest):
         session_closed=result.get("session_closed", True),
         articles=result.get("articles", []),
         status=result.get("status", "timeout"),
+        http_status=result.get("http_status", 0),
     )
 
 
@@ -486,7 +522,9 @@ def _run_type_b_article(req: TypeBRequest, log) -> dict:
     log("article_body_done", report_id=req.report_id, engine=req.engine,
         session_id=req.session_id[:20], requested=len(req.article_ids),
         returned=len(result.get("articles", [])),
-        status=result.get("status"), _elapsed=time.time()-t0)
+        status=result.get("status"),
+        http_status=result.get("http_status", 0),
+        _elapsed=time.time()-t0)
     return result
 
 
@@ -507,4 +545,5 @@ if __name__ == "__main__":
     import uvicorn
     port = _middleman_cfg.get("port", 8311)
     host = _middleman_cfg.get("host", "0.0.0.0")
-    uvicorn.run("server:app", host=host, port=port, workers=4)
+    workers = _middleman_cfg.get("workers", 4)
+    uvicorn.run("server:app", host=host, port=port, workers=workers)

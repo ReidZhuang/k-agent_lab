@@ -6,6 +6,7 @@ server:
 middleman:
   host: "localhost"
   port: 8311
+  workers: 4                  # uvicorn worker 进程数
   type_a_max_workers: 24     # 匹配 mail_tower Semaphore 的并发槽位
   type_a_queue_timeout: 300  # 排队超时（秒）
   type_b_max_workers: 64     # 正文请求无需排队
@@ -14,13 +15,17 @@ middleman:
 writer:
   host: "localhost"
   port: 8310
+  workers: 4                  # uvicorn worker 进程数
+  main_pool_workers: 4       # _sync_create_report 线程池大小
   sub_worker_max_workers: 64
 
 reporter:
   host: "localhost"
   port: 8312
+  workers: 8                  # uvicorn worker 进程数（之前硬编码为 4）
+  thread_pool_size: 64        # agent.run() 线程池大小
   max_loop_rounds: 8          # Agent loop 最大轮次
-  article_timeout: 180        # 获取正文全局超时（秒）
+  article_timeout: 600        # 获取正文全局超时（10分钟）
   deepseek:
     model: "deepseek-v4-flash"
     max_tokens: 4000

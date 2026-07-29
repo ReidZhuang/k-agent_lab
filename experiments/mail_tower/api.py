@@ -11,6 +11,10 @@ bot_search API v3.0 — 引擎分发 + mode=list + 单篇正文按需提取
     uvicorn api:app --host 0.0.0.0 --port 8300 --reload
 """
 import asyncio, time, threading, re, traceback
+from concurrent.futures import ThreadPoolExecutor
+# ↑ sentinel: 这个 import 必须保留在 module 级别。
+#   ThreadPoolExecutor 在 get_article (line ~1262) 中使用。
+#   如果被误删，module 加载时立即报错，不会等到运行时才暴露。
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, model_validator
@@ -33,9 +37,7 @@ app = FastAPI(title="bot_search API v3.0", version="3.0.0")
 
 # ── 全局并发控制 ──
 # 限制同时处理的 /search 请求数，超过的排队等待。
-# 默认 = 物理线程数（超出部分在 OS socket 层排队，不会丢失）。
-SEARCH_SEM = asyncio.Semaphore(16)
-
+# semaphore 值从 config.json search.semaphore 读取。
 # ── 搜索超时 + 排队超时（从 config.json 加载） ──
 import json as _json
 _SEARCH_CONFIG_PATH = __import__("os").path.join(
@@ -43,6 +45,7 @@ _SEARCH_CONFIG_PATH = __import__("os").path.join(
 )
 with open(_SEARCH_CONFIG_PATH) as _f:
     _cfg = _json.load(_f)
+SEARCH_SEM = asyncio.Semaphore(_cfg.get("search", {}).get("semaphore", 16))
 SEARCH_TIMEOUT = _cfg.get("search", {}).get("timeout_seconds", 90)
 MAX_SEARCH_WAIT = _cfg.get("search", {}).get("max_wait_seconds", 300)  # 排队超时，超时返回 503
 
@@ -354,7 +357,8 @@ def _run_list_phase1_in_thread(session_id: str, raw_results: list[dict],
     start = time.time()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(_run(max_parallel=20))
+    _juchao_parallel = _cfg.get("phase1", {}).get("juchao_parallel", 20)
+    loop.run_until_complete(_run(max_parallel=_juchao_parallel))
     loop.close()
 
 
@@ -497,7 +501,8 @@ def _run_baidufin_phase1_in_thread(session_id: str, raw_results: list[dict]):
         if not target:
             return []
         return await phase1_fetch_and_extract(
-            target, max_parallel=10, include_snippet=True, truncate=True,
+            target, max_parallel=_cfg.get("phase1", {}).get("baidufin_parallel", 10),
+            include_snippet=True, truncate=True,
         )
 
     def _run_pw_fallback(results, failed):
@@ -1167,6 +1172,22 @@ async def get_article(req: ArticleRequest):
     """
     sess = session_manager.get(req.session_id)
     if not sess:
+        # ── debug: 定位 404 真实原因 ──
+        import os, json as _jj
+        _fp = os.path.join(os.path.dirname(__file__), "sessions", f"{req.session_id}.json")
+        _exists = os.path.exists(_fp)
+        _size = os.path.getsize(_fp) if _exists else 0
+        _status = "?"
+        if _exists:
+            try:
+                with open(_fp) as _f:
+                    _d = _jj.load(_f)
+                _status = _d.get("status", "?")
+            except Exception:
+                _status = "CORRUPT"
+        log_svc(session_id=req.session_id[:20], step="article_404_debug",
+                engine=req.engine, file_exists=_exists, file_size=_size,
+                file_status=_status)
         raise HTTPException(status_code=404, detail="Session not found")
 
     if sess.mode != "list":
@@ -1187,11 +1208,12 @@ async def get_article(req: ArticleRequest):
 
     log_svc(session_id=req.session_id, step="article_fetch", extra={"article_ids": req.article_ids or [req.article_id] if req.article_id else []})
 
-    # ── Sinafin 按需取正文（并行，Semaphore 并发控制） ──
+    # ── Sinafin 按需取正文（多文章并行提取，带详细耗时日志） ──
     if sess.engine == "sinafin":
+        # 筛出需要提取的文章
+        to_extract = []
         for aid in target_ids:
-            body = session_manager.get_article_body(req.session_id, aid)
-            if body is not None:
+            if session_manager.get_article_body(req.session_id, aid) is not None:
                 continue
             info = session_manager.get_article_info(req.session_id, aid)
             if not info or not info.get("url"):
@@ -1199,41 +1221,71 @@ async def get_article(req: ArticleRequest):
                     req.session_id, aid, body_text="", fetch_error="无可用 URL",
                 )
                 continue
+            to_extract.append((aid, info["url"]))
+        if to_extract:
             from sinafin_rate_limiter import acquire_slot, release_slot
-            # 检查缓存（等槽位期间可能已被其他线程提取）
-            if session_manager.get_article_body(req.session_id, aid) is not None:
-                continue
-            await asyncio.to_thread(acquire_slot)
-            try:
-                from core import _fetch_single, _extract_body_from_html, truncate_body
-                import random
-                last_error = ""
-                success = False
-                for attempt in range(3):
+            from core import _fetch_single, _extract_body_from_html, truncate_body
+            from reporting.debug_log import DLog as _Dlog
+            import random
+            _T0 = time.time()
+            _Dlog.log("sinafin_extract_start", session_id=req.session_id[:20],
+                       count=len(to_extract), articles=[a for a,_ in to_extract])
+
+            def _extract_one(aid: str, url: str) -> None:
+                t0 = time.time()
+                t_sem_start = time.time()
+                acquire_slot()
+                t_sem = time.time() - t_sem_start
+                try:
+                    if session_manager.get_article_body(req.session_id, aid) is not None:
+                        return
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
                     try:
-                        html_text, fetch_err = await _fetch_single(info["url"])
-                        if html_text:
-                            bt, _, _ = _extract_body_from_html(html_text)
-                            if bt and bt.strip():
-                                truncated_body, was_truncated = truncate_body(bt)
-                                session_manager.set_article_body(
-                                    req.session_id, aid,
-                                    body_text=truncated_body or "",
-                                    truncated=was_truncated,
+                        for attempt in range(3):
+                            try:
+                                html_text, fetch_err = loop.run_until_complete(
+                                    _fetch_single(url)
                                 )
-                                success = True
-                                break
-                        last_error = fetch_err or "提取正文失败"
-                    except Exception as e:
-                        last_error = str(e)[:200]
-                    await asyncio.sleep(1 + random.random() * 2)
-                if not success:
+                                if html_text:
+                                    bt, _, _ = _extract_body_from_html(html_text)
+                                    if bt and bt.strip():
+                                        tb, tw = truncate_body(bt)
+                                        session_manager.set_article_body(
+                                            req.session_id, aid,
+                                            body_text=tb or "", truncated=tw,
+                                        )
+                                        _Dlog.log("sinafin_extract_done",
+                                                   article_id=aid,
+                                                   body_len=len(tb),
+                                                   sem_wait_s=t_sem,
+                                                   fetch_s=time.time()-t0,
+                                                   url=url[:60])
+                                        return
+                                last_error = fetch_err or "提取正文失败"
+                            except Exception as e:
+                                last_error = str(e)[:200]
+                            time.sleep(1 + random.random() * 2)
+                    finally:
+                        loop.close()
+                    _Dlog.log("sinafin_extract_fail", article_id=aid,
+                               error=last_error[:60])
                     session_manager.set_article_body(
                         req.session_id, aid,
-                        body_text="", fetch_error=last_error,
+                        body_text="", fetch_error=f"sinafin: {last_error}",
                     )
-            finally:
-                await asyncio.to_thread(release_slot)
+                finally:
+                    release_slot()
+
+            loop = asyncio.get_event_loop()
+            pool = ThreadPoolExecutor(max_workers=len(to_extract))
+            tasks = [loop.run_in_executor(pool, _extract_one, aid, url)
+                     for aid, url in to_extract]
+            await asyncio.gather(*tasks)
+            pool.shutdown(wait=False)
+            _Dlog.log("sinafin_extract_batch_done",
+                       session_id=req.session_id[:20],
+                       elapsed_s=time.time()-_T0)
 
     # ── 先检查是否所有文章都已就绪或失败 ──
     all_statuses = set()

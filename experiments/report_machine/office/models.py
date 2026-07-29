@@ -36,6 +36,7 @@ class TypeBResponse(BaseModel):
     session_closed: bool
     articles: list[dict]     # [{article_id, body_text, truncated}]
     status: str              # ready / error / timeout
+    http_status: int = 0     # mail_tower 返回的真实 HTTP 状态码，0 表示网络/超时
 
 
 # ========================
