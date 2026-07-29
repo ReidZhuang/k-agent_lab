@@ -20,7 +20,7 @@ reporter:
   host: "localhost"
   port: 8312
   max_loop_rounds: 8          # Agent loop 最大轮次
-  article_timeout: 120        # 获取正文全局超时（秒）
+  article_timeout: 180        # 获取正文全局超时（秒）
   deepseek:
     model: "deepseek-v4-flash"
     max_tokens: 4000

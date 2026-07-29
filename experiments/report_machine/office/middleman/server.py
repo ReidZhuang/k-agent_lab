@@ -230,7 +230,8 @@ def _call_mail_tower_article(engine: str, session_id: str,
     """
     MAX_ATTEMPTS = 3
     POLL_SECONDS = 5  # 每 5s 轮询一次 processing
-    ROUND1_TIMEOUT = 60  # 每轮等待 60s（sinafin按需加载较慢）
+    ROUND1_TIMEOUT = 60  # 每轮等待 60s
+    MAX_POLL_PER_ATTEMPT = 96  # 每次尝试最多轮询 96×5s=480s（匹配 reporter 超时）
 
     def _post_article(sid, aids):
         return _HTTP_SESSION.post(
@@ -259,7 +260,7 @@ def _call_mail_tower_article(engine: str, session_id: str,
                         "status": top_status,
                         "session_closed": data.get("session_closed", False)}
             # 如果 processing → 5s 轮询
-            for poll_attempt in range(4):  # 20s / 5s = 4次
+            for poll_attempt in range(MAX_POLL_PER_ATTEMPT):  # 最多 200s
                 time.sleep(POLL_SECONDS)
                 try:
                     pr = _HTTP_SESSION.get(

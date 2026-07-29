@@ -938,8 +938,8 @@ async def search(req: SearchRequest):
                 t.start()
 
             # Sinafin 模式：不启动后台线程 — 正文改为按需加载。
-            # _phase1_raw 已在 set_preview 中存好，/article 调用时从池子
-            # 取出 URL，经全局节流阀后提取正文。
+            # 按需加载使用 Semaphore(10) 并发控制（sinafin_rate_limiter），
+            # 替代旧版 1.8s 文件锁 wait_slot，多篇文章可并行提取。
 
             # Baidufin 模式：后台自动提取全部文章正文（httpx → Playwright 兜底）
             if req.engine == "baidufin":
@@ -1187,7 +1187,7 @@ async def get_article(req: ArticleRequest):
 
     log_svc(session_id=req.session_id, step="article_fetch", extra={"article_ids": req.article_ids or [req.article_id] if req.article_id else []})
 
-    # ── Sinafin 按需取正文（懒加载 + 全局节流） ──
+    # ── Sinafin 按需取正文（并行，Semaphore 并发控制） ──
     if sess.engine == "sinafin":
         for aid in target_ids:
             body = session_manager.get_article_body(req.session_id, aid)
@@ -1199,44 +1199,41 @@ async def get_article(req: ArticleRequest):
                     req.session_id, aid, body_text="", fetch_error="无可用 URL",
                 )
                 continue
-            from sinafin_rate_limiter import wait_slot
-            await asyncio.to_thread(wait_slot)
-            body = session_manager.get_article_body(req.session_id, aid)
-            if body is not None:
+            from sinafin_rate_limiter import acquire_slot, release_slot
+            # 检查缓存（等槽位期间可能已被其他线程提取）
+            if session_manager.get_article_body(req.session_id, aid) is not None:
                 continue
-            from core import _fetch_single, _extract_body_from_html, truncate_body
-            import random
-            last_error = ""
-            for attempt in range(3):
-                try:
-                    html_text, fetch_err = await _fetch_single(info["url"])
-                    if html_text:
-                        bt, _, _ = _extract_body_from_html(html_text)
-                        if bt and bt.strip():
-                            truncated_body, was_truncated = truncate_body(bt)
-                            session_manager.set_article_body(
-                                req.session_id, aid,
-                                body_text=truncated_body or "",
-                                truncated=was_truncated,
-                            )
-                            break  # 成功，跳出重试循环
-                    last_error = fetch_err or "提取正文失败"
-                except Exception as e:
-                    last_error = str(e)[:200]
-                # 最后一次失败后不再等待
-                if attempt < 2:
-                    wait = 1 + random.random() * 2
-                    print(f"[sinafin] 第{attempt+1}次提取失败 ({last_error})，{wait:.1f}s 后重试", flush=True)
-                    await asyncio.sleep(wait)
-            else:
-                # 3 次全部失败
-                session_manager.set_article_body(
-                    req.session_id, aid,
-                    body_text="", fetch_error=last_error,
-                )
-                continue
-            # 成功时已 break，这里继续下一篇文章
-            continue
+            await asyncio.to_thread(acquire_slot)
+            try:
+                from core import _fetch_single, _extract_body_from_html, truncate_body
+                import random
+                last_error = ""
+                success = False
+                for attempt in range(3):
+                    try:
+                        html_text, fetch_err = await _fetch_single(info["url"])
+                        if html_text:
+                            bt, _, _ = _extract_body_from_html(html_text)
+                            if bt and bt.strip():
+                                truncated_body, was_truncated = truncate_body(bt)
+                                session_manager.set_article_body(
+                                    req.session_id, aid,
+                                    body_text=truncated_body or "",
+                                    truncated=was_truncated,
+                                )
+                                success = True
+                                break
+                        last_error = fetch_err or "提取正文失败"
+                    except Exception as e:
+                        last_error = str(e)[:200]
+                    await asyncio.sleep(1 + random.random() * 2)
+                if not success:
+                    session_manager.set_article_body(
+                        req.session_id, aid,
+                        body_text="", fetch_error=last_error,
+                    )
+            finally:
+                await asyncio.to_thread(release_slot)
 
     # ── 先检查是否所有文章都已就绪或失败 ──
     all_statuses = set()

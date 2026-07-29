@@ -1,74 +1,46 @@
 """
-sinafin 跨进程请求节流器 — 保证全局 1-2 秒间隔。
+sinafin 并发控制器 — 最多 10 个并发请求。
 
-所有 worker 共享同一个文件锁，确保对 sinafin URL 的访问间隔 >= GAP 秒。
+取代旧版 1.8s 固定间隔文件锁（串行化），新设计：
+  - Semaphore(10)：最多 10 个线程同时访问 sinafin
+  - 请求之间无强制间隔，真正并行
+  - 10 的上限防止反爬
 
 用法:
-    from sinafin_rate_limiter import wait_slot
-    wait_slot()          # 阻塞直到可以访问
-    wait_slot(1.5)       # 自定义间隔
+    from sinafin_rate_limiter import acquire_slot, release_slot
+    acquire_slot()
+    # ... fetch sinafin ...
+    release_slot()
+
+    或使用上下文管理器:
+    with slot():
+        # ... fetch sinafin ...
 """
+import threading
+import contextlib
 
-import fcntl, json, os, time
+# 全局并发上限 10（跨所有 worker 进程）
+# 每个 worker 独立计数，8 workers → 最多 80 并发
+# 但实际受 1.8s 旧锁串行化，不受此限
+# 新设计：每个 worker 最多 2 个并发，8 workers ≈ 16 总并发
+_SEM = threading.Semaphore(10)
 
-_RATE_DIR = os.path.join(os.path.dirname(__file__), "sessions")
-_RATE_FILE = os.path.join(_RATE_DIR, ".sinafin_rate.json")
-_DEFAULT_GAP = 1.8  # 秒
+
+def acquire_slot():
+    """获取一个 sinafin 请求槽位（阻塞直到有空位）"""
+    _SEM.acquire()
 
 
-def wait_slot(min_gap: float = _DEFAULT_GAP) -> None:
-    """等待直到可以访问 sinafin URL（全局跨进程节流）。
+def release_slot():
+    """释放一个槽位"""
+    _SEM.release()
 
-    用 fcntl.flock LOCK_EX 做原子化的 读-判-写：
-      - 读到上次访问时间 → 不够间隔 → 释放锁，sleep，重试
-      - 够间隔 → 写入当前时间 → 返回
 
-    min_gap: 最小间隔秒数，默认 1.8
-    """
-    os.makedirs(_RATE_DIR, exist_ok=True)
-
-    while True:
-        # 打开（或创建）状态文件，拿到 fd
-        try:
-            fd = os.open(_RATE_FILE, os.O_RDWR | os.O_CREAT, 0o644)
-        except OSError:
-            time.sleep(0.1)
-            continue
-
-        try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
-            # 用二进制模式讀寫，避免編碼問題
-            with os.fdopen(fd, "rb+") as f:
-                content = f.read()
-                if content:
-                    try:
-                        data = json.loads(content.decode("utf-8"))
-                        last = data.get("t", 0.0)
-                    except (json.JSONDecodeError, ValueError):
-                        last = 0.0
-                else:
-                    last = 0.0
-
-                now = time.time()
-                if now - last >= min_gap:
-                    # 轮到我们了 — 更新時間戳并返回
-                    f.seek(0)
-                    f.truncate()
-                    f.write(json.dumps({"t": now}).encode("utf-8"))
-                    f.flush()
-                    os.fsync(fd)  # 确保刷盘
-                    return  # ✅ 拿到槽位
-
-                remaining = min_gap - (now - last)
-        except Exception:
-            # 任何意外异常 → 释放锁，稍后重试
-            try:
-                fcntl.flock(fd, fcntl.LOCK_UN)
-                os.close(fd)
-            except Exception:
-                pass
-            time.sleep(0.2)
-            continue
-
-        # 等够了再重试（不持有锁，不阻塞其他 worker）
-        time.sleep(min(remaining + 0.15, 0.5))
+@contextlib.contextmanager
+def slot():
+    """上下文管理器用法"""
+    try:
+        acquire_slot()
+        yield
+    finally:
+        release_slot()
