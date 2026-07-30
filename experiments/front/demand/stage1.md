@@ -6,3 +6,112 @@
 4. 2/3页面是有标签（标签在页面的右上角，点击可以切换）的可以选择股票池，也可以选择文档，选择文档的话这2/3页面内容就显示一个文档展示也页面，展示的是左边explorer点击的md文档，右边（不管当前在哪个标签上都会跳到文档标签上）的文档页面就会显示选中的文档内容。展示将md文档展示成在vs code中打开md文件使用的build-in的markdown preview应用打开的md文件的效果。不可以编辑。
 5. explorer有下载功能，点击文件点击页面底部的下载按键可以下载。
 6. 需要在配置处开发一个存放用户deepseek token的位置，之后office中调用deepseek的部分使用这个token，要确保这个token不会被git同步。这个token最好写到linux的环境配置里面去，但要索引好用户信息。
+
+
+
+1. 股票名称和代码的确认你可以copy name_to_code.py的逻辑，但是实时拉取要每天都进行一次，比如今天要调用这个函数了发现今天还没拉取过tushare的数据，那么在用之前先拉取更新一遍。用/home/stockagent/project_space/demand/final/api_intro/tushare_basic_data_description.md其中第一个股票基础信息表应该就是了。
+2. 关于股票池tushare_basic_data_description.md中有A股日线行情，这张表可以提供很多信息，用它来填充股票池里展示的数据指标。接入tushare的方式可以参考/home/stockagent/project_space/research/experiments/report_machine/data_fetch/midday/fetch_midday_data.py和config.py如果还不行再问我。股票池的数据显示，直接用tushare端的数据就可以了，不用拉取到本地整张表了，tushare数据都是日终更新的，所以只能取昨天的数据，不是实时，昨日行情就直接这样取tushare的数据显示就好了，你觉得可以吗？
+3. 所有用户都用一个token吧，这样的话deepseek token的相关开发就与这个前端需求无关了
+4. 前端技术栈：接下来我要扩展这个前端，要增加文档在线编辑（加粗、标题、字体、颜色等功能）、还要增加一些页面的互动，请保证这些基础的功能都可以实现。选择实现这类功能扩展空间大的。
+5. 用户名密码一定要加在数据库里。
+6. explorer指向/home/stockagent/project_space/research/experiments/report_machine/user_001这个目录
+
+
+
+1. 请注意，真个前端的设计字体用的稍大一些，因为是老年人使用。另外要支持手机端浏览器访问。设计风格偏简约轻商务风，设计以原木色为主基调，颜色搭配柔和一点。
+2. 前端的使用将会让用户通过talescale ip透传来我的本地pc连接，我不知道这个对于开发前端有没有影响。告知一下。
+
+
+这个风格非常好，保留
+另外几点
+1. 股票池展示的指标更多一点，现有的都是主要的都保留
+2. office里应该有一个将md转成docx的脚本，你看你能找到吗？如果能找到，那么在explorer中就放md格式，展示文档就用你在模板里的展示md的preview非常好，但是点击下载之后就把选中的文档从md转为word格式再下载，转换时显示一个进度条。
+3. 把上传按钮去掉，改成收藏按钮。在explorer中置顶一个收藏夹，用户选中点击收藏的文档，要在收藏夹中显示。
+
+
+1. 点击下载之后得到的是个zip，下载一个文档的话直接下崽诚docx，下载很多的时候再给打包zip
+2. 下载选中文档的按钮需要居中
+3. 登录页的用户名和密码输入框长度不一致
+4. 转换后的docx文件中的字都太小了，整体都要增大。标题能要更醒目，各级别的标题字都要大一些
+
+
+好的，测试结束，测试通过了。现在要进行下一步的需求开发：将office系统与前端对接。
+前端在/home/stockagent/project_space/research/experiments/front， 你可以看一下intro中的文档
+前端的每个用户都有股票池：
+zgx 当前股票池有 4 只：
+
+┌──────────┬───────────┬────────────┐
+│ 股票名称 │   代码    │  加入时间  │
+├──────────┼───────────┼────────────┤
+│ 凯莱英   │ 002821.SZ │ 2026-07-29 │
+├──────────┼───────────┼────────────┤
+│ 广生堂   │ 300436.SZ │ 2026-07-29 │
+├──────────┼───────────┼────────────┤
+│ 淮北矿业 │ 600985.SH │ 2026-07-29 │
+├──────────┼───────────┼────────────┤
+│ 博瑞医药 │ 688166.SH │ 2026-07-29 │
+└──────────┴───────────┴────────────┘
+
+
+你也可以直接查 SQLite：
+
+stock_pool 表里只存了 user_id（数字），没有存用户名。用户名在 user 表里，需要 JOIN 才能查到：
+
+SELECT u.username, s.stock_name, s.ts_code
+FROM stock_pool s
+JOIN user u ON s.user_id = u.id
+WHERE u.username = 'zgx';
+
+这是数据库的规范化设计——用户名只存一份（user 表），其他地方引用 user_id，避免用户名修改时出现数据不一致。
+
+我希望在office里设置一个配置，可以将前端的用户名配置进去。然后开发一个脚本并设置一个定时任务，让这个任务在交易日的11：40分开始跑。这里的交易日判定使用/home/stockagent/project_space/research/experiments/report_machine/data_fetch/midday/trade_calendar.py。任务中，只要配置进去用户名，就查它的股票池，去重之后将股票池中的股票调用office系统跑全流程。输出结果后，将结果保存在/home/stockagent/project_space/research/experiments/report_machine/user/{配置的用户名}/，保存方式还是一个股票一个文件夹。保存的文件名需要修改一下，把里面的midday改成“午间收盘报告”
+
+
+
+
+
+
+
+
+
+
+
+
+# qnainfo 正文已存入 session，不关闭 session，让 TTL 自然过期。
+# 关闭后 /article 无法通过 get() 读取缓存正文，导致 reporter Type B 404。
+
+"body_avail": "有" if (has_url or engine in ("juchao", "qnainfo")) else "无"
+"body_avail": "有" if (has_url or engine == "juchao") else "无"
+
+
+
+股票报告系统 把这个名字改一下 改成：股神的秘密
+
+已完成。
+
+---
+
+### 2026-07-30 更新
+
+1. **系统更名**："股票报告系统" → "股神的秘密"（前端标题、浏览器标签、后端 API 名称均已修改）
+
+2. **Explorer 排序**：顶部添加 📄（按名称排序）和 🕐（按时间排序）两个排序按钮，支持点击切换排序方式
+
+3. **Explorer 删除功能**：
+   - 后端 `/api/explorer/delete` 接口（DELETE），支持删除文件或空目录，含路径穿越防护
+   - 前端文件右侧悬停显示 🗑 删除按钮，点击确认后删除
+   - 底部批量删除按钮，选中文件后确认批量删除
+
+4. **Explorer 底部操作栏（三按钮）**：
+   - **刷新**（文字按钮）— 清空选中状态、收起所有文件夹、重新加载文件树
+   - **删除** — 批量删除已选中文件
+   - **下载** — 单个文件直下 docx，多个文件打包 zip
+   - ✅ 操作栏 sticky 固定在左栏底部，滚动时始终可见
+
+5. **Explorer Bug 修复**：
+   - 文件夹展开后文件不显示：buildTree 的 expanded 默认值从 `!== false` 改为 `=== true`
+   - 标签切换后底部按钮消失：`.sidebar` 和 `.tree-section` 添加 `min-height: 0` 防止 flex 裁剪
+   - 增加刷新按钮（原设计缺失）
+
+6. **DOCX 字体缩小**：`md_to_docx.py` 封面/正文/标题/表格字体整体调小一档
+

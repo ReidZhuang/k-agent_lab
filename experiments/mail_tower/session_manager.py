@@ -51,6 +51,8 @@ class Session:
         self.include_snippet = include_snippet
         self.llm_mode = llm_mode
         self.status = "processing"
+        self.list_status: str = "processing"     # processing | ready | empty | error
+        self.article_status: str = "free"        # free | waiting | processing | ready | error
         self.created_at = time.time()
         self._loaded_at = time.time()
         self.elapsed = 0.0
@@ -127,6 +129,8 @@ class Session:
             "include_snippet": self.include_snippet,
             "llm_mode": self.llm_mode,
             "status": self.status,
+            "list_status": self.list_status,
+            "article_status": self.article_status,
             "created_at": self.created_at,
             "elapsed": self.elapsed,
             "error": self.error,
@@ -156,7 +160,8 @@ class Session:
             start_date=data.get("start_date"),
             end_date=data.get("end_date"),
         )
-        for key in ("status", "created_at", "elapsed", "error",
+        for key in ("status", "list_status", "article_status",
+                    "created_at", "elapsed", "error",
                     "call_count", "body_return_count", "list_ready_at",
                     "preview", "article_bodies", "_phase1_raw"):
             if key in data:
@@ -249,12 +254,19 @@ class SessionManager:
             return {"status": "not_found"}
         return sess.to_dict(include_texts=False)
 
-    def set_preview(self, session_id: str, preview: dict, phase1_raw: list, elapsed: float):
+    def set_preview(self, session_id: str, preview: dict, phase1_raw: list, elapsed: float,
+                    engine: str = ""):
         sess = self.get(session_id)
         if not sess:
             return
         with self._lock:
             sess.status = "list_ready" if sess.mode == "list" else "preview"
+            sess.list_status = "ready"
+            if engine in ("qnainfo",):
+                sess.article_status = "free"
+            elif sess.mode == "list":
+                # 正文提取由后台线程或 /article 内联处理
+                sess.article_status = "waiting"
             sess.preview = preview
             sess._phase1_raw = phase1_raw
             sess.elapsed = elapsed
@@ -286,6 +298,29 @@ class SessionManager:
             sess._phase1_raw = []
         self._save_to_file(session_id)
 
+    def set_article_processing(self, session_id: str):
+        """标记正文提取开始（article_status → processing）"""
+        sess = self.get(session_id)
+        if not sess:
+            return
+        with self._lock:
+            if sess.article_status != "error":
+                sess.article_status = "processing"
+        self._save_to_file(session_id)
+
+    def set_article_ready(self, session_id: str, has_ready: bool = True):
+        """标记正文提取完成（article_status → ready 或 error）
+
+        Args:
+            has_ready: True=至少一篇就绪, False=全部失败
+        """
+        sess = self.get(session_id)
+        if not sess:
+            return
+        with self._lock:
+            sess.article_status = "ready" if has_ready else "error"
+        self._save_to_file(session_id)
+
     def set_article_body(self, session_id: str, article_id: str,
                          body_text: str, truncated: bool = False,
                          fetch_error: str = ""):
@@ -307,6 +342,8 @@ class SessionManager:
             return
         with self._lock:
             sess.status = "error"
+            sess.list_status = "error"
+            sess.article_status = "error"
             sess.error = error
             sess._phase1_raw = []
         self._save_to_file(session_id)
