@@ -107,9 +107,19 @@ Office 是一个自动化的午间报告生成系统。它从多个数据源获�
 
 线程池使用延迟创建模式（double-checked locking），支持 uvicorn workers>1 的 fork 场景。
 
-### 调试日志
+### 日志
 
-所有组件记录 JSONL 格式的结构化日志到 `test_drive/results/debug_logs/`，每行含 timestamp + component + step + elapsed_ms。通过配置开关控制。
+参见详细文档 [LOGGING.md](LOGGING.md)。
+
+系统包含三类日志：
+
+| 类型 | 位置 | 说明 |
+|:-----|:------|:------|
+| DebugLogger（JSONL） | `test_drive/results/debug_logs/*.jsonl` | 调试用结构化日志，7 个组件共 26 个 step，可按需移除 |
+| log_office_error | SQLite `error_log` 表 | 异常记录（15 处调用点），保留 |
+| Commander 任务日志 | `office/log/task_*.log` / `summary_*.json` | 定时任务流水和摘要 |
+
+> **移除调试日志**：见 [LOGGING.md](LOGGING.md)「移除指南」。
 
 ## 启动
 
@@ -205,3 +215,5 @@ conda run -n stock_agent python retry_fallback.py --retry-all # 全部重试
 | 2026-07-28 | 双保险 | 响应丢失后检查报告文件是否存在 |
 | 2026-07-28 | 78只压测通过 | 76/76 成功，零 fallback，7.8min |
 | 2026-07-28 | 添加 Word 输出 | 自动生成 .docx 格式报告 |
+| 2026-07-30 | 接入 Commander | 定时任务通过 commander/scheduled_task.py 调度 |
+| 2026-07-30 | 文档完善 | [LOGGING.md](LOGGING.md) 详细记录所有日志点 |
