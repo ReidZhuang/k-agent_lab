@@ -1,0 +1,76 @@
+{
+  "stock_name": "英力特",
+  "ts_code": "000635.SZ",
+  "fetch_data": "## 英力特 (000635.SZ)\n\n- 市场热度: 29（低）\n- 成交额: 2.32万亿（+454亿）\n- 上涨占比: 73.00% | 赚钱效应: 41%\n- 涨停梯队: 一板42只(晋级率9%) / 二板6只(晋级率17%) / 三板1只(晋级率60%) / 高度板3只\n- 涨跌分布: 上涨1756 / 下跌3654 / 涨停56 / 跌停75\n\n- 涨停56 / 跌停76 / 上涨1748 / 下跌3665\n- 信号: 市场人气低迷\n- 涨跌幅分布：涨幅集中在 1%~2%，跌幅集中在 -4%~-1%\n---\n\n📌 股票涉及行业关键词：PVC, 化学, 化学制品, 化工, 化工原料, 原材料行业, 基础化工, 基础材料, 工业原料, 无机化工, 有机化工, 材料, 氯气, 氯碱, 烧碱, 石化, 硫酸, 精细化工, 纯碱, 资源品\n\n【今日11:30收盘数据】股票名称: 英 力 特 | 代码: 000635 | 当前价: 6.1 | 昨收: 6.14 | 开盘: 6.14 | 最高: 6.22 | 最低: 6.08 | 涨跌幅%: -0.65 | 成交量(手): 21757 | 成交额(万元): 1344.0 | 换手率%: 0.59 | 振幅%: 2.28 | 量比: 0.92 | 均价: 6.18 | 动态市盈率: -4.66 | 市净率: 2.18\n                     总市值(亿元): 24.04 | 流通市值(亿元): 22.38 | 涨停价: 6.75 | 跌停价: 5.53 | 买一价: 6.1 | 卖一价: 6.11 | 外盘(手): 9883 | 内盘(手): 11874\n\n【上一个交易日日终】换手率: 1.244% | 自由流通换手率: 2.1576% | PE: None | PB: 2.1946\n\n【上一个交易日日终融资融券】\n          无融资融券信息，股票可能非融资融券标的\n\n【今日午间收盘资金流向（逐分钟统计）】\n          净流向: 净流出 427.34万元（统计分钟数: 239）\n          资金流入 95 分钟 / 流出 140 分钟 | 最大单分钟流入: 62.8万 / 最大单分钟流出: 54.6万\n\n【上一个交易日日终资金细分（元）】\n          大单净额: -1849893.00（买入: 1454748 / 卖出: 3304641）\n          中单净额: -2056334.00（买入: 5782982 / 卖出: 7839316）\n          小单净额: -455809.00（买入: 2502020 / 卖出: 2957829）\n          合计净额: -4362036.00\n\n\n【技术面关键位置】当前价: None\n          布林带上轨: 6.29 | 布林带下轨: 5.69\n",
+  "fetch_message": "## 英力特 (000635.SZ)\n\n（今日暂无相关消息数据）\n",
+  "fetch_warnings": {},
+  "articles": {
+    "sinafin": {
+      "session_id": "s_20260730_145749_852684_7886931825",
+      "preview": {
+        "articles": [
+          {
+            "id": "a_01",
+            "title": "英力特：截至2026年7月20日公司股东总户数为21,550",
+            "body_avail": "有",
+            "date": "2026-07-30 08:46",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 08:46",
+            "_category": "资讯",
+            "body_status": "processing"
+          }
+        ],
+        "total": 1,
+        "total_raw": 1,
+        "filter_stats": {
+          "raw_count": 1,
+          "filtered_count": 1,
+          "dropped_count": 0,
+          "filter_days": null,
+          "filter_title": null
+        }
+      },
+      "empty": false,
+      "error": ""
+    },
+    "juchao": {
+      "session_id": "s_20260730_145750_083935_5341406093",
+      "preview": {
+        "articles": [],
+        "total": 0,
+        "total_raw": 0,
+        "filter_stats": {}
+      },
+      "empty": true,
+      "error": ""
+    },
+    "thsfin": {
+      "session_id": "s_20260730_145750_234919_1085830561",
+      "preview": {
+        "articles": [],
+        "total": 0,
+        "total_raw": 0,
+        "filter_stats": {}
+      },
+      "empty": true,
+      "error": ""
+    },
+    "qnainfo": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "qnainfo search failed after retries"
+    },
+    "baidufin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "baidufin search failed after retries"
+    }
+  },
+  "middleman_warnings": [
+    "qnainfo: qnainfo search failed after retries",
+    "baidufin: baidufin search failed after retries"
+  ]
+}

@@ -146,7 +146,7 @@ def _add_cover(doc, stock_name: str, trade_date: str, md_text: str):
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = p.add_run('午间分析报告')
-    run.font.size = Pt(26)
+    run.font.size = Pt(24)
     run.bold = True
     run.font.color.rgb = C_H1
     run.font.name = 'Microsoft YaHei'
@@ -157,7 +157,7 @@ def _add_cover(doc, stock_name: str, trade_date: str, md_text: str):
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.paragraph_format.space_before = Pt(6)
         run = p.add_run(stock_name)
-        run.font.size = Pt(14)
+        run.font.size = Pt(20)
         run.font.color.rgb = C_MUTED
         run.font.name = 'Microsoft YaHei'
 
@@ -177,7 +177,7 @@ def _add_cover(doc, stock_name: str, trade_date: str, md_text: str):
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p.paragraph_format.space_before = Pt(12)
     run = p.add_run(f'{trade_date or datetime.now().strftime("%Y-%m-%d")}')
-    run.font.size = Pt(10.5)
+    run.font.size = Pt(14)
     run.font.color.rgb = C_MUTED
     run.font.name = 'Microsoft YaHei'
 
@@ -237,10 +237,10 @@ def _set_styles(doc):
     # ── Normal（正文） ──
     s = doc.styles['Normal']
     s.font.name = 'Microsoft YaHei'
-    s.font.size = Pt(10.5)
+    s.font.size = Pt(12)
     s.font.color.rgb = C_BODY
     s.paragraph_format.line_spacing = 1.5
-    s.paragraph_format.space_after = Pt(6)
+    s.paragraph_format.space_after = Pt(4)
     s.paragraph_format.space_before = Pt(0)
     _set_east_asia(s, 'Microsoft YaHei')
 
@@ -249,7 +249,7 @@ def _set_styles(doc):
     for style_name in ['List Bullet', 'List Number']:
         s = doc.styles[style_name]
         s.font.name = 'Microsoft YaHei'
-        s.font.size = Pt(10.5)
+        s.font.size = Pt(12)
         s.font.color.rgb = C_BODY
         s.paragraph_format.space_after = Pt(2)
         _set_east_asia(s, 'Microsoft YaHei')
@@ -270,7 +270,7 @@ def _add_h1(doc, text: str):
     p.paragraph_format.space_after = Pt(4)
     p.paragraph_format.line_spacing = 1.2
     run = p.add_run(text)
-    run.font.size = Pt(18)
+    run.font.size = Pt(24)
     run.bold = True
     run.font.color.rgb = C_H1
     run.font.name = 'Microsoft YaHei'
@@ -291,7 +291,7 @@ def _add_h2(doc, text: str):
     p.paragraph_format.space_after = Pt(4)
     p.paragraph_format.line_spacing = 1.2
     run = p.add_run(text)
-    run.font.size = Pt(14)
+    run.font.size = Pt(20)
     run.bold = True
     run.font.color.rgb = C_H2
     run.font.name = 'Microsoft YaHei'
@@ -311,7 +311,7 @@ def _add_h3(doc, text: str):
     p.paragraph_format.space_after = Pt(4)
     p.paragraph_format.line_spacing = 1.3
     run = p.add_run(text)
-    run.font.size = Pt(12)
+    run.font.size = Pt(16)
     run.bold = True
     run.font.color.rgb = C_H3
     run.font.name = 'Microsoft YaHei'
@@ -323,7 +323,7 @@ def _add_h4(doc, text: str):
     p.paragraph_format.space_before = Pt(10)
     p.paragraph_format.space_after = Pt(2)
     run = p.add_run(text)
-    run.font.size = Pt(11)
+    run.font.size = Pt(14)
     run.bold = True
     run.font.color.rgb = C_BODY
     run.font.name = 'Microsoft YaHei'
@@ -386,13 +386,13 @@ def _add_table(doc, rows: list[str]):
                 _set_cell_shading(cell, C_TABLE_HEADER)
                 run = p.add_run(cell_text.strip())
                 run.bold = True
-                run.font.size = Pt(9)
+                run.font.size = Pt(11)
                 run.font.color.rgb = C_H1
                 run.font.name = 'Microsoft YaHei'
             else:
                 if row_idx % 2 == 0:
                     _set_cell_shading(cell, C_TABLE_ALT)
-                _add_rich_text(p, cell_text.strip(), font_size=Pt(9))
+                _add_rich_text(p, cell_text.strip(), font_size=Pt(11))
 
     doc.add_paragraph()
 

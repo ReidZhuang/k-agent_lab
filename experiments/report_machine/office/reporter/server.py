@@ -58,16 +58,23 @@ async def generate_report(ctx: ReportContext):
     接收 sub writer 传来的 context，启动 agent loop。
     """
     report_id = uuid.uuid4().hex[:12]
+    _log = get_logger("reporter")
+    _log("handler_enter", report_id=report_id, stock_name=ctx.stock_name,
+         ts_code=ctx.ts_code)
 
+    t0 = time.time()
     try:
+        _log("before_get_pool", report_id=report_id, stock_name=ctx.stock_name)
         pool = _get_pool()
-        log = get_logger("reporter")
-        t0 = time.time()
-        output_path, rounds_used = await asyncio.get_event_loop().run_in_executor(
+        _log("after_get_pool", report_id=report_id, stock_name=ctx.stock_name)
+
+        loop = asyncio.get_running_loop()
+        _log("before_run_in_executor", report_id=report_id, stock_name=ctx.stock_name)
+        output_path, rounds_used = await loop.run_in_executor(
             pool, agent.run, ctx
         )
-        log("generate_report", report_id=report_id, stock_name=ctx.stock_name,
-            rounds=rounds_used, output=output_path or "", _elapsed=time.time()-t0)
+        _log("after_run_in_executor", report_id=report_id, stock_name=ctx.stock_name,
+             rounds=rounds_used, output=output_path or "", _elapsed=time.time()-t0)
     except Exception as e:
         log_office_error(
             module="office.reporter",

@@ -91,7 +91,7 @@ app.add_middleware(
 # ======================================================================
 
 def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
-                     fetch_message_text: str, report_id: str) -> SubWorkerResult:
+                     fetch_message_text: str, report_id: str, query: str = "") -> SubWorkerResult:
     """单个股票的 sub writer
 
     流程：
@@ -160,6 +160,7 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
         fetch_warnings={},
         articles=articles,
         middleman_warnings=middleman_warnings,
+        query=query,
     )
 
     # ── 保存 context 样本（用于研究 prompt，POST reporter 前保存） ──
@@ -215,7 +216,7 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
     # ── 响应丢失检查：reporter 实际已成功但响应没回来？ ──
     today = time.strftime("%Y%m%d")
     expected_path = os.path.join(
-        _OUTPUT_DIR, stock_name, f"{today}_{stock_name}_midday.md"
+        _OUTPUT_DIR, stock_name, f"{today}_{stock_name}_午间收盘报告.md"
     )
     if os.path.exists(expected_path):
         log("post_reporter_recovered", stock_name=stock_name,
@@ -264,6 +265,7 @@ def _sync_create_report(req: ReportRequest) -> ReportResponse:
     """同步执行函数（在 _WRITER_POOL 线程中运行）"""
     report_id = uuid.uuid4().hex[:12]
     stock_names = req.stock_names
+    query = req.query
     log = get_logger("writer_api")
     t_start = time.time()
     log("report_start", report_id=report_id, stocks=stock_names)
@@ -293,7 +295,7 @@ def _sync_create_report(req: ReportRequest) -> ReportResponse:
             data_text = data_by_stock.get(name, {}).get("data", "")
             msg_text = data_by_stock.get(name, {}).get("message", "")
             fut = pool.submit(
-                _run_sub_writer, name, info, data_text, msg_text, report_id
+                _run_sub_writer, name, info, data_text, msg_text, report_id, query
             )
             fut_map[fut] = name
 

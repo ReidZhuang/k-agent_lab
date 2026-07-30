@@ -1,0 +1,46 @@
+{
+  "stock_name": "东和新材",
+  "ts_code": "920792.BJ",
+  "fetch_data": "## 东和新材 (920792.BJ)\n\n- 市场热度: 70（高）\n- 成交额: 2.3万亿（+2708亿）\n- 上涨占比: 85.00% | 赚钱效应: 54%\n- 涨停梯队: 一板70只(晋级率13%) / 二板6只(晋级率31%) / 三板4只(晋级率33%) / 高度板1只\n- 涨跌分布: 上涨4253 / 下跌1215 / 涨停86 / 跌停9\n\n- 涨停86 / 跌停9 / 上涨4253 / 下跌1214\n- 信号: 市场人气高涨\n- 涨跌幅分布：涨幅集中在 2%~3%，跌幅集中在 -3%~-1%\n---\n\n📌 股票涉及行业关键词：功能材料, 化学, 化工, 卫浴, 原材料行业, 地板, 基础材料, 复合材料, 工业原料, 建材, 建筑材料, 水泥, 涂料, 玻璃, 瓷砖, 稀土, 管材, 精细化工, 耐材, 耐火, 装潢, 装饰, 资源品, 钢铁, 防水, 陶瓷\n\n\n【上一个交易日日终】换手率: 0.2652% | 自由流通换手率: 0.4086% | PE: 20.679 | PB: 1.4673\n\n【上一个交易日日终融资融券】\n          融资余额: 0.08亿（较前日: +1.02%）\n          融券余额: N/A\n\n❌（今日午间收盘）资金流向: 无数据\n\n❌（上一个交易日日终）资金细分: 'NoneType' object has no attribute 'get'\n\n\n❌ 技术面: K线数据不足\n",
+  "fetch_message": "## 东和新材 (920792.BJ)\n\n【热门板块上涨原因】\n  ### 家居装饰 (+1.75%)\n  **上涨原因**: 在智能家居市场长期处于追赶者地位之后，苹果公司正准备发起新一轮大举进军，推出一系列全新硬件和软件产品。\n    - 志邦家居 | 涨幅:+10.02% | 标签:['家居']\n    - 坚朗五金 | 涨幅:+10.01% | 标签:['家居装修']\n    - 慕思股份 | 涨幅:+9.99% | 标签:['床垫']\n    - 欧派家居 | 涨幅:+9.99% | 标签:['家居']\n\n  ### 化工 (+1.48%)\n  **上涨原因**: 中信建投证券研报指出，6月化工品出口延续高位，当月出口金额3025亿元，同比增长22.7%、环比增长3.4%；1-6月累计出口金额16045亿元，同比增长13.7%。\n    - 金牛化工 | 涨幅:+10.04% | 标签:['化工', '采购风电设备']\n    - 赤天化   | 涨幅:+10.10% | 标签:['煤化工']\n    - 金煤科技 | 涨幅:+9.87% | 标签:['业绩', '煤化工']\n    - 闰土股份 | 涨幅:+10.00% | 标签:['染料']\n",
+  "fetch_warnings": {},
+  "articles": {
+    "thsfin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "thsfin search failed after retries"
+    },
+    "juchao": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "juchao search failed after retries"
+    },
+    "baidufin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "baidufin search failed after retries"
+    },
+    "sinafin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "sinafin search failed after retries"
+    },
+    "qnainfo": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "qnainfo search failed after retries"
+    }
+  },
+  "middleman_warnings": [
+    "thsfin: thsfin search failed after retries",
+    "juchao: juchao search failed after retries",
+    "baidufin: baidufin search failed after retries",
+    "sinafin: sinafin search failed after retries",
+    "qnainfo: qnainfo search failed after retries"
+  ]
+}

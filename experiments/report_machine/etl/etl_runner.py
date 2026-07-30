@@ -587,6 +587,54 @@ def etl_mid_stock_intraday():
 
 
 # ====================================================================
+# 第 4 组: 股票基础信息
+# ====================================================================
+
+def etl_stock_basic():
+    """刷新 stg_stock_basic（全量替换）"""
+    logger.info("[stock_basic] 拉取股票基础信息...")
+
+    today = datetime.now().strftime("%Y%m%d")
+
+    # 检查是否今日已更新
+    rows = db.execute("SELECT update_date FROM stg_stock_basic LIMIT 1")
+    if rows and rows[0][0] == today:
+        logger.info("  ✅ 今日已更新，跳过")
+        return 0
+
+    df = PRO.stock_basic(
+        exchange="",
+        list_status="L",
+        fields="ts_code,symbol,name,area,industry,market,list_date",
+    )
+    if df is None or df.empty:
+        logger.warning("  ⚠️  Tushare stock_basic 返回空")
+        return 0
+
+    insert_rows = []
+    for _, r in df.iterrows():
+        insert_rows.append((
+            r.get("ts_code", ""),
+            r.get("symbol", ""),
+            r.get("name", ""),
+            r.get("area", ""),
+            r.get("industry", ""),
+            r.get("market", ""),
+            r.get("list_date", ""),
+            today,
+        ))
+
+    # 全量替换
+    db.execute("DELETE FROM stg_stock_basic")
+    db.insert_batch("stg_stock_basic",
+        ["ts_code", "symbol", "name", "area", "industry", "market", "list_date", "update_date"],
+        insert_rows)
+
+    logger.info(f"  ✅ 股票基础信息已更新: {len(insert_rows)} 只")
+    return len(insert_rows)
+
+
+# ====================================================================
 # 日志
 # ====================================================================
 
@@ -626,6 +674,14 @@ def run_all():
                 logger.error(f"  ❌ {grp} 失败: {err}")
             else:
                 logger.info(f"  ✅ {grp}: {n} 行")
+
+    logger.info(f"\n═══ 股票基础信息 ═══")
+    s = datetime.now().isoformat()
+    try:
+        n = etl_stock_basic()
+        log_it("stock_basic", "stg_stock_basic", n, s, datetime.now().isoformat())
+    except Exception as e:
+        log_it("stock_basic", "stg_stock_basic", 0, s, datetime.now().isoformat(), "FAILED", str(e))
 
     logger.info(f"\n═══ 腾讯快照 ═══")
     s = datetime.now().isoformat()
@@ -669,6 +725,9 @@ if __name__ == "__main__":
     if "--mid-only" in args:
         etl_mid_sector()
         etl_mid_stock_intraday()
+        sys.exit(0)
+    if "--stock-basic-only" in args:
+        etl_stock_basic()
         sys.exit(0)
 
     db.init_schema()

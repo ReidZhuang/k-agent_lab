@@ -131,6 +131,10 @@ def _call_mail_tower_search(engine: str, stock_code: str) -> dict:
       500(参数) → 不重试
       连接失败 → retry 3次 × 递增
 
+    轮询超时策略：
+      第 1 轮超时 → 关闭 session → 重新 search（新 session）→ 第 2 轮轮询
+      第 2 轮超时 → 关闭 session → 返回 error
+
     Returns:
         {session_id, preview, empty, error}
     """
@@ -145,38 +149,52 @@ def _call_mail_tower_search(engine: str, stock_code: str) -> dict:
         "start_date": start_date,
         "end_date": end_date,
     }
-
-    # ── POST /search（带重试） ──
-    def _do_search():
-        r = _HTTP_SESSION.post(f"{_MT_BASE}/search", json=body, timeout=30)
-        return r
-
-    resp = _retry_http(_do_search, engine, "search")
-
-    if resp is None:
-        return {"session_id": "", "preview": None, "empty": None,
-                "error": f"{engine} search failed after retries"}
-
-    try:
-        data = resp.json()
-    except Exception as e:
-        return {"session_id": "", "preview": None, "empty": None,
-                "error": f"JSON decode error: {e}"}
-
-    session_id = data.get("session_id", "")
-    status = data.get("status", "")
-
-    # 如果立即就绪（罕见但可能）
-    if status != "processing":
-        preview = data.get("preview")
-        empty = data.get("empty", preview is None)
-        return {"session_id": session_id, "preview": preview,
-                "empty": empty, "error": ""}
-
-    # ── /poll 轮询（每引擎最长等 ENGINE_TIMEOUT=90s） ──
     ENGINE_TIMEOUT = _mt_cfg.get("search_timeout", 150)
     max_polls = max(1, ENGINE_TIMEOUT // _POLL_INTERVAL)
-    return _poll_session(engine, session_id, max_poll=max_polls)
+
+    for round_num in range(2):  # 最多两轮
+        # ── POST /search（带重试） ──
+        def _do_search():
+            r = _HTTP_SESSION.post(f"{_MT_BASE}/search", json=body, timeout=30)
+            return r
+
+        resp = _retry_http(_do_search, engine, "search")
+
+        if resp is None:
+            return {"session_id": "", "preview": None, "empty": None,
+                    "error": f"{engine} search failed after retries"}
+
+        try:
+            data = resp.json()
+        except Exception as e:
+            return {"session_id": "", "preview": None, "empty": None,
+                    "error": f"JSON decode error: {e}"}
+
+        session_id = data.get("session_id", "")
+        status = data.get("status", "")
+
+        # 立即就绪
+        if status != "processing":
+            preview = data.get("preview")
+            empty = data.get("empty", preview is None)
+            return {"session_id": session_id, "preview": preview,
+                    "empty": empty, "error": ""}
+
+        # ── 轮询 ──
+        result = _poll_session(engine, session_id, max_poll=max_polls)
+        if result.get("error"):
+            # 超时 → 关闭 session，下一轮重试
+            try:
+                _HTTP_SESSION.post(f"{_MT_BASE}/close/{session_id}", timeout=10)
+            except Exception:
+                pass
+            continue
+
+        return result
+
+    # 两轮都超时
+    return {"session_id": "", "preview": None, "empty": None,
+            "error": f"{engine} search timeout after 2 rounds"}
 
 
 def _poll_session(engine: str, session_id: str,
@@ -241,14 +259,14 @@ def _call_mail_tower_article(engine: str, session_id: str,
     """
     MAX_ATTEMPTS = 3
     POLL_SECONDS = 5
-    ROUND1_TIMEOUT = 60
-    MAX_POLL_PER_ATTEMPT = 120
+    MAX_POLL_PER_ATTEMPT = 120  # 120 × 5s = 600s，匹配 reporter article_timeout=600
+    POST_TIMEOUT = _mt_cfg.get("type_b_timeout", 60)
 
     def _post_article(sid, aids):
         return _HTTP_SESSION.post(
             f"{_MT_BASE}/article",
             json={"session_id": sid, "article_ids": aids},
-            timeout=ROUND1_TIMEOUT + 10,
+            timeout=POST_TIMEOUT + 10,
         )
 
     def _resp(status: str, http_status: int,
@@ -257,7 +275,7 @@ def _call_mail_tower_article(engine: str, session_id: str,
         return {"articles": articles or [], "status": status,
                 "http_status": http_status, "session_closed": session_closed}
 
-    # ── 第一轮 ──
+    # ── POST /article（4xx 最多重试 3 次） ──
     for attempt in range(MAX_ATTEMPTS):
         try:
             resp = _post_article(session_id, article_ids)
@@ -274,8 +292,7 @@ def _call_mail_tower_article(engine: str, session_id: str,
                          "resp_body": resp.text[:200]}),
                 )
                 return {"articles": [], "status": "error",
-                        "http_status": resp.status_code,
-                        "session_closed": True}
+                        "http_status": resp.status_code, "session_closed": True}
             # 404 — session 不存在
             if resp.status_code == 404:
                 return _resp("error", 404)
@@ -289,11 +306,11 @@ def _call_mail_tower_article(engine: str, session_id: str,
             data = resp.json()
             top_status = data.get("status", "")
             if top_status in ("ready", "error"):
-                resp_status = data.get("status", "error")
                 return {"articles": data.get("articles", []),
-                        "status": resp_status, "http_status": 200,
+                        "status": data.get("status", "error"),
+                        "http_status": 200,
                         "session_closed": data.get("session_closed", False)}
-            # processing → 轮询
+            # processing → 轮询（最多 600s，被 reporter 610s 截断）
             for poll_attempt in range(MAX_POLL_PER_ATTEMPT):
                 time.sleep(POLL_SECONDS)
                 try:
@@ -301,27 +318,63 @@ def _call_mail_tower_article(engine: str, session_id: str,
                         f"{_MT_BASE}/poll/{session_id}", timeout=30
                     )
                     pj = pr.json() if pr.ok else {}
-                    p_status = pj.get("status", "")
-                    if p_status in ("list_ready", "done"):
+                    p_list_status = pj.get("list_status", "")
+                    p_article_status = pj.get("article_status", "")
+                    # 列表出错或无结果 → 退出
+                    if p_list_status in ("error", "empty"):
+                        break
+                    # 正文就绪 → 调 /article 取正文
+                    if p_article_status == "ready":
                         art_resp = _post_article(session_id, article_ids)
                         if art_resp.ok:
                             ad = art_resp.json()
+                            # 如果返回 processing，检查是否有就绪的文章可以立即返回
+                            if ad.get("status") == "processing":
+                                ready_articles = [a for a in ad.get("articles", []) if a.get("status") == "ready"]
+                                if ready_articles:
+                                    # 有部分正文就绪 → 直接返回，不再等
+                                    return {"articles": ready_articles,
+                                            "status": "ready",
+                                            "http_status": 200,
+                                            "session_closed": ad.get("session_closed", False)}
+                                # 没有一篇就绪 → 继续轮询
+                                continue
                             return {"articles": ad.get("articles", []),
                                     "status": ad.get("status", "error"),
                                     "http_status": art_resp.status_code,
                                     "session_closed": ad.get("session_closed", False)}
-                    elif p_status == "error":
+                    # 无正文（qnainfo）或全部失败 → 退出
+                    elif p_article_status in ("free", "error"):
                         break
+                    # waiting/processing → 继续轮询
                 except Exception:
                     continue
-            # polling 超时 → 继续下一轮 attempt
-        except requests.Timeout:
+            # 轮询超时或 article_status=error/free → 关闭 session 返回 error
+            break
+        except (requests.Timeout, Exception):
             if attempt < MAX_ATTEMPTS - 1:
+                time.sleep(2 + random.random())
                 continue
-        except Exception:
-            if attempt < MAX_ATTEMPTS - 1:
-                time.sleep(2)
-                continue
+            break
+
+    # ── 最后一轮：轮询超时后，直接调 /article 取已有正文 ──
+    final_articles = []
+    try:
+        final_resp = _post_article(session_id, article_ids)
+        if final_resp.ok:
+            final_data = final_resp.json()
+            per_articles = final_data.get("articles", [])
+            for art in per_articles:
+                if art.get("status") == "ready":
+                    final_articles.append(art)
+                elif art.get("status") == "processing":
+                    art["status"] = "error"
+                    art["fetch_error"] = "正文获取超时"
+                    final_articles.append(art)
+                else:
+                    final_articles.append(art)
+    except Exception:
+        pass
 
     # ── 关闭 session ──
     try:
@@ -329,34 +382,16 @@ def _call_mail_tower_article(engine: str, session_id: str,
     except Exception:
         pass
 
-    # ── 第二轮：全新 session ──
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            resp = _post_article(session_id, article_ids)
-            if not resp.ok:
-                if attempt < MAX_ATTEMPTS - 1:
-                    time.sleep(2 + random.random())
-                    continue
-                return _resp("error", resp.status_code if 'resp' in dir() else 0)
-            data = resp.json()
-            top_status = data.get("status", "")
-            if top_status in ("ready", "error"):
-                return {"articles": data.get("articles", []),
-                        "status": top_status, "http_status": 200,
-                        "session_closed": data.get("session_closed", False)}
-            time.sleep(POLL_SECONDS)
-        except Exception:
-            if attempt < MAX_ATTEMPTS - 1:
-                time.sleep(2)
-                continue
+    if final_articles:
+        return {"articles": final_articles, "status": "ready",
+                "http_status": 200, "session_closed": True}
 
-    # 全部失败
+    # 正文获取失败
     log_office_error(
         module="office.middleman",
         function="_call_mail_tower_article",
         level="WARNING",
-        error_msg=f"{engine} /article timeout after {MAX_ATTEMPTS*2} attempts, "
-                   f"last http_status={resp.status_code if 'resp' in dir() else 'N/A'}",
+        error_msg=f"{engine} /article timeout or error after polling",
         error_code="MIDDLEMAN_ENGINE_TIMEOUT",
         data_snapshot=json.dumps({"engine": engine, "session_id": session_id,
                                    "article_ids": article_ids}),

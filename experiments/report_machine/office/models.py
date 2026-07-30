@@ -45,6 +45,7 @@ class TypeBResponse(BaseModel):
 
 class ReportRequest(BaseModel):
     stock_names: list[str]   # 股票名称列表
+    query: str = ""           # 用户需求描述，如"生成该股票的午间收盘分析报告"
 
 
 class SubWorkerResult(BaseModel):
@@ -74,6 +75,7 @@ class ReportContext(BaseModel):
     fetch_warnings: dict          # fetch 完整度检查警告
     articles: dict                # {engine: {session_id, preview, ...}}
     middleman_warnings: list[str] # engine 层的异常信息
+    query: str = ""               # 用户需求描述
 
 
 class ReporterResponse(BaseModel):

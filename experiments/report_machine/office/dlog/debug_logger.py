@@ -44,8 +44,8 @@ class DebugLogger:
 
     def __call__(self, step: str, **data):
         """快速调用方式: logger('step_name', key=value, ...)"""
-        elapsed = data.pop("_elapsed", None)
-        self.log(step, data, elapsed_ms=elapsed)
+        elapsed_s = data.pop("_elapsed", None)
+        self.log(step, data, elapsed_ms=elapsed_s * 1000 if elapsed_s is not None else None)
 
 
 # ── 快捷创建 ──

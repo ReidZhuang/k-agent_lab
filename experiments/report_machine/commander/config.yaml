@@ -1,0 +1,77 @@
+# Commander — 定时任务与健康检测配置
+# ============================================
+
+commander:
+  # 定时任务 query 参数
+  query: "生成该股票的午间收盘分析报告"
+
+  # 日志输出目录
+  log_dir: /home/stockagent/project_space/research/experiments/report_machine/office/log
+
+  # Office 输出目录（报告暂存）
+  output_dir: /home/stockagent/project_space/research/experiments/report_machine/office/output
+
+  # 用户报告存放根目录（user/{username}/）
+  user_base_dir: /home/stockagent/project_space/research/experiments/report_machine/user
+
+  # 前端用户配置（哪些用户参与定时报告）
+  users_config: /home/stockagent/project_space/research/experiments/front/config/report_users.yaml
+
+  # 启动超时（秒）- 等待服务健康响应
+  start_timeout: 30
+
+  # 健康检测总体超时（秒）
+  health_check_timeout: 120
+
+  # 报告日期戳格式
+  date_format: "%Y%m%d"
+
+# ── 服务定义 ──────────────────────────────────
+# 按启动依赖顺序排列（先起的在前）
+services:
+  mail_tower:
+    name: "mail_tower"
+    port: 8300
+    cwd: /home/stockagent/project_space/research/experiments/mail_tower
+    cmd: "conda run -n stock_agent uvicorn api:app --host 0.0.0.0 --port 8300 --workers 12"
+    health_url: "http://localhost:8300/"
+    health_field: "service"
+    health_expected: "bot_search API"
+    startup_grace: 8
+
+  middleman:
+    name: "middleman"
+    port: 8311
+    cwd: /home/stockagent/project_space/research/experiments/report_machine/office/middleman
+    cmd: "conda run -n stock_agent uvicorn server:app --host 0.0.0.0 --port 8311 --workers 4"
+    health_url: "http://localhost:8311/health"
+    health_field: "status"
+    health_expected: "ok"
+    startup_grace: 5
+
+  reporter:
+    name: "reporter"
+    port: 8312
+    cwd: /home/stockagent/project_space/research/experiments/report_machine/office/reporter
+    cmd: "conda run -n stock_agent python3 server.py"
+    health_url: "http://localhost:8312/health"
+    health_field: "status"
+    health_expected: "ok"
+    startup_grace: 8
+
+  writer:
+    name: "writer"
+    port: 8310
+    cwd: /home/stockagent/project_space/research/experiments/report_machine/office/writer
+    cmd: "conda run -n stock_agent python3 server.py"
+    health_url: "http://localhost:8310/health"
+    health_field: "status"
+    health_expected: "ok"
+    startup_grace: 5
+
+# ── 数据库 ────────────────────────────────────
+database:
+  sqlite_path: /home/stockagent/project_space/database/report_market.db
+  neo4j_uri: bolt://localhost:7687
+  neo4j_user: neo4j
+  neo4j_password: kg_route_2026

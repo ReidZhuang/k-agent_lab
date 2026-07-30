@@ -1,0 +1,67 @@
+/* ═══════════════ 全局样式 ═══════════════ */
+:root {
+  --wood-50:  #FFF8F0;
+  --wood-100: #F5EDE0;
+  --wood-200: #E8DDD0;
+  --wood-300: #D4C4AE;
+  --wood-400: #C4A882;
+  --wood-500: #B89570;
+  --wood-600: #8B7355;
+  --wood-700: #6B5A42;
+  --wood-800: #4A3728;
+  --green-400: #8FB996;
+  --green-500: #7A9E7E;
+  --red-400: #D4867A;
+  --amber-400: #D4A060;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background: var(--wood-50);
+  color: var(--wood-800);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 覆盖 Element Plus 主题色 ── */
+.el-button--primary {
+  --el-button-bg-color: var(--wood-400);
+  --el-button-border-color: var(--wood-400);
+  --el-button-hover-bg-color: var(--wood-500);
+  --el-button-hover-border-color: var(--wood-500);
+  --el-button-active-bg-color: var(--wood-600);
+  --el-button-active-border-color: var(--wood-600);
+}
+
+.el-button--success {
+  --el-button-bg-color: var(--green-500);
+  --el-button-border-color: var(--green-500);
+  --el-button-hover-bg-color: #6B8F6F;
+  --el-button-hover-border-color: #6B8F6F;
+}
+
+.el-input__wrapper {
+  background: var(--wood-50) !important;
+  box-shadow: 0 0 0 1.5px var(--wood-200) inset !important;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1.5px var(--wood-400) inset !important;
+}
+
+.el-tabs__item.is-active { color: var(--wood-700) !important; }
+.el-tabs__active-bar { background-color: var(--wood-400) !important; }
+
+/* ── 大字号覆盖 ── */
+.el-button { font-size: 1rem !important; }
+.el-input__inner { font-size: 1rem !important; height: 44px !important; }
+.el-table { font-size: 1rem !important; }
+.el-tree-node__content { height: 40px !important; font-size: 1rem !important; }
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--wood-200); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--wood-300); }

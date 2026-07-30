@@ -4,3 +4,17 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# mail_tower 运行时产物
+experiments/mail_tower/logs/
+experiments/mail_tower/sessions/
+
+# 报告生成输出
+experiments/report_machine/office/output/
+experiments/report_machine/office/log/
+experiments/report_machine/office/test_drive/results/debug_logs/
+
+# ETL 日志
+experiments/report_machine/etl/logs/
+experiments/front/frontend/node_modules/
+.claude/worktrees/
