@@ -227,10 +227,9 @@ A: 系统自动走三路兜底：trafilatura → readability → PDF 链接下�
 A: `truncated: true` 时末尾有 `[截断 全文长于8000字]` 标记。
 可在 `config/config.json` 中调整 `max_body_chars`。
 
-**Q: 调用 2 次 /article 后 session 自动关闭？**  
-A: 设计如此。每 session 最多 2 次正文请求（`max_body_returns`），第 2 次后自动关闭。
-`close: true` 可提前关闭。15 分钟无操作自动超时。
-可在 `config.json` 的 `session.list` 中调整。
+**Q: 调用 /article 会关闭 session 吗？**  
+A: 不会（2026-08-01 起移除正文请求次数上限）。session 仅由 `close: true` 显式关闭，
+或 45 分钟（list 模式从列表就绪起算）无操作自动超时。
 
 **Q: 如何停止服务？**  
 A: `fuser -k 8300/tcp`

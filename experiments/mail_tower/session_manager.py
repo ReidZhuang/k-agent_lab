@@ -23,7 +23,6 @@ with open(CONFIG_PATH) as f:
     cfg = json.load(f)
 SESSION_TTL = cfg["session"]["ttl_minutes"] * 60
 LIST_TTL = cfg.get("session", {}).get("list", {}).get("ttl_minutes", 15) * 60
-LIST_MAX_BODY_RETURNS = cfg.get("session", {}).get("list", {}).get("max_body_returns", 2)
 
 
 class Session:
@@ -58,7 +57,6 @@ class Session:
         self.elapsed = 0.0
         self.error = None
         self.call_count = 0
-        self.body_return_count = 0
         self.list_ready_at = 0.0
         self.preview = None
         self.articles = {}
@@ -135,7 +133,6 @@ class Session:
             "elapsed": self.elapsed,
             "error": self.error,
             "call_count": self.call_count,
-            "body_return_count": self.body_return_count,
             "list_ready_at": self.list_ready_at,
             "preview": self.preview,
             "article_bodies": self.article_bodies,
@@ -162,7 +159,7 @@ class Session:
         )
         for key in ("status", "list_status", "article_status",
                     "created_at", "elapsed", "error",
-                    "call_count", "body_return_count", "list_ready_at",
+                    "call_count", "list_ready_at",
                     "preview", "article_bodies", "_phase1_raw"):
             if key in data:
                 setattr(sess, key, data[key])
@@ -366,18 +363,6 @@ class SessionManager:
                 self._save_to_file(session_id)
                 return sess.call_count
             return 0
-
-    def increment_body_return(self, session_id: str) -> int:
-        with self._lock:
-            sess = self._sessions.get(session_id)
-            if not sess or sess.mode != "list" or sess.status == "closed":
-                return -1
-            sess.body_return_count += 1
-            if sess.body_return_count >= LIST_MAX_BODY_RETURNS:
-                sess.status = "closed"
-                sess._phase1_raw = []
-            self._save_to_file(session_id)
-            return sess.body_return_count
 
     def close_after_article(self, session_id: str, close_signal: bool) -> bool:
         if close_signal:

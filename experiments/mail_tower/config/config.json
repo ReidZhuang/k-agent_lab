@@ -51,8 +51,7 @@
   "session": {
     "ttl_minutes": 60,
     "list": {
-      "ttl_minutes": 45,
-      "max_body_returns": 10
+      "ttl_minutes": 45
     }
   }
 }

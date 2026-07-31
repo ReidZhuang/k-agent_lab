@@ -278,9 +278,7 @@ def get_article_body(self, session_id, article_id):
   "session": {
     "ttl_minutes": 60,
     "list": {
-      "ttl_minutes": 15,
-      "max_calls": 3,
-      "max_body_returns": 2
+      "ttl_minutes": 45
     }
   }
 }
