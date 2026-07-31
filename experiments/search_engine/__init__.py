@@ -46,6 +46,8 @@
     engine=thsfin 时额外返回 _known_date 字段（事件日期）。
     engine=dcfin 时额外返回 _known_date（精确到分钟）和 _category 字段（热门/资讯/公告）。
     engine=juchao 时额外返回 _known_date、_category（公告）、_announce_id、_announce_time 字段。
+    engine=thsnews 时额外返回 _known_date（绝对时间，分钟精度）、date_confidence（high/medium）、
+             _category（资讯/研报）字段，snippet 为空。
     engine=qnainfo 时返回 body_text（回答内容，可直接使用）及问答专属字段：
              _question（问题全文）、_answerer（回答者）、_answer（回答内容）、
              _ask_time（提问时间）、_update_time（更新时间）。
@@ -65,6 +67,7 @@ from .backends.thsfin import ThsfinBackend
 from .backends.dcfin import DcfinBackend
 from .backends.juchao import JuchaoBackend
 from .backends.qnainfo import QnAInfoBackend
+from .backends.thsnews import ThsnewsBackend
 
 
 def search(query: str, max_results: int = 10,
@@ -125,6 +128,11 @@ def search(query: str, max_results: int = 10,
         return backend.search(query, max_results=max_results,
                                site=site, timelimit=timelimit,
                                start_date=start_date, end_date=end_date)
+    elif engine == "thsnews":
+        backend = ThsnewsBackend()
+        return backend.search(query, max_results=max_results,
+                              site=site, timelimit=timelimit,
+                              start_date=start_date, end_date=end_date)
     elif engine == "qnainfo":
         backend = QnAInfoBackend()
         return backend.search(query, max_results=max_results,

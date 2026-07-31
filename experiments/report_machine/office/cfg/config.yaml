@@ -1,0 +1,39 @@
+server:
+  host: 0.0.0.0
+middleman:
+  host: localhost
+  port: 8311
+  workers: 4
+  type_a_max_workers: 24
+  type_a_queue_timeout: 300
+  type_b_max_workers: 64
+  type_b_queue_timeout: 120
+writer:
+  host: localhost
+  port: 8310
+  workers: 4
+  main_pool_workers: 4
+  sub_worker_max_workers: 64
+reporter:
+  host: localhost
+  port: 8312
+  workers: 8
+  thread_pool_size: 64
+  max_loop_rounds: 8
+  article_timeout: 600
+  prompts_dir: prompts_deepseek
+  article_tool_name: get_article_body
+  deepseek:
+    model: deepseek-v4-flash
+    max_tokens: 20000
+    api_base: https://api.deepseek.com
+    timeout: 130
+database:
+  path: /home/stockagent/project_space/database/report_market.db
+logging:
+  level: INFO
+mail_tower:
+  base_url: http://localhost:8300
+  search_timeout: 150
+  poll_interval: 3
+  max_poll_attempts: 100

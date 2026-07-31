@@ -23,7 +23,6 @@ with open(CONFIG_PATH) as f:
     cfg = json.load(f)
 SESSION_TTL = cfg["session"]["ttl_minutes"] * 60
 LIST_TTL = cfg.get("session", {}).get("list", {}).get("ttl_minutes", 15) * 60
-LIST_MAX_BODY_RETURNS = cfg.get("session", {}).get("list", {}).get("max_body_returns", 2)
 
 
 class Session:
@@ -51,12 +50,13 @@ class Session:
         self.include_snippet = include_snippet
         self.llm_mode = llm_mode
         self.status = "processing"
+        self.list_status: str = "processing"     # processing | ready | empty | error
+        self.article_status: str = "free"        # free | waiting | processing | ready | error
         self.created_at = time.time()
         self._loaded_at = time.time()
         self.elapsed = 0.0
         self.error = None
         self.call_count = 0
-        self.body_return_count = 0
         self.list_ready_at = 0.0
         self.preview = None
         self.articles = {}
@@ -127,11 +127,12 @@ class Session:
             "include_snippet": self.include_snippet,
             "llm_mode": self.llm_mode,
             "status": self.status,
+            "list_status": self.list_status,
+            "article_status": self.article_status,
             "created_at": self.created_at,
             "elapsed": self.elapsed,
             "error": self.error,
             "call_count": self.call_count,
-            "body_return_count": self.body_return_count,
             "list_ready_at": self.list_ready_at,
             "preview": self.preview,
             "article_bodies": self.article_bodies,
@@ -156,8 +157,9 @@ class Session:
             start_date=data.get("start_date"),
             end_date=data.get("end_date"),
         )
-        for key in ("status", "created_at", "elapsed", "error",
-                    "call_count", "body_return_count", "list_ready_at",
+        for key in ("status", "list_status", "article_status",
+                    "created_at", "elapsed", "error",
+                    "call_count", "list_ready_at",
                     "preview", "article_bodies", "_phase1_raw"):
             if key in data:
                 setattr(sess, key, data[key])
@@ -182,10 +184,12 @@ class SessionManager:
         if not sess:
             return
         path = self._file_path(session_id)
+        tmp = path + ".tmp"
         data = sess.to_file_dict()
         try:
-            with open(path, "w", encoding="utf-8") as f:
+            with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False)
+            os.replace(tmp, path)  # 原子替换，读取方不会看到截断中的文件
         except Exception as e:
             print(f"[session] 保存文件失败 {session_id}: {e}", flush=True)
 
@@ -247,12 +251,19 @@ class SessionManager:
             return {"status": "not_found"}
         return sess.to_dict(include_texts=False)
 
-    def set_preview(self, session_id: str, preview: dict, phase1_raw: list, elapsed: float):
+    def set_preview(self, session_id: str, preview: dict, phase1_raw: list, elapsed: float,
+                    engine: str = ""):
         sess = self.get(session_id)
         if not sess:
             return
         with self._lock:
             sess.status = "list_ready" if sess.mode == "list" else "preview"
+            sess.list_status = "ready"
+            if engine in ("qnainfo",):
+                sess.article_status = "free"
+            elif sess.mode == "list":
+                # 正文提取由后台线程或 /article 内联处理
+                sess.article_status = "waiting"
             sess.preview = preview
             sess._phase1_raw = phase1_raw
             sess.elapsed = elapsed
@@ -284,6 +295,29 @@ class SessionManager:
             sess._phase1_raw = []
         self._save_to_file(session_id)
 
+    def set_article_processing(self, session_id: str):
+        """标记正文提取开始（article_status → processing）"""
+        sess = self.get(session_id)
+        if not sess:
+            return
+        with self._lock:
+            if sess.article_status != "error":
+                sess.article_status = "processing"
+        self._save_to_file(session_id)
+
+    def set_article_ready(self, session_id: str, has_ready: bool = True):
+        """标记正文提取完成（article_status → ready 或 error）
+
+        Args:
+            has_ready: True=至少一篇就绪, False=全部失败
+        """
+        sess = self.get(session_id)
+        if not sess:
+            return
+        with self._lock:
+            sess.article_status = "ready" if has_ready else "error"
+        self._save_to_file(session_id)
+
     def set_article_body(self, session_id: str, article_id: str,
                          body_text: str, truncated: bool = False,
                          fetch_error: str = ""):
@@ -305,6 +339,8 @@ class SessionManager:
             return
         with self._lock:
             sess.status = "error"
+            sess.list_status = "error"
+            sess.article_status = "error"
             sess.error = error
             sess._phase1_raw = []
         self._save_to_file(session_id)
@@ -327,18 +363,6 @@ class SessionManager:
                 self._save_to_file(session_id)
                 return sess.call_count
             return 0
-
-    def increment_body_return(self, session_id: str) -> int:
-        with self._lock:
-            sess = self._sessions.get(session_id)
-            if not sess or sess.mode != "list" or sess.status == "closed":
-                return -1
-            sess.body_return_count += 1
-            if sess.body_return_count >= LIST_MAX_BODY_RETURNS:
-                sess.status = "closed"
-                sess._phase1_raw = []
-            self._save_to_file(session_id)
-            return sess.body_return_count
 
     def close_after_article(self, session_id: str, close_signal: bool) -> bool:
         if close_signal:

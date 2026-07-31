@@ -202,7 +202,7 @@ DDG 搜索 → fetch HTML → trafilatura 提取正文
         → PDF 公告页：后台异步提取（15s 超时），/article 返回 processing 待就绪
 ```
 
-**PDF 公告处理**：Phase 1 跳过 PDF 下载（快返回列表），后台线程异步提取。调用 `/article` 时若 PDF 未加载完返回 `processing`（不计入调用次数），加载完返回 `ready`。15 秒超时未提取成功则返回原始占位正文。
+**PDF 公告处理**：Phase 1 跳过 PDF 下载（快返回列表），后台线程异步提取。调用 `/article` 时若 PDF 未加载完返回 `processing`（可反复轮询），加载完返回 `ready`。15 秒超时未提取成功则返回原始占位正文。
 
 **参数差异**：
 - `timelimit` — DDG 搜索端的时间过滤（d/w/m/y）
@@ -347,7 +347,7 @@ playwright install chromium
 
 | status | 含义 |
 |--------|------|
-| `"processing"` | 正文尚未提取完成（PDF 页后台提取中，不计入调用次数） |
+| `"processing"` | 正文尚未提取完成（PDF 页后台提取中，可反复轮询） |
 | `"ready"` | 正文已就绪 |
 | `"error"` | 提取失败（httpx + Playwright 均无法提取，或 PDF 超时） |
 
@@ -358,9 +358,9 @@ playwright install chromium
 | `session_closed` | bool | 本次返回后 session 是否已关闭 |
 
 **list 模式会话生命周期：**
-- 累计 `/article` 正文返回达到 `max_body_returns`（默认 **10** 次）后自动关闭
-- `processing` 不计入次数，`close:true` 可提前关闭
-- 从列表返回起 15 分钟未操作自动超时关闭
+- `/article` 正文请求**无次数限制**（2026-08-01 起移除计数机制），可无限轮询
+- `close:true` 可提前关闭
+- 从列表返回起 45 分钟未操作自动超时关闭
 
 ### GET /poll/{session_id}
 
@@ -532,7 +532,7 @@ Phase 1（同步，快）          后台线程（异步，15s 超时）
 - **非 list 模式**（`skip_pdf=False`）：同步提取后返回
 - **Playwright 兜底**：渲染后仍无正文时，httpx 取原始 HTML → 同步 PDF 提取
 
-> **/article 调用说明**：DDG list 模式下 PDF 公告页正文在后台异步加载，加载期间 `/article` 返回 `status=processing`（不计入调用限制），加载完成后返回 `ready`。若 15 秒超时，保留原始 trafilatura 占位正文，`/article` 返回 `status=error`。
+> **/article 调用说明**：DDG list 模式下 PDF 公告页正文在后台异步加载，加载期间 `/article` 返回 `status=processing`（可反复轮询，无次数限制），加载完成后返回 `ready`。若 15 秒超时，保留原始 trafilatura 占位正文，`/article` 返回 `status=error`。
 - **Playwright 兜底路径**：浏览器渲染后仍无正文时，额外用 httpx 获取原始 HTML 再尝试 PDF 提取
 
 ---
@@ -553,7 +553,7 @@ A: 不会。`filter_days` 有上下界包夹保护，超过今天日期的文章
 
 **Q: /article 一直返回 processing？**
 A: 
-- **DDG list 模式**：正常 HTML 文章正文即时就绪；PDF 公告页在后台异步提取（15 秒超时），提取期间返回 `processing`（不计入调用次数），超时或完成后返回 `ready`/`error`
+- **DDG list 模式**：正常 HTML 文章正文即时就绪；PDF 公告页在后台异步提取（15 秒超时），提取期间返回 `processing`（可反复轮询），超时或完成后返回 `ready`/`error`
 - **baidufin 引擎**：后台自动提取约需 5~15 秒，若超过 30 秒仍未就绪则可能全部提取失败
 - **sinafin 引擎**：需先调用 `/extract` 触发提取
 
@@ -566,8 +566,8 @@ A: 这是 PDF 公告页面。v3.0 自动处理：
 - **其他模式**：同步提取 PDF，返回时正文已就绪
 确保已安装 `pypdf`：`pip install pypdf`。部分上交所官网 PDF 有 JS Challenge 反爬保护，同花顺代理可自动处理，但 SSE 直链可能失败。
 
-**Q: 调用 /article 后收到 404？**
-A: 可能原因：1）session TTL（45分钟）已过期；2）session 已手动关闭。只要 session 未超时未关闭，可正常调用 `/article` 获取正文。`processing` 状态不消耗调用计数。超过 `max_body_returns`（10 次）后 session 自动关闭。
+**Q: 调用 /article 会关闭 session 吗？**
+A: 不会。`/article` 正文请求无次数限制（2026-08-01 起移除计数机制），可无限轮询直到所有文章就绪。session 仅由 `close: true` 显式关闭，或从列表返回起 45 分钟未操作自动超时。
 
 **Q: baidufin 的 sentiment/情绪标签可靠吗？**
 A: 标签来自百度股市通 AI 分析，仅供参考。

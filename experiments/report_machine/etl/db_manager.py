@@ -1,35 +1,46 @@
 """
-SQLite 数据库管理模块
+SQLite 数据库管理模块 — 线程安全版
+
+每个线程独立持有自己的 SQLite 连接（threading.local），
+避免多线程共享同一连接导致的 check_same_thread 和事务冲突问题。
 """
 import sqlite3
 import time
+import threading
 from pathlib import Path
 from contextlib import contextmanager
 from config import DB_PATH
 
 
 class DatabaseManager:
-    """SQLite 数据库管理器"""
+    """SQLite 数据库管理器（线程安全）"""
 
     def __init__(self, db_path=None):
         self.db_path = Path(db_path or DB_PATH)
-        self._conn = None
+        self._local = threading.local()
 
-    def connect(self):
-        if self._conn is None:
-            self._conn = sqlite3.connect(str(self.db_path))
-            self._conn.execute("PRAGMA journal_mode=WAL")
-            self._conn.execute("PRAGMA synchronous=NORMAL")
-        return self._conn
+    def _get_conn(self):
+        """获取当前线程的 SQLite 连接（按需创建）"""
+        if not hasattr(self._local, "conn") or self._local.conn is None:
+            self._local.conn = sqlite3.connect(str(self.db_path))
+            self._local.conn.execute("PRAGMA journal_mode=WAL")
+            self._local.conn.execute("PRAGMA synchronous=NORMAL")
+        return self._local.conn
 
     def close(self):
-        if self._conn:
-            self._conn.close()
-            self._conn = None
+        """关闭当前线程的连接"""
+        conn = getattr(self._local, "conn", None)
+        if conn:
+            conn.close()
+            self._local.conn = None
+
+    def close_all(self):
+        """谨慎使用：遍历所有线程的连接并关闭（仅兜底时调用）"""
+        pass  # threading.local 不支持跨线程遍历
 
     @contextmanager
     def get_conn(self):
-        conn = self.connect()
+        conn = self._get_conn()
         try:
             yield conn
             conn.commit()
