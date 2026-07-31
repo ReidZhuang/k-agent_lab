@@ -6,7 +6,7 @@
 |------|----------|
 | **v1.0** | DDG 搜索 → 提取正文 → LLM 分组/摘要（纯异步） |
 | **v2.0** | 双阶段 Pipeline（Phase 1 同步预览 + Phase 2 后台 LLM）；分层日期提取；过滤模块 |
-| **v3.0** | **引擎分发**（ddg / sinafin / baidufin / thsfin）；**list 模式**（先列表后按需/自动提取正文）；正文截断 8000 字；sinafin/baidufin/thsfin/dcfin 精确日期跳过提取；空白字符治理；**baidufin 双重兜底提取**（httpx → Playwright）；**thsfin 同花顺 F10 公司大事**（Playwright 抓取，后台自动提取有 URL 的文章）；**PDF 公告异步后台提取**（Phase 1 跳过 → 后台 15s 超时）；**list 模式会话生命周期**（15 分钟超时 / 3 次调用关闭 / close 信号）；**日期过滤上下界包夹**（精确到分钟，自动剔除未来日期） |
+| **v3.0** | **引擎分发**（ddg / sinafin / baidufin / thsfin）；**list 模式**（先列表后按需/自动提取正文）；正文截断 8000 字；sinafin/baidufin/thsfin/dcfin 精确日期跳过提取；空白字符治理；**baidufin 双重兜底提取**（httpx → Playwright）；**thsfin 同花顺 F10 公司大事**（Playwright 抓取，后台自动提取有 URL 的文章）；**PDF 公告异步后台提取**（Phase 1 跳过 → 后台 15s 超时）；**list 模式会话生命周期**（45 分钟超时 / 正文请求无次数限制 / close 信号）；**日期过滤上下界包夹**（精确到分钟，自动剔除未来日期） |
 
 ## 架构总览
 
@@ -194,9 +194,9 @@ list 模式 (ddg):
   created → done (正常 HTML 正文就绪；PDF 页后台异步提取中)
 
 list 模式 会话生命周期（仅 list 模式）:
-  调用次数: /search(1) → /article × 2(3) → 第 3 次返回后自动关闭
-           processing 不计入次数，close:true 可提前关闭
-  超时: 从列表返回起 15 分钟未操作自动关闭
+  正文请求无次数限制（2026-08-01 起移除计数机制），仅 close:true 显式关闭
+           processing 可反复轮询，close:true 可提前关闭
+  超时: 从列表返回起 45 分钟未操作自动关闭
 
 preview 模式:
   created → preview (Phase 1 完成) → done (Phase 2 完成)
