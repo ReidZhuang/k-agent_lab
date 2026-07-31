@@ -1,6 +1,9 @@
 """
 Session 管理器（v3.0）— 支持引擎分发 + list 模式下逐篇存储正文
 
+支持多 worker：每次变更同步写文件，get() 读文件兜底，
+              不同 worker 进程可共享 session 数据。
+
 状态流转:
   - processing:     运行中（Phase 0 刚完成）
   - preview:        Phase 1 完成（预览可见），Phase 2 进行中（仅 preview 模式）
@@ -19,6 +22,9 @@ CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "config.json")
 with open(CONFIG_PATH) as f:
     cfg = json.load(f)
 SESSION_TTL = cfg["session"]["ttl_minutes"] * 60
+LIST_TTL = cfg.get("session", {}).get("list", {}).get("ttl_minutes", 15) * 60
+LIST_MAX_CALLS = cfg.get("session", {}).get("list", {}).get("max_calls", 3)
+LIST_MAX_BODY_RETURNS = cfg.get("session", {}).get("list", {}).get("max_body_returns", 2)
 
 
 class Session:
@@ -45,18 +51,18 @@ class Session:
         self.filter_title = filter_title
         self.include_snippet = include_snippet
         self.llm_mode = llm_mode
-        self.status = "processing"  # processing | preview | list_ready | done | error | closed
+        self.status = "processing"
         self.created_at = time.time()
         self.elapsed = 0.0
         self.error = None
-        # Phase 1 预览（文章列表，无正文）
+        self.call_count = 0
+        self.body_return_count = 0
+        self.list_ready_at = 0.0
         self.preview = None
-        # Phase 2 完整分析
         self.articles = {}
         self.segments = {}
         self._texts = {}
         self._phase1_raw = []
-        # list 模式：逐篇存储正文（article_id → {body_text, truncated, fetch_error, fetched_at}）
         self.article_bodies: dict[str, dict] = {}
 
     def to_dict(self, include_texts: bool = False) -> dict:
@@ -82,20 +88,17 @@ class Session:
             d["preview"] = self.preview
         if self.mode == "list":
             if self.status == "list_ready":
-                # Phase 1 进行中：返回预览列表 + body_status
                 arts = list(self.preview.get("articles", [])) if self.preview else []
                 for a in arts:
                     body = self.article_bodies.get(a.get("id", ""))
                     a["body_status"] = "ready" if body else "processing"
-                d["_list_articles"] = arts  # list 用内部字段
+                d["_list_articles"] = arts
             elif self.status == "done" and not self.articles:
-                # list + none：所有正文已提取完成
                 arts = list(self.preview.get("articles", [])) if self.preview else []
                 for a in arts:
                     a["body_status"] = "ready" if a.get("id", "") in self.article_bodies else "error"
                 d["_list_articles"] = arts
             else:
-                # list + segments/summary：LLM 结果已就绪
                 d["articles"] = self.articles
                 d["segments"] = self.segments
         elif self.status in ("done", "error"):
@@ -107,15 +110,119 @@ class Session:
             d["_texts"] = self._texts
         return d
 
+    # ── 文件持久化 ──
+
+    def to_file_dict(self) -> dict:
+        """序列化为 JSON 可存储的 dict（包含所有字段，供跨 worker 恢复）"""
+        return {
+            "session_id": self.session_id,
+            "query": self.query,
+            "keyword": self.keyword,
+            "max_results": self.max_results,
+            "mode": self.mode,
+            "engine": self.engine,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+            "site": self.site,
+            "timelimit": self.timelimit,
+            "filter_days": self.filter_days,
+            "filter_title": self.filter_title,
+            "include_snippet": self.include_snippet,
+            "llm_mode": self.llm_mode,
+            "status": self.status,
+            "created_at": self.created_at,
+            "elapsed": self.elapsed,
+            "error": self.error,
+            "call_count": self.call_count,
+            "body_return_count": self.body_return_count,
+            "list_ready_at": self.list_ready_at,
+            "preview": self.preview,
+            "article_bodies": self.article_bodies,
+            "_phase1_raw": self._phase1_raw,
+        }
+
+    @classmethod
+    def from_file_dict(cls, data: dict) -> "Session":
+        """从文件存储的 dict 恢复 Session 对象"""
+        sess = cls(
+            session_id=data["session_id"],
+            query=data.get("query", ""),
+            keyword=data.get("keyword", ""),
+            max_results=data.get("max_results", 5),
+            mode=data.get("mode", "full"),
+            site=data.get("site"),
+            timelimit=data.get("timelimit"),
+            filter_days=data.get("filter_days"),
+            filter_title=data.get("filter_title"),
+            include_snippet=data.get("include_snippet", False),
+            llm_mode=data.get("llm_mode", "segments"),
+            engine=data.get("engine", "ddg"),
+            start_date=data.get("start_date"),
+            end_date=data.get("end_date"),
+        )
+        # 覆盖 __init__ 默认值
+        for key in ("status", "created_at", "elapsed", "error",
+                    "call_count", "body_return_count", "list_ready_at",
+                    "preview", "article_bodies", "_phase1_raw"):
+            if key in data:
+                setattr(sess, key, data[key])
+        return sess
+
 
 class SessionManager:
-    """全局会话管理器，线程安全"""
+    """全局会话管理器，线程安全 + 文件持久化（支持多 worker）"""
 
     def __init__(self):
         self._sessions: dict[str, Session] = {}
         self._lock = threading.Lock()
         self._cleanup_thread = threading.Thread(target=self._cleanup_loop, daemon=True)
         self._cleanup_thread.start()
+
+    # ── 文件持久化（跨 worker 共享） ──
+
+    def _file_path(self, session_id: str) -> str:
+        return os.path.join(SESSIONS_DIR, f"{session_id}.json")
+
+    def _save_to_file(self, session_id: str):
+        """将 session 写入 JSON 文件"""
+        sess = self._sessions.get(session_id)
+        if not sess:
+            return
+        path = self._file_path(session_id)
+        data = sess.to_file_dict()
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False)
+        except Exception as e:
+            print(f"[session] 保存文件失败 {session_id}: {e}", flush=True)
+
+    def _load_from_file(self, session_id: str) -> Session | None:
+        """从 JSON 文件加载 session，加入内存缓存"""
+        path = self._file_path(session_id)
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            sess = Session.from_file_dict(data)
+            # 加载后加入内存缓存
+            with self._lock:
+                self._sessions[session_id] = sess
+            return sess
+        except Exception as e:
+            print(f"[session] 加载文件失败 {session_id}: {e}", flush=True)
+            return None
+
+    def _remove_file(self, session_id: str):
+        """删除 session 文件"""
+        path = self._file_path(session_id)
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except Exception as e:
+            print(f"[session] 删除文件失败 {session_id}: {e}", flush=True)
+
+    # ── 工厂 + 查询 ──
 
     def create(self, query: str, keyword: str = "", max_results: int = 5,
                mode: str = "full", site: str | None = None, timelimit: str | None = None,
@@ -130,6 +237,7 @@ class SessionManager:
                        engine, start_date, end_date)
         with self._lock:
             self._sessions[session_id] = sess
+        self._save_to_file(session_id)
         return session_id
 
     def get(self, session_id: str) -> Session | None:
@@ -137,13 +245,21 @@ class SessionManager:
             sess = self._sessions.get(session_id)
             if sess and sess.status == "closed":
                 return None
-            return sess
+            if sess:
+                return sess
+        # 内存未命中 → 从文件加载
+        sess = self._load_from_file(session_id)
+        if sess and sess.status == "closed":
+            return None
+        return sess
 
     def get_status(self, session_id: str) -> dict:
         sess = self.get(session_id)
         if not sess:
             return {"status": "not_found"}
         return sess.to_dict(include_texts=False)
+
+    # ── 状态变更（每次变更后自动写文件） ──
 
     def set_preview(self, session_id: str, preview: dict, phase1_raw: list, elapsed: float):
         sess = self.get(session_id)
@@ -154,6 +270,10 @@ class SessionManager:
             sess.preview = preview
             sess._phase1_raw = phase1_raw
             sess.elapsed = elapsed
+            if sess.mode == "list" and sess.list_ready_at == 0:
+                sess.list_ready_at = time.time()
+                sess.call_count += 1
+        self._save_to_file(session_id)
 
     def set_done(self, session_id: str, articles: dict, segments: dict, texts: dict, elapsed: float):
         sess = self.get(session_id)
@@ -166,9 +286,9 @@ class SessionManager:
             sess._texts = texts
             sess.elapsed = elapsed
             sess._phase1_raw = []
+        self._save_to_file(session_id)
 
     def set_list_done(self, session_id: str, elapsed: float):
-        """list 模式：全部文章正文提取完毕"""
         sess = self.get(session_id)
         if not sess:
             return
@@ -176,29 +296,22 @@ class SessionManager:
             sess.status = "done"
             sess.elapsed = elapsed
             sess._phase1_raw = []
+        self._save_to_file(session_id)
 
     def set_article_body(self, session_id: str, article_id: str,
                          body_text: str, truncated: bool = False,
                          fetch_error: str = ""):
-        """list 模式：存储单篇提取结果"""
-        sess = self.get(session_id)
-        if not sess:
-            return
         with self._lock:
+            sess = self._sessions.get(session_id)
+            if not sess:
+                return
             sess.article_bodies[article_id] = {
                 "body_text": body_text,
                 "truncated": truncated,
                 "fetch_error": fetch_error,
                 "fetched_at": time.time(),
             }
-
-    def get_article_body(self, session_id: str, article_id: str) -> dict | None:
-        """获取单篇正文，None 表示尚未提取完成"""
-        sess = self.get(session_id)
-        if not sess:
-            return None
-        with self._lock:
-            return sess.article_bodies.get(article_id)
+        self._save_to_file(session_id)
 
     def set_error(self, session_id: str, error: str):
         sess = self.get(session_id)
@@ -208,6 +321,7 @@ class SessionManager:
             sess.status = "error"
             sess.error = error
             sess._phase1_raw = []
+        self._save_to_file(session_id)
 
     def close(self, session_id: str) -> bool:
         sess = self.get(session_id)
@@ -216,7 +330,49 @@ class SessionManager:
         with self._lock:
             sess.status = "closed"
             sess._phase1_raw = []
+        self._save_to_file(session_id)
         return True
+
+    # ── 只包含数值变更的方法（也需持久化状态） ──
+
+    def increment_call_count(self, session_id: str) -> int:
+        with self._lock:
+            sess = self._sessions.get(session_id)
+            if sess and sess.mode == "list" and sess.status != "closed":
+                sess.call_count += 1
+                self._save_to_file(session_id)
+                return sess.call_count
+            return 0
+
+    def increment_body_return(self, session_id: str) -> int:
+        with self._lock:
+            sess = self._sessions.get(session_id)
+            if not sess or sess.mode != "list" or sess.status == "closed":
+                return -1
+            sess.body_return_count += 1
+            if sess.body_return_count >= LIST_MAX_BODY_RETURNS:
+                sess.status = "closed"
+                sess._phase1_raw = []
+            self._save_to_file(session_id)
+            return sess.body_return_count
+
+    def close_after_article(self, session_id: str, close_signal: bool) -> bool:
+        if close_signal:
+            self.close(session_id)
+            return True
+        with self._lock:
+            sess = self._sessions.get(session_id)
+            if sess and sess.mode == "list" and sess.status == "closed":
+                return True
+            return False
+
+    # ── 只读方法 ──
+
+    def get_article_body(self, session_id: str, article_id: str) -> dict | None:
+        sess = self.get(session_id)
+        if not sess:
+            return None
+        return sess.article_bodies.get(article_id)
 
     def get_phase1_raw(self, session_id: str) -> list:
         sess = self.get(session_id)
@@ -230,18 +386,29 @@ class SessionManager:
             return None
         return sess._texts.get(article_id, {}).get(segment_id)
 
+    # ── 清理 ──
+
     def _cleanup_loop(self):
         while True:
             time.sleep(60)
             now = time.time()
             with self._lock:
-                expired = [
-                    sid for sid, sess in self._sessions.items()
-                    if sess.status not in ("closed",) and (now - sess.created_at) > SESSION_TTL
-                ]
+                expired = []
+                for sid, sess in self._sessions.items():
+                    if sess.status in ("closed",):
+                        continue
+                    if sess.mode == "list" and sess.list_ready_at > 0:
+                        ttl = LIST_TTL
+                        ref_time = sess.list_ready_at
+                    else:
+                        ttl = SESSION_TTL
+                        ref_time = sess.created_at
+                    if (now - ref_time) > ttl:
+                        expired.append(sid)
                 for sid in expired:
                     self._sessions[sid].status = "closed"
                     self._sessions[sid]._phase1_raw = []
+                    self._remove_file(sid)
                 if expired:
                     print(f"[cleanup] 过期关闭 {len(expired)} 个会话", flush=True)
                 purge = [
@@ -250,6 +417,7 @@ class SessionManager:
                 ]
                 for sid in purge:
                     del self._sessions[sid]
+                    self._remove_file(sid)
                 if purge:
                     print(f"[cleanup] 清理 {len(purge)} 个已关闭会话", flush=True)
 

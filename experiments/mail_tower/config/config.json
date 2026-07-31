@@ -1,0 +1,47 @@
+{
+  "server": {
+    "workers": 12
+  },
+  "search": {
+    "engine": "duckduckgo",
+    "max_results": 5,
+    "tool": "web-forager",
+    "sinafin": {
+      "endpoint": "http://localhost:8000"
+    },
+    "timeout_seconds": 90,
+    "max_wait_seconds": 300
+  },
+  "extraction": {
+    "primary": "trafilatura",
+    "fallback": "readability",
+    "output_format": "markdown",
+    "include_images": false,
+    "include_links": true,
+    "timeout": 15,
+    "max_body_chars": 8000
+  },
+  "ollama": {
+    "endpoint": "http://localhost:11434",
+    "models": {
+      "default": "glm4:9b-chat-q3_K_S",
+      "large": "glm4:9b-chat-q3_K_S"
+    },
+    "max_parallel": 4,
+    "timeout": 120,
+    "temperature": 0,
+    "num_predict": 8192
+  },
+  "split": {
+    "threshold_chars": 3000,
+    "part_target_chars": 2000,
+    "max_tokens": 2500
+  },
+  "session": {
+    "ttl_minutes": 60,
+    "list": {
+      "ttl_minutes": 45,
+      "max_body_returns": 10
+    }
+  }
+}

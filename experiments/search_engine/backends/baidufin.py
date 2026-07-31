@@ -7,6 +7,9 @@
     from search_engine import search
     results = search("300436", engine="baidufin")
     results = search("300436", engine="baidufin", start_date="2026-07-20", end_date="2026-07-21")
+    # 时间精度支持到分钟：
+    results = search("300436", engine="baidufin",
+                     start_date="2026-07-21 09:00", end_date="2026-07-21 15:00")
 
 返回格式: [{title, url, snippet, _known_date, _baidu_sentiment, _baidu_provider, _baidu_abstract}, ...]
     _known_date: 百度返回的精确发布日期
@@ -14,7 +17,7 @@
     _baidu_sentiment: 情绪分类（利好/中性/利空）
     _baidu_provider: 来源（证券之星/东方财富网/同花顺）
 """
-import re, threading
+import re, threading, time, random
 from datetime import datetime
 from typing import Optional
 
@@ -28,6 +31,31 @@ except ImportError:
     pass
 
 
+def _parse_time(text: str) -> int:
+    """解析时间字符串为 Unix 时间戳（秒级）。支持以下格式：
+
+    - "2026-07-21"           → 当日 00:00:00
+    - "2026-07-21 09:30"     → 精确到分钟
+    - "2026-07-21T09:30:00"  → ISO 8601，精确到秒
+    """
+    if not text:
+        raise ValueError("empty time string")
+    text = text.strip().replace("T", " ")
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return int(datetime.strptime(text, fmt).timestamp())
+        except ValueError:
+            continue
+    # 尝试自动补全
+    if " " not in text and "T" not in text:
+        # 只有日期，视为当日 00:00
+        try:
+            return int(datetime.strptime(text, "%Y-%m-%d").timestamp())
+        except ValueError:
+            pass
+    raise ValueError(f"无法解析时间: '{text}'，支持格式: YYYY-MM-DD 或 YYYY-MM-DD HH:MM")
+
+
 class BaidufinBackend(SearchBackend):
     """通过百度股市通获取个股新闻（Playwright 浏览器）"""
 
@@ -38,6 +66,24 @@ class BaidufinBackend(SearchBackend):
     def _scrape(code: str, pages: int, max_results: int,
                 ts_start: Optional[int], ts_end: Optional[int]) -> list[dict]:
         benefit_map = BaidufinBackend.BENEFIT_MAP
+        last_exc = None
+        for attempt in range(2):
+            try:
+                return BaidufinBackend._scrape_once(
+                    code, pages, max_results, ts_start, ts_end, benefit_map
+                )
+            except Exception as e:
+                last_exc = e
+                if attempt == 0:
+                    wait = 1 + random.random()
+                    print(f"[baidufin] Playwright 失败（{type(e).__name__}），{wait:.1f}s 后重试: {code}", flush=True)
+                    time.sleep(wait)
+        raise last_exc  # 全部重试失败
+
+    @staticmethod
+    def _scrape_once(code: str, pages: int, max_results: int,
+                     ts_start: Optional[int], ts_end: Optional[int],
+                     benefit_map: dict) -> list[dict]:
         results = []
         seen_ids = set()
 
@@ -144,8 +190,8 @@ class BaidufinBackend(SearchBackend):
         Args:
             query: 股票代码（如 "300436" 或 "600519"）
             max_results: 最大返回条数（默认 20，最大 100）
-            start_date: 起始日期过滤 YYYY-MM-DD
-            end_date: 截止日期过滤 YYYY-MM-DD
+            start_date: 起始时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM
+            end_date: 截止时间，支持 YYYY-MM-DD 或 YYYY-MM-DD HH:MM
 
         Returns:
             [{title, url, snippet, _known_date, _baidu_*}, ...]
@@ -165,9 +211,12 @@ class BaidufinBackend(SearchBackend):
         ts_start = None
         ts_end = None
         if start_date:
-            ts_start = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp())
+            ts_start = _parse_time(start_date)
         if end_date:
-            ts_end = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp() + 86399)
+            ts_end = _parse_time(end_date)
+            # 如果 end_date 只有日期（不含时间），默认到当天最后一秒
+            if end_date.strip().replace("T", " ").count(" ") == 0:
+                ts_end += 86399
 
         # 在独立线程中运行 playwright（兼容 async 调用方）
         result_holder = []

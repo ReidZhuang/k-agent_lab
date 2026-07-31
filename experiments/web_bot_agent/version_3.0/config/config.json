@@ -1,11 +1,16 @@
 {
+  "server": {
+    "workers": 12
+  },
   "search": {
     "engine": "duckduckgo",
     "max_results": 5,
     "tool": "web-forager",
     "sinafin": {
       "endpoint": "http://localhost:8000"
-    }
+    },
+    "timeout_seconds": 90,
+    "max_wait_seconds": 300
   },
   "extraction": {
     "primary": "trafilatura",
@@ -33,6 +38,11 @@
     "max_tokens": 2500
   },
   "session": {
-    "ttl_minutes": 60
+    "ttl_minutes": 60,
+    "list": {
+      "ttl_minutes": 45,
+      "max_calls": 20,
+      "max_body_returns": 2
+    }
   }
 }

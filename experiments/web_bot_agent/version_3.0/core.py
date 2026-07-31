@@ -2,9 +2,10 @@
 v3.0 核心引擎 — 引擎分发 + mode=list + 截断8000
 
 新增:
-  - engine 参数: "ddg" | "sinafin"
+  - engine 参数: "ddg" | "sinafin" | "baidufin" | "thsfin" | "dcfin" | "juchao"
   - mode="list": Phase 0 返回列表即止，Phase 1 后台提取正文（截断8000）
-  - _known_date: 跳过日期提取，直接使用 sinafin 精确日期
+  - juchao: 巨潮盘后公告，列表仅标题/日期（精确到天），后台异步下载PDF提取正文
+  - _known_date: 跳过日期提取，直接使用 sinafin/thsfin/dcfin 精确日期
   - 正文截断：超过 max_body_chars 字截断，尾部加截断标记
 """
 import json, os, sys, time, re, asyncio, threading
@@ -25,6 +26,17 @@ from search_engine import search as search_web
 
 from date_extractor import extract_date_fast, upgrade_date_with_body
 from filter import ArticleFilter
+
+# ── 提前导入（避免并发 import 竞态） ──
+import trafilatura  # noqa: E402
+from pypdf import PdfReader  # noqa: E402
+from readability import Document  # noqa: E402
+import html2text  # noqa: E402
+try:
+    from playwright.sync_api import sync_playwright
+    _PW_AVAILABLE = True
+except ImportError:
+    _PW_AVAILABLE = False
 
 OLLAMA_URL = f"{cfg['ollama']['endpoint']}/api/generate"
 MODEL = cfg["ollama"]["models"]["default"]
@@ -140,8 +152,181 @@ def truncate_body(body_text: str, max_chars: int = MAX_BODY_CHARS) -> tuple[str,
 
 
 # ============================================================
-# Phase 1: 并行 fetch HTML + 正文提取
+# PDF 提取（公告页面 Fallback）
 # ============================================================
+
+def _find_pdf_urls_in_html(html: str) -> list[str]:
+    """从 HTML 中提取所有 PDF 下载链接。
+
+    覆盖以下场景:
+      - <a href="...pdf">
+      - <iframe src="...pdf">
+      - <embed src="...pdf">
+      - JavaScript: pdfsource = '...', otherSource = '...'
+      - 任何含 .pdf 的 URL
+    """
+    urls = []
+    seen = set()
+
+    # 1. HTML 标签中的 PDF 链接
+    for pat in [
+        r'<a[^>]*href\s*=\s*["\']([^"\']*\.pdf[^"\']*)["\']',
+        r'<iframe[^>]*src\s*=\s*["\']([^"\']*\.pdf[^"\']*)["\']',
+        r'<embed[^>]*src\s*=\s*["\']([^"\']*\.pdf[^"\']*)["\']',
+    ]:
+        for m in re.finditer(pat, html, re.IGNORECASE):
+            u = m.group(1).strip()
+            if u and u not in seen:
+                seen.add(u)
+                urls.append(u)
+
+    # 2. JavaScript 中常见的 PDF url 变量
+    for pat in [
+        r'''pdfsource\s*=\s*['"]([^'"]+\.pdf[^'"]*)['"]''',
+        r'''otherSource\s*=\s*['"]([^'"]+\.pdf[^'"]*)['"]''',
+        r'''pdfUrl\s*[:=]\s*['"]([^'"]+\.pdf[^'"]*)['"]''',
+        r'''fileUrl\s*[:=]\s*['"]([^'"]+\.pdf[^'"]*)['"]''',
+    ]:
+        for m in re.finditer(pat, html, re.IGNORECASE):
+            u = m.group(1).strip()
+            if u and u not in seen:
+                seen.add(u)
+                urls.append(u)
+
+    # 3. 确保 URL 有 scheme（部分页面省略协议前缀）
+    resolved = []
+    for u in urls:
+        if u.startswith("//"):
+            u = "https:" + u
+        elif u.startswith("/"):
+            u = "https:" + u   # 对于公告类页面通常同站 https
+        if u.startswith("http"):
+            resolved.append(u)
+
+    return resolved
+
+
+def _extract_pdf_from_url(pdf_url: str, timeout: int = 30) -> str:
+    """下载 PDF 并用 pypdf 提取文字。
+
+    Returns:
+        提取的文本，失败返回空字符串。
+    """
+    try:
+        import requests
+        from io import BytesIO
+        from pypdf import PdfReader
+        from urllib.parse import quote, urlparse, urlunparse
+
+        # URL 编码 — 处理 URL 路径中的中文字符（requests 的 latin-1 header 限制）
+        parsed = urlparse(pdf_url)
+        encoded_path = "".join(
+            quote(ch, safe="/:@!$&'()*+,;=-._~?#") if ord(ch) > 127 else ch
+            for ch in parsed.path
+        )
+        safe_url = urlunparse((
+            parsed.scheme, parsed.netloc, encoded_path,
+            parsed.params, parsed.query, parsed.fragment
+        ))
+
+        resp = requests.get(
+            safe_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "http://www.cninfo.com.cn/",
+            },
+            timeout=timeout,
+            allow_redirects=True,
+        )
+        resp.raise_for_status()
+
+        # 内容类型检查
+        ct = resp.headers.get("Content-Type", "")
+        if "application/pdf" not in ct and "octet-stream" not in ct:
+            # 有时 PDF 的 Content-Type 缺失但仍可解析
+            if not resp.content[:8].startswith(b"%PDF-"):
+                return ""
+
+        reader = PdfReader(BytesIO(resp.content))
+        pages = []
+        for page in reader.pages:
+            pt = page.extract_text()
+            if pt:
+                pages.append(pt.strip())
+
+        if not pages:
+            return ""
+
+        full = "\n".join(pages)
+
+        # 空白治理（与正文提取一致）
+        if has_excessive_whitespace(full):
+            full = clean_excessive_whitespace(full)
+
+        return full
+
+    except Exception:
+        return ""
+
+
+_BOILERPLATE_MARKERS = [
+    "无法在线阅读",
+    "下载原文",
+    "pdfsource",
+    "当前公告无法在线",
+    "请下载原文",
+    "该公告暂不支持在线浏览",
+]
+
+
+def _is_pdf_announcement_page(body_text: str) -> bool:
+    """检测正文是否仅为 PDF 公告占位提示。"""
+    if not body_text or len(body_text.strip()) < 50:
+        return True
+    text_lower = body_text.lower()
+    for marker in _BOILERPLATE_MARKERS:
+        if marker.lower() in text_lower:
+            return True
+    return False
+
+
+def _try_extract_pdf_from_html(html: str, timeout: int = 30) -> str:
+    """从 HTML 中找出 PDF 链接并尝试提取正文。
+
+    Args:
+        timeout: 每个 PDF URL 的下载+解析超时（秒）
+
+    Returns:
+        提取的 PDF 正文（最长的那个 PDF 的内容），失败返回空字符串。
+    """
+    pdf_urls = _find_pdf_urls_in_html(html)
+    if not pdf_urls:
+        return ""
+
+    best_text = ""
+    for url in pdf_urls:
+        text = _extract_pdf_from_url(url, timeout=timeout)
+        if len(text) > len(best_text):
+            best_text = text
+
+    return best_text
+
+
+def extract_pdf_from_article(article: dict, timeout: int = 15) -> str:
+    """从文章 dict 中提取 PDF 正文（用于后台异步提取）。
+
+    Args:
+        article: phase1_fetch_and_extract 返回的文章 dict（需含 html 字段）
+        timeout: 每个 PDF URL 的下载+解析超时（秒）
+
+    Returns:
+        提取的正文（失败返回空字符串）
+    """
+    html = article.get("html", "")
+    if not html:
+        return ""
+    return _try_extract_pdf_from_html(html, timeout=timeout)
+
 
 async def _fetch_single(url: str) -> tuple[str, str]:
     """下载单个 URL, 返回 (html_text, error_or_blank).
@@ -208,7 +393,6 @@ def _extract_body_from_html(html: str) -> tuple[str, str, list]:
     """
     用 trafilatura 从 HTML 提取正文。返回 (body_text, date_from_meta, paragraphs).
     """
-    import trafilatura
 
     meta_json = trafilatura.extract(html, output_format='json', include_images=False, with_metadata=True)
     date_from_meta = ""
@@ -251,12 +435,8 @@ def _extract_with_playwright(urls: list[str]) -> dict[str, str]:
     Returns:
         {url: body_text, ...}  提取失败则 body_text 为空字符串
     """
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        return {url: "" for url in urls}
+    pass  # playwright handled below
 
-    import trafilatura
     result = {}
 
     with sync_playwright() as p:
@@ -277,9 +457,17 @@ def _extract_with_playwright(urls: list[str]) -> dict[str, str]:
                 # Playwright 的 page.content() 已由浏览器正确解码（UTF-8）
                 body_text = trafilatura.extract(page.content(), output_format='markdown', include_images=False) or ""
 
-                # 策略2: 如果能找到正文容器，直接用 Playwright 取 inner_text
+                # 策略2: 检测 captcha（东方财富等网站的反爬）
                 if not body_text or len(body_text.strip()) < 20:
-                    for sel in ["article", "div[class*='content']", "div[class*='article']",
+                    page_text = page.inner_text("body").strip()[:200]
+                    if "身份核实" in page_text or "拖动滑块" in page_text:
+                        print(f"  [pw] captcha 拦截，等待重试: {url[:60]}", flush=True)
+                        page.wait_for_timeout(5000)
+
+                # 策略3: 如果能找到正文容器，直接用 Playwright 取 inner_text
+                if not body_text or len(body_text.strip()) < 20:
+                    for sel in ["div.newstext", "div#zw_body", "div.article-body",
+                                "article", "div[class*='content']", "div[class*='article']",
                                 "div[class*='detail']", "div[class*='main-text']", "#content"]:
                         el = page.query_selector(sel)
                         if el:
@@ -288,13 +476,27 @@ def _extract_with_playwright(urls: list[str]) -> dict[str, str]:
                                 body_text = t
                                 break
 
-                # 策略3: 取 body 全文
+                # 策略4: 取 body 全文
                 if not body_text or len(body_text.strip()) < 20:
                     body_text = page.inner_text("body").strip()
 
                 # 空白治理（与 phase1_fetch_and_extract 一致）
                 if body_text and has_excessive_whitespace(body_text):
                     body_text = clean_excessive_whitespace(body_text)
+
+                # PDF 公告 fallback：Playwright 渲染后仍无正文时，尝试提取 PDF
+                if _is_pdf_announcement_page(body_text):
+                    try:
+                        import requests as _requests
+                        r = _requests.get(url, headers={
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                        }, timeout=10)
+                        r.encoding = "utf-8"
+                        pdf_text = _try_extract_pdf_from_html(r.text)
+                        if pdf_text:
+                            body_text = pdf_text
+                    except Exception:
+                        pass
 
                 page.close()
             except Exception:
@@ -312,6 +514,7 @@ async def phase1_fetch_and_extract(
     max_parallel: int = 4,
     include_snippet: bool = False,
     truncate: bool = False,       # v3.0: 是否截断正文
+    skip_pdf: bool = False,       # v3.0: 跳过 PDF 提取（后台异步处理）
 ) -> list[dict]:
     """
     Phase 1: 并行下载 HTML → trafilatura 正文提取 → 日期提取。
@@ -367,6 +570,17 @@ async def phase1_fetch_and_extract(
             if body_text and has_excessive_whitespace(body_text):
                 body_text = clean_excessive_whitespace(body_text)
 
+            # v3.0: PDF 公告 fallback — 正文为空或为"无法在线阅读"等占位时
+            is_pdf = False
+            if _is_pdf_announcement_page(body_text):
+                if skip_pdf:
+                    is_pdf = True  # 标记为 PDF 页，后台异步提取
+                else:
+                    pdf_text = _try_extract_pdf_from_html(html)
+                    if pdf_text:
+                        body_text = pdf_text
+                        paragraphs = [p.strip() for p in body_text.split('\n\n') if p.strip()]
+
             # v3.0: 截断正文
             truncated = False
             if truncate and body_text:
@@ -398,6 +612,8 @@ async def phase1_fetch_and_extract(
                 result["_original_id"] = item["_original_id"]
             if truncate:
                 result["truncated"] = truncated
+            if is_pdf:
+                result["_is_pdf"] = True
             return result
 
     tasks = [_process_one(item, i) for i, item in enumerate(raw_results)]
@@ -816,18 +1032,6 @@ async def phase2_llm_analysis(
 
 
 # ============================================================
-# 预过滤（sinafin / baidufin 模式专用）
-# ============================================================
-
-def _prefilter_sinafin(articles: list[dict],
-                        filter_days: int | None = None,
-                        filter_title: str | None = None) -> list[dict]:
-    """对 sinafin 返回的结果进行预过滤，仅做标题过滤。"""
-    if filter_title:
-        articles = ArticleFilter.apply(articles, title_pattern=filter_title)
-    return articles
-
-
 # ============================================================
 # 主入口: run_search_pipeline
 # ============================================================
@@ -882,7 +1086,7 @@ async def run_search_pipeline(
         if engine == "ddg":
             phase1_results = await phase1_fetch_and_extract(
                 raw_results, max_parallel=MAX_PARALLEL, include_snippet=True,
-                truncate=True,
+                truncate=True, skip_pdf=True,
             )
 
             # 日期过滤
@@ -907,7 +1111,7 @@ async def run_search_pipeline(
                 articles_out.append({
                     "id": a["id"],
                     "title": a["title"],
-                    "url": a["url"],
+                    "body_avail": "有",
                     "date": a.get("date", ""),
                     "date_source": a.get("date_source", ""),
                     "date_confidence": a.get("date_confidence", ""),
@@ -934,38 +1138,89 @@ async def run_search_pipeline(
                 "_phase2_input": phase2_input,  # 含 body_text，供 /article 取正文
             }
 
-        # ── Sinafin / Baidufin 模式：仅返回列表，不提取正文（等 /extract）──
+        # ── Sinafin / Baidufin / Thsfin / Dcfin / Juchao / QnAinfo 模式：仅返回列表，不提取正文 ──
+        # 保存原始总数（用于统计）
+        _total_raw = len(raw_results)
+
         # 预过滤（标题过滤）
-        if engine in ("sinafin", "baidufin"):
-            raw_results = _prefilter_sinafin(raw_results,
-                                              filter_days=filter_days,
-                                              filter_title=filter_title)
+        if engine in ("sinafin", "baidufin", "thsfin", "dcfin", "juchao", "qnainfo"):
+            if filter_title:
+                raw_results = ArticleFilter.apply(raw_results,
+                                                   title_pattern=filter_title)
 
         # 构建预览列表
         articles_out = []
         for idx, item in enumerate(raw_results):
             known_date = item.get("_known_date", "")
+            url = item.get("url", "")
+            has_url = bool(url and url.strip().startswith("http"))
             art = {
                 "id": f"a_{idx + 1:02d}",
                 "title": item.get("title", ""),
-                "url": item.get("url", ""),
+                "body_avail": "有" if (has_url or engine in ("juchao", "qnainfo")) else "无",
+                "date": known_date,
                 "date": known_date,
                 "date_source": engine if known_date else "",
                 "date_confidence": "high" if known_date else "",
-                "source": re.sub(r'https?://(www\.)?', '', item.get("url", "")).split('/')[0] if item.get("url") else "",
                 "snippet": item.get("snippet", ""),
             }
-            # baidufin 特有字段
+            # dcfin / sinafin 特有字段：分类标签（资讯/公告）
+            if engine in ("dcfin", "sinafin"):
+                art["_category"] = item.get("_category", "")
+            # juchao 特有字段：分类标签（公告）+ 后台提取元数据
+            if engine == "juchao":
+                art["_category"] = item.get("_category", "")
+                art["_announce_id"] = item.get("_announce_id", "")
+                art["_announce_time"] = item.get("_announce_time", "")
+            # baidufin 特有字段：情绪分类 + 分类固定为资讯
             if engine == "baidufin":
-                art["sentiment"] = item.get("_baidu_sentiment", "")
+                art["sentiment"] = item.get("_baidu_sentiment", item.get("sentiment", ""))
+                art["_category"] = "资讯"
                 art["provider"] = item.get("_baidu_provider", "")
                 art["snippet"] = item.get("_baidu_abstract", item.get("snippet", ""))
+            # thsfin 特有：标题前半段（冒号前）作为分类
+            if engine == "thsfin":
+                _t = art.get("title", "")
+                if "：" in _t:
+                    parts = _t.split("：", 1)
+                    art["_category"] = parts[0].strip()
+                    art["title"] = parts[1].strip()
+            # qnainfo 特有字段：互动易问答完整内容（首次调用即全部返回）
+            if engine == "qnainfo":
+                art["_category"] = item.get("_category", "")
+                art["_question"] = item.get("_question", "")
+                art["_answerer"] = item.get("_answerer", "")
+                art["_answer"] = item.get("_answer", "")
+                art["_ask_time"] = item.get("_ask_time", "")
+                art["_update_time"] = item.get("_update_time", "")
             articles_out.append(art)
 
+        # ── 通用引擎额外：按 filter_days 做时间筛选（只精确到天） ──
+        if engine in ("sinafin", "thsfin", "dcfin", "baidufin", "juchao", "qnainfo") and filter_days is not None:
+            _raw_before = len(raw_results)
+            kept_ids = {a["id"] for a in ArticleFilter.apply(
+                articles_out, days=filter_days, title_pattern=None
+            )}
+            articles_out = [a for a in articles_out if a["id"] in kept_ids]
+            # 同步过滤 raw_results（用 id 中的序号反查索引）
+            raw_indices = set()
+            for aid in kept_ids:
+                try:
+                    raw_indices.add(int(aid.split("_")[1]) - 1)
+                except (ValueError, IndexError):
+                    pass
+            raw_results = [raw_results[i] for i in sorted(raw_indices)]
+            # 重排 articles_out 的 id 为连续编号
+            for new_idx, art in enumerate(articles_out):
+                art["id"] = f"a_{new_idx + 1:02d}"
+            _dropped = _raw_before - len(raw_results)
+        else:
+            _dropped = 0
+
         filter_stats = {
-            "raw_count": len(raw_results),
+            "raw_count": _total_raw,
             "filtered_count": len(articles_out),
-            "dropped_count": 0,
+            "dropped_count": _total_raw - len(raw_results),
             "filter_days": filter_days,
             "filter_title": filter_title,
         }
@@ -974,7 +1229,7 @@ async def run_search_pipeline(
             "mode": "list",
             "articles": articles_out,
             "total": len(articles_out),
-            "total_raw": len(raw_results),
+            "total_raw": _total_raw,
             "filter_stats": filter_stats,
             "_phase2_input": raw_results,  # 原始结果（含 url），供后台提取正文
         }

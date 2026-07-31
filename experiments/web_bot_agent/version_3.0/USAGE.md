@@ -18,7 +18,7 @@ conda run -n stock_agent uvicorn api:app --host 0.0.0.0 --port 8300
 
 ```bash
 curl http://localhost:8300/
-# → {"service":"bot_search API","version":"3.0.0","modes":["preview","full","list"],"engines":["ddg","sinafin"]}
+# → {"service":"bot_search API","version":"3.0.0","modes":["preview","full","list"],"engines":["ddg","sinafin","baidufin","thsfin","dcfin"]}
 ```
 
 ---
@@ -179,14 +179,14 @@ curl -X POST http://localhost:8300/search \
 
 | 参数 | 类型 | 默认 | 说明 |
 |------|------|------|------|
-| `query` | str | **必填** | 搜索关键词（DDG）或股票代码/名称（sinafin） |
-| `engine` | str | `"ddg"` | 搜索引擎，`"ddg"` 或 `"sinafin"` |
+| `query` | str | **必填** | 搜索关键词（DDG）或**股票代码**（sinafin/baidufin/thsfin/dcfin） |
+| `engine` | str | `"ddg"` | 搜索引擎，`"ddg"` / `"sinafin"`（资讯+公告）/ `"baidufin"` / `"thsfin"` / `"dcfin"`（热门/资讯/公告） |
 | `mode` | str | `"full"` | 执行模式，`"preview"` / `"full"` / `"list"` |
 | `llm_mode` | str | `"segments"` | LLM 模式，`"segments"` / `"summary"` / `"none"` |
 | `max_results` | int | 5 | DDG 返回条数，或 sinafin 翻页页数 |
-| `start_date` | str | - | 起始日期 `YYYY-MM-DD`（仅 sinafin） |
-| `end_date` | str | - | 截止日期 `YYYY-MM-DD`（仅 sinafin） |
-| `filter_days` | int | - | 时间过滤（天），DDG 模式使用 |
+| `start_date` | str | - | 起始日期 `YYYY-MM-DD`（仅 sinafin/dcfin） |
+| `end_date` | str | - | 截止日期 `YYYY-MM-DD`（仅 sinafin/dcfin） |
+| `filter_days` | int | - | 时间过滤（天），仅 DDG 模式生效；上下界包夹，未来日期自动剔除，含时间则精确到分钟 |
 | `filter_title` | str | - | 标题关键词/正则过滤 |
 | `site` | str | - | 站内限制（仅 DDG） |
 | `timelimit` | str | - | DDG 搜索时间限制 |
@@ -214,22 +214,59 @@ curl -X POST http://localhost:8300/search \
 
 ### `POST /article`
 
-获取单篇文章正文（仅 list 模式）。
+获取单篇或多篇文章正文（仅 list 模式，支持批量请求）。
 
 **请求参数：**
 
-| 参数 | 类型 | 说明 |
+| 参数 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `session_id` | str | - | session_id |
+| `article_id` | str | - | 单篇模式：文章 ID，如 `"a_01"`（与 article_ids 二选一） |
+| `article_ids` | list[str] | - | 批量模式：文章 ID 列表，如 `["a_01","a_03"]`（与 article_id 二选一） |
+| `close` | bool | false | 设为 `true` 时，本次返回后关闭 session |
+
+**响应：**
+
+```json
+{
+  "session_id": "s_...",
+  "articles": [
+    {"article_id": "a_01", "status": "ready", "body_text": "...", "title": "...", ...},
+    {"article_id": "a_02", "status": "processing", "title": "..."}
+  ],
+  "session_closed": false
+}
+```
+
+**批量说明：**
+- 一次请求多篇 ID 只计 **1 次** 正文请求
+- 每 session 最多 **2 次** 正文请求，第 2 次返回后自动关闭
+- `status: "processing"` / `"error"` 不消耗正文请求次数
+
+**响应字段：**
+
+| 字段 | 类型 | 说明 |
 |------|------|------|
-| `session_id` | str | session_id |
-| `article_id` | str | 文章 ID，如 `"a_01"` |
+| `status` | str | `"processing"` / `"ready"` / `"error"` |
+| `body_text` | str | 正文（仅 ready 时有） |
+| `has_body` | bool | 文章是否有 URL 和正文（列表预览中可见） |
+| `session_closed` | bool | 本次返回后 session 是否已关闭 |
+| `fetch_error` | str | 提取失败原因（仅 error 时有） |
+| `truncated` | bool | 正文是否被截断 |
 
-**响应 status 值：**
+**status 含义：**
 
-| status | 含义 |
+| status | 说明 |
 |--------|------|
-| `processing` | 正文尚未提取完成，请稍后重试 |
+| `processing` | 正文尚未提取完成（PDF 页后台加载中），不计入调用次数 |
 | `ready` | 正文已就绪，`body_text` 含正文内容 |
 | `error` | 提取失败，`fetch_error` 含错误信息 |
+
+**List 模式会话生命周期：**
+- 正文请求次数：每调一次 `/article`（支持批量）计 1 次，上限 **2 次**，第 2 次返回后自动关闭
+- `/article` 返回 `processing`/`error` 时不消耗正文请求次数
+- 请求中设 `close: true` 可提前关闭 session
+- 从列表返回起 15 分钟未操作自动超时关闭
 
 ### `GET /poll/{session_id}`
 
@@ -293,6 +330,26 @@ curl -X POST http://localhost:8300/search \
   -H "Content-Type: application/json" \
   -d '{"query":"宁德时代","engine":"sinafin","mode":"preview"}'
 ```
+### Dcfin + List（东方财富股吧）
+
+```bash
+# 搜索三分类文章列表（热门/资讯/公告，各前15条）
+curl -X POST http://localhost:8300/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"300395","engine":"dcfin","mode":"list","start_date":"2026-07-19","end_date":"2026-07-22"}'
+
+# 返回带分类标签（_category）和精确到分钟日期的文章列表
+# 后台自动提取正文，通过 /article 按需获取
+SID=$(curl -s -X POST http://localhost:8300/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"300395","engine":"dcfin","mode":"list"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['session_id'])")
+
+# 取正文
+curl -s -X POST http://localhost:8300/article \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\":\"${SID}\",\"article_id\":\"a_03\"}"
+```
 
 ## 常见问题
 
@@ -302,11 +359,23 @@ A: 确认 sinafin_artical_tool 服务正在运行（`curl http://localhost:8000/
 **Q: /extract 提示 "无效 ID"？**
 A: `article_ids` 传入了不存在的 ID，会被自动忽略。检查 `/search` 返回值中的 `articles[].id`。
 
+**Q: filter_days=3 为什么还看到未来日期的文章？**
+A: 不会。`filter_days` 有上下界包夹保护，超过今天日期的文章自动剔除。如果文章带具体时间（`HH:MM`），精确到分钟比较。若仍有异常，检查服务端日志是否有 `[filter] N articles with future date (dropped)` 输出。
+
 **Q: /article 一直返回 processing？**
-A: 正文提取需要时间（每篇数秒）。如果长时间不返回，检查：1) 是否调了 `/extract`；2) 提取过程是否有错误（查看服务端日志）。
+A: DDG list 模式下，正常 HTML 文章正文即时就绪；PDF 公告页在后台异步提取（15 秒超时），提取期间返回 processing。如果超过 15 秒仍未就绪，检查：1) 服务端日志是否有 `[ddg_pdf]` 错误信息；2) 是否已安装 `pypdf`。sinafin 引擎需先调用 `/extract` 触发提取。
 
 **Q: 正文截断了怎么办？**
 A: 返回的 `truncated: true` 和末尾 `[截断 全文长于8000字]` 标记。可在 `config/config.json` 中调整 `max_body_chars`。
+
+**Q: 有些同花顺/巨潮公告文章只有"无法在线阅读"几个字？**
+A: 这是 PDF 公告页面，没有 HTML 正文。v3.0 自动处理：
+   - **DDG list 模式**：列表快速返回（不等待 PDF），后台异步下载 PDF（15 秒超时），`/article` 返回 `processing` 直到提取完成
+   - **其他模式**：同步提取 PDF，列表返回时正文已就绪
+   确认已安装 `pypdf`（`pip install pypdf`）。部分上交所官网 PDF 有 JS Challenge 保护可能提取失败，后台会保留原有占位正文。
+
+**Q: 调用 3 次 /article 后就收到 404？**
+A: 这是设计。list 模式会话有调用次数限制（默认 3 次，含 `/search`），第 3 次 `/article` 返回后自动关闭。`close: true` 信号可提前关闭。从列表返回起 15 分钟未操作也会自动超时。可在 `config.json` 的 `session.list.max_calls` 中调整。
 
 **Q: 如何停止所有后台服务？**
 A: 使用 `fuser -k 8000/tcp; fuser -k 8300/tcp`。

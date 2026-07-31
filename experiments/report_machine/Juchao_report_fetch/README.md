@@ -199,3 +199,73 @@ fetch_announcements(symbols, start_date, end_date)
    │
    └── 返回 {code: [text, ...] | None}
 ```
+
+---
+
+## v3.0 服务集成
+
+本模块已集成到 `v3.0 API`（`web_bot_agent/version_3.0/`）和 `search_engine` 统一搜索接口。
+
+### search_engine 接口
+
+```python
+from search_engine import search
+
+# 查列表（秒回，不下载 PDF）
+results = search("300395", engine="juchao")
+results = search("菲利华", engine="juchao",
+                 start_date="2026-07-20", end_date="2026-07-21")
+```
+
+返回格式不含正文，正文需后台异步下载：
+
+```python
+# 返回格式
+[
+    {
+        "title": "2026年半年度业绩预告",
+        "url": "",
+        "snippet": "证券代码：300395 ...",
+        "_known_date": "2026-07-20",
+        "_category": "公告",
+        "_announce_id": "1225432055",    # 供 PDF 下载
+        "_announce_time": "2026-07-20",  # 供 PDF 下载
+    },
+]
+```
+
+### v3.0 API 调用
+
+```bash
+# 查列表（快慢分离：列表秒回 + 后台PDF提取）
+curl -X POST /search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"688166","engine":"juchao","mode":"list",
+       "max_results":10, "filter_days":3}'
+# → status: "list_ready", ~1s
+
+# 取正文（后台PDF提取完成后立即可取）
+curl -X POST /article \
+  -H "Content-Type: application/json" \
+  -d '{"session_id":"s_...","article_ids":["a_01"]}'
+# → status: "ready", 正文完整
+```
+
+### 架构说明
+
+```
+Phase 0 (search):  akshare → 公告列表（标题/日期/announceId）
+                   状态: list_ready (0.3~2s)
+Phase 1 (后台线程): 逐条下载 PDF → pypdf 提取文字
+                   状态: done (3~15s)
+取正文 (/article):  从 session 内存读取
+                   状态: ready (即时)
+```
+
+### 注意事项
+
+- 公告时间只精确到 **天**（YYYY-MM-DD），无分钟精度
+- 时间筛选用 `start_date` / `end_date` 或 `filter_days=N`（近 N 天）
+- 所有巨潮公告均为 PDF 格式，后台自动下载提取
+- PDF 下载失败或内容为空时标记 `fetch_error`，不影响其他公告
+- 依赖：`akshare`、`requests`、`pypdf`

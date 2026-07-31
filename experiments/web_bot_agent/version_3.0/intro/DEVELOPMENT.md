@@ -6,7 +6,7 @@
 |------|----------|
 | **v1.0** | DDG 搜索 → 提取正文 → LLM 分组/摘要（纯异步） |
 | **v2.0** | 双阶段 Pipeline（Phase 1 同步预览 + Phase 2 后台 LLM）；分层日期提取；过滤模块 |
-| **v3.0** | **引擎分发**（ddg / sinafin / baidufin）；**list 模式**（先列表后按需/自动提取正文）；正文截断 8000 字；sinafin/baidufin 精确日期跳过提取；空白字符治理；**baidufin 双重兜底提取**（httpx → Playwright） |
+| **v3.0** | **引擎分发**（ddg / sinafin / baidufin / thsfin）；**list 模式**（先列表后按需/自动提取正文）；正文截断 8000 字；sinafin/baidufin/thsfin/dcfin 精确日期跳过提取；空白字符治理；**baidufin 双重兜底提取**（httpx → Playwright）；**thsfin 同花顺 F10 公司大事**（Playwright 抓取，后台自动提取有 URL 的文章）；**PDF 公告异步后台提取**（Phase 1 跳过 → 后台 15s 超时）；**list 模式会话生命周期**（15 分钟超时 / 3 次调用关闭 / close 信号）；**日期过滤上下界包夹**（精确到分钟，自动剔除未来日期） |
 
 ## 架构总览
 
@@ -27,9 +27,9 @@
 │        ┌────────────┼────────────────┐                       │
 │        ▼            ▼                ▼                       │
 │  ┌──────────┐ ┌──────────┐ ┌──────────────┐                 │
-│  │ ddgs.py  │ │sinafin.py│ │ baidufin.py  │                 │
-│  │DDG搜索   │ │个股新闻   │ │百度股市通    │                 │
-│  │(需代理)   │ │HTTP API  │ │Playwright    │                 │
+│  │ ddgs.py  │ │sinafin.py│ │ baidufin.py  │ │ thsfin.py │ │dcfin.py  │   │
+│  │DDG搜索   │ │个股新闻   │ │百度股市通    │ │同花顺F10  │ │东方财富   │   │
+│  │(需代理)   │ │HTTP API  │ │Playwright    │ │Playwright │ │BS4        │   │
 │  └──────────┘ └────┬─────┘ └──────────────┘                 │
 │                    │           │                              │
 │                    ▼ HTTP      ▼ 浏览器                       │
@@ -137,6 +137,7 @@ def _decode_html_bytes(raw: bytes, declared_encoding: str | None = None) -> str:
 - `_fetch_single(url)` — 下载 HTML（httpx，15s 超时，GBK 自动检测）
 - `_extract_body_from_html(html)` — trafilatura 提取 + readability 兜底
 - 日期提取：有 `_known_date` 直接使用（sinafin/baidufin），否则走 `date_extractor` 分层提取
+- **PDF 公告 fallback**：正文为空或含"无法在线阅读"等占位标记时，扫描 HTML 中 PDF 链接 → 下载 → pypdf 提取 → 替换正文
 - **空白治理**：`has_excessive_whitespace()` → 空白占比 > 50% → `clean_excessive_whitespace()`
 - **正文截断**：`truncate_body(body, max_chars=8000)` → 超 8000 字截断加标记
 
@@ -149,7 +150,7 @@ def _extract_with_playwright(urls: list[str]) -> dict[str, str]:
     策略1: trafilatura 在渲染后的 HTML 上提取
     策略2: 查找常见正文容器（article, div.content, div.detail 等）
     策略3: 取 body 全文
-    → 空白治理 → 返回
+    → 空白治理 → PDF fallback（仍是占位文本时）→ 返回
     """
 ```
 
@@ -161,11 +162,22 @@ def _extract_with_playwright(urls: list[str]) -> dict[str, str]:
 **mode=list 分支逻辑**：
 ```
 mode=list
-  ├── engine=ddg:      Phase 0 → Phase 1 → 过滤 → 返回预览（正文已就绪）
+  ├── engine=ddg:
+  │     Phase 0 → Phase 1（skip_pdf=True，跳过 PDF 提取）
+  │       ├─ 正常 HTML → 正文即时就绪，立即存储
+  │       └─ PDF 公告 → 标记 _is_pdf，/article 返回 processing
+  │     → filter_days 过滤（上下界包夹，精确到分钟，未来日期剔除）
+  │     → 返回预览（正文已就绪，PDF 页后台异步提取中）
+  │     → 后台线程 _run_ddg_pdf_extraction_in_thread（15s 超时）
+  │     → PDF 提取完 → set_article_body() 覆盖
+  │
   ├── engine=sinafin:  Phase 0 → 返回预览 → 等 /extract → Phase 1
+  │                    日期过滤在搜索引擎层（start_date/end_date）
+  │
   └── engine=baidufin: Phase 0 → 返回预览（含情绪/来源/摘要）
-                                → 后台自动 Phase 1（httpx → Playwright 兜底）
-                                → 全部就绪 → status=done
+                        → 后台自动 Phase 1（httpx → Playwright 兜底）
+                        → 全部就绪 → status=done
+                        日期过滤在搜索引擎层（start_date/end_date）
 ```
 
 ### 3. session_manager.py — 会话管理
@@ -179,7 +191,12 @@ list 模式 (sinafin):
   created → list_ready (等 /extract) → processing → done
 
 list 模式 (ddg):
-  created → done (正文已就绪)
+  created → done (正常 HTML 正文就绪；PDF 页后台异步提取中)
+
+list 模式 会话生命周期（仅 list 模式）:
+  调用次数: /search(1) → /article × 2(3) → 第 3 次返回后自动关闭
+           processing 不计入次数，close:true 可提前关闭
+  超时: 从列表返回起 15 分钟未操作自动关闭
 
 preview 模式:
   created → preview (Phase 1 完成) → done (Phase 2 完成)
@@ -222,7 +239,62 @@ ArticleFilter.apply(articles, days=7, title_pattern="固态")
 ```
 
 - `days` — 时间过滤（基于 `date` 字段，无日期文章保留）
+  - **上下界包夹**：`cutoff <= date <= now`，未来日期自动剔除
+  - **分钟精度**：如日期字段含 `HH:MM`，精确到分钟比较；仅日期则按天比较
+  - **统计打点**：过滤日志输出无日期（保留）和未来日期（丢弃）的数量
 - `title_pattern` — 标题关键词匹配（支持正则）
+
+## PDF 公告自动提取
+
+### 提取模式（两种策略）
+
+**同步提取**（DDG list 以外的模式 / Playwright 兜底）：
+```
+Normal article text → trafilatura → 空白治理 → 返回
+PDF placeholder    → _try_extract_pdf_from_html() 同步提取 → 返回
+```
+
+**异步后台提取**（DDG list 模式 — default）：
+```
+Phase 1（同步，快）         后台线程（异步，15s 超时）
+  trafilatura 提取              │
+    ↓                           ├─ 扫描 HTML 找 PDF URL
+  _is_pdf_announcement_page()   ├─ requests.download(pdf)
+    ↓ True                      ├─ pypdf.PdfReader.extract()
+  标记 _is_pdf → 跳过 PDF       ├─ 空白治理 + 截断
+    ↓                           └─ set_article_body() → 覆盖占位正文
+  返回列表（不等待 PDF）
+```
+
+### 触发条件
+正文提取完成后，如果满足以下任一条件，自动触发 PDF 回退提取：
+- 正文为空或少于 50 个字符
+- 正文包含关键词：`无法在线阅读`、`下载原文`、`请下载原文` 等
+
+### 核心函数
+1. `_find_pdf_urls_in_html(html)` — 扫描 HTML 提取 PDF 链接
+2. `_extract_pdf_from_url(url, timeout)` — 下载 + pypdf 提取（时长受 timeout 限制）
+3. `_try_extract_pdf_from_html(html, timeout)` — 编排：找链接 → 逐个下载 → 取最长文本
+4. `extract_pdf_from_article(article, timeout)` — 公开函数，供后台线程使用
+5. `_run_ddg_pdf_extraction_in_thread()` — DDG list 模式后台线程入口
+
+### PDF 链接发现
+`_find_pdf_urls_in_html()` 支持多种链接格式：
+- `<a href="...pdf">` — 锚链接
+- `<iframe src="...pdf">` / `<embed src="...pdf">` — 嵌入式 PDF
+- JavaScript 变量：`pdfsource = '...'`、`otherSource = '...'`
+- 自动补全 `//`（协议相对）和 `/`（根相对）URL
+
+### URL 编码处理
+PDF 文件名常包含中文字符（如`博瑞医药：关于...公告.pdf`），直接传给 `requests` 会导致 latin-1 header 编码异常。`_extract_pdf_from_url()` 自动对路径中的非 ASCII 字符做百分号编码。
+
+### 集成路径
+| 路径 | 触发位置 | 模式 |
+|------|----------|------|
+| DDG list Phase 1（`phase1_fetch_and_extract`） | `skip_pdf=True`，跳过 PDF，仅标记 `_is_pdf` | 异步后台 |
+| DDG list 后台线程（`_run_ddg_pdf_extraction_in_thread`） | 调用 `extract_pdf_from_article(art, timeout=15)` | 异步（15s 超时） |
+| 非 list 模式（`phase1_fetch_and_extract`） | `skip_pdf=False`，trafilatura 提取 + 空白治理后 | 同步 |
+| Playwright 兜底（`_extract_with_playwright`） | 渲染提取 + 空白治理后 | 同步 |
 
 ## 正文空白治理
 
