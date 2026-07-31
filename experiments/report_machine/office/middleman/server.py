@@ -79,6 +79,7 @@ _ENGINE_CONFIG = {
     "sinafin":  {"max_results": 15, "mode": "list"},
     "baidufin": {"max_results": 20, "mode": "list"},
     "thsfin":   {"max_results": 20, "mode": "list"},
+    "thsnews":  {"max_results": 20, "mode": "list"},
     "juchao":   {"max_results": 10, "mode": "list"},
     "qnainfo":  {"max_results": 20, "mode": "list"},
 }

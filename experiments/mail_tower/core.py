@@ -1166,7 +1166,7 @@ async def run_search_pipeline(
         _total_raw = len(raw_results)
 
         # 预过滤（标题过滤）
-        if engine in ("sinafin", "baidufin", "thsfin", "dcfin", "juchao", "qnainfo"):
+        if engine in ("sinafin", "baidufin", "thsfin", "dcfin", "juchao", "qnainfo", "thsnews"):
             if filter_title:
                 raw_results = ArticleFilter.apply(raw_results,
                                                    title_pattern=filter_title)
@@ -1190,7 +1190,7 @@ async def run_search_pipeline(
                 "snippet": item.get("snippet", ""),
             }
             # dcfin / sinafin 特有字段：分类标签（资讯/公告）
-            if engine in ("dcfin", "sinafin"):
+            if engine in ("dcfin", "sinafin", "thsnews"):
                 art["_category"] = item.get("_category", "")
             # juchao 特有字段：分类标签（公告）+ 后台提取元数据
             if engine == "juchao":
@@ -1221,7 +1221,7 @@ async def run_search_pipeline(
             articles_out.append(art)
 
         # ── 通用引擎额外：按 filter_days 做时间筛选（只精确到天） ──
-        if engine in ("sinafin", "thsfin", "dcfin", "baidufin", "juchao", "qnainfo") and filter_days is not None:
+        if engine in ("sinafin", "thsfin", "dcfin", "baidufin", "juchao", "qnainfo", "thsnews") and filter_days is not None:
             _raw_before = len(raw_results)
             kept_ids = {a["id"] for a in ArticleFilter.apply(
                 articles_out, days=filter_days, title_pattern=None

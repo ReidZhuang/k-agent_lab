@@ -509,6 +509,141 @@ def _run_thsfin_phase1_in_thread(session_id: str, raw_results: list[dict]):
     print(f"[thsfin] {len(has_url)} 篇提取完成, 耗时 {elapsed:.1f}s", flush=True)
 
 
+def _run_thsnews_phase1_in_thread(session_id: str, raw_results: list[dict]):
+    """后台线程: thsfin 模式提取有 URL 的文章正文（httpx→trafilatura，失败则 Playwright 兜底 + 1次重试）"""
+    from core import truncate_body, _fetch_single, _extract_body_from_html, _extract_with_playwright, extract_pdf_from_article
+    import asyncio, time, random
+
+    start = time.time()
+
+    # 只提取有 URL 的文章
+    has_url = [a for a in raw_results if a.get("url", "").strip().startswith("http")]
+    if not has_url:
+        print("[thsnews] 没有需要提取正文的文章（全部无 URL）", flush=True)
+        session_manager.set_article_ready(session_id, has_ready=False)
+        session_manager.set_list_done(session_id, 0)
+        return
+
+    session_manager.set_article_processing(session_id)
+
+    async def _fetch_one(item: dict) -> dict:
+        """单篇提取（httpx → HTML → trafilatura）"""
+        from core import _fetch_single, _extract_body_from_html, truncate_body, _is_pdf_announcement_page, _try_extract_pdf_from_html
+        url = item.get("url", "")
+        try:
+            html_text, fetch_err = await _fetch_single(url)
+            if html_text:
+                body_text, meta_date, paragraphs = _extract_body_from_html(html_text)
+                # PDF 回退
+                if not body_text or len(body_text.strip()) < 50:
+                    if _is_pdf_announcement_page(body_text or html_text):
+                        pdf_text = _try_extract_pdf_from_html(html_text, timeout=15)
+                        if pdf_text:
+                            body_text = pdf_text
+                item["body_text"] = body_text or ""
+            else:
+                item["body_text"] = ""
+                item["fetch_error"] = "HTTP fetch returned empty"
+        except Exception as e:
+            item["body_text"] = ""
+            item["fetch_error"] = str(e)
+        return item
+
+    async def _fetch_all(items=None):
+        target = items if items is not None else has_url
+        tasks = [_fetch_one(a) for a in target]
+        return await asyncio.gather(*tasks)
+
+    def _run_pw_fallback(results):
+        failed = [a for a in results
+                  if not a.get("body_text") or sum(1 for c in a["body_text"] if not c.isspace()) < 20]
+        if not failed:
+            return failed
+        urls = [a["url"] for a in failed]
+        print(f"[thsnews] {len(failed)} 篇需要 Playwright 兜底提取", flush=True)
+        pw_bodies = _extract_with_playwright(urls)
+        for art in failed:
+            pw_body = pw_bodies.get(art["url"], "")
+            if pw_body and sum(1 for c in pw_body if not c.isspace()) >= 20:
+                body, truncated = truncate_body(pw_body)
+                art["body_text"] = body
+                art["truncated"] = truncated
+        return failed
+
+    def _get_failed(results):
+        return [a for a in results
+                if not a.get("body_text") or sum(1 for c in a["body_text"] if not c.isspace()) < 20]
+
+    # 第1步: httpx 并行提取
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        phase1_results = loop.run_until_complete(_fetch_all())
+    finally:
+        loop.close()
+
+    # 第2步: Playwright 兜底
+    _run_pw_fallback(phase1_results)
+
+    # 第3步: 重试（1次）：Playwright 仍失败 → 1~3s 后从头重试
+    still_failed = _get_failed(phase1_results)
+    if still_failed:
+        wait = 1 + random.random() * 2
+        print(f"[thsnews] {len(still_failed)} 篇 Playwright 仍失败，{wait:.1f}s 后重试 httpx", flush=True)
+        time.sleep(wait)
+        retry_items = [a for a in has_url if a["id"] in {f["id"] for f in still_failed}]
+        loop2 = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop2)
+        try:
+            retry_results = loop2.run_until_complete(_fetch_all(items=retry_items))
+        finally:
+            loop2.close()
+        for art in retry_results:
+            for i, orig in enumerate(phase1_results):
+                if orig.get("id") == art.get("id"):
+                    phase1_results[i] = art
+                    break
+        # 重试后 Playwright 兜底
+        _run_pw_fallback(phase1_results)
+
+    # 第4步: 存入 session（基于 has_url 保持原始顺序）
+    for art in has_url:
+        # 找到 phase1 中对应项
+        matched = next((a for a in phase1_results if a.get("id") == art["id"]), None)
+        body = (matched or {}).get("body_text", "") or ""
+        fetch_err = (matched or {}).get("fetch_error", "")
+        if not body.strip() and not fetch_err:
+            fetch_err = "httpx + Playwright 均无法提取正文（已重试1次）"
+        truncated_body, was_truncated = truncate_body(body) if body.strip() else ("", False)
+        session_manager.set_article_body(
+            session_id, art["id"],
+            body_text=truncated_body,
+            truncated=was_truncated,
+            fetch_error=fetch_err,
+        )
+
+    # 无 URL 的文章：标记无正文
+    no_url = [a for a in raw_results if not a.get("url", "").strip().startswith("http")]
+    for art in no_url:
+        session_manager.set_article_body(
+            session_id, art["id"],
+            body_text="",
+            truncated=False,
+            fetch_error="该事件无外部文章链接",
+        )
+
+    elapsed = time.time() - start
+    has_success = any(
+        a.get("body_text") and a["body_text"].strip()
+        for a in phase1_results
+        if a.get("id") in {h["id"] for h in has_url}
+    )
+    session_manager.set_article_ready(session_id, has_ready=has_success)
+    session_manager.set_list_done(session_id, elapsed)
+    print(f"[thsnews] {len(has_url)} 篇提取完成, 耗时 {elapsed:.1f}s", flush=True)
+
+
+
 def _run_baidufin_phase1_in_thread(session_id: str, raw_results: list[dict]):
     """后台线程: baidufin 模式自动提取全部文章正文（httpx→trafilatura，失败则 Playwright 兜底 + 1次重试）"""
     from core import truncate_body, _fetch_single, _extract_body_from_html, _extract_with_playwright
@@ -999,6 +1134,15 @@ async def search(req: SearchRequest):
                 )
                 t.start()
 
+            # Thsnews 模式：与 thsfin 相同的后台自动提取（httpx → Playwright 兜底 + 重试）
+            if req.engine == "thsnews":
+                t = threading.Thread(
+                    target=_run_thsnews_phase1_in_thread,
+                    args=(session_id, raw_for_phase1),
+                    daemon=True,
+                )
+                t.start()
+
             # Dcfin 模式：后台自动提取全部文章正文（httpx → trafilatura+BS4 → Playwright 兜底）
             if req.engine == "dcfin":
                 t = threading.Thread(
@@ -1042,9 +1186,10 @@ async def search(req: SearchRequest):
                 preview=preview_data,
                 elapsed=round(elapsed, 1),
                 created_at=created_at,
-                    list_status=sess.list_status,
+                    # qnainfo 已主动关闭 session，get() 返回 None，需保护
+                    list_status=sess.list_status if sess else "ready",
 
-                    article_status=sess.article_status,
+                    article_status=sess.article_status if sess else "free",
 
             )
 
@@ -1214,7 +1359,7 @@ async def get_article(req: ArticleRequest):
 
         说明：
             - 每调用一次 /article 计为 1 次正文请求，无论请求多少篇文章
-            - 上限 2 次正文请求，第 2 次请求返回后自动关闭 session
+            - 上限 2 次正文请求，第 2 次请求返回后自动关闭 session（已移除，2026-07-31）
             - processing/error 不消耗正文请求次数
     """
     sess = session_manager.get(req.session_id)
@@ -1233,8 +1378,8 @@ async def get_article(req: ArticleRequest):
             except Exception:
                 _status = "CORRUPT"
         log_svc(session_id=req.session_id[:20], step="article_404_debug",
-                engine=req.engine, file_exists=_exists, file_size=_size,
-                file_status=_status)
+                engine=getattr(req, "engine", ""),
+                extra={"file_exists": _exists, "file_size": _size, "file_status": _status})
         raise HTTPException(status_code=404, detail="Session not found")
 
     if sess.mode != "list":
@@ -1388,11 +1533,8 @@ async def get_article(req: ArticleRequest):
             session_closed=False,
         )
 
-    # 本次请求有成功返回正文 → 消耗 1 次正文请求次数
-    if has_ready_body:
-        session_manager.increment_body_return(req.session_id)
-
-    # 判断是否关闭
+    # 判断是否关闭（2026-07-31 起移除正文请求次数上限机制：
+    # 内部流程轮询 /article 取正文不应受次数限制，session 仅由显式 close 关闭）
     closed = session_manager.close_after_article(req.session_id, req.close)
 
     # 顶层 status: 任一 ready → "ready", 全 error → "error"
@@ -1695,7 +1837,7 @@ async def root():
         "service": "bot_search API",
         "version": "3.0.0",
         "modes": ["preview", "full", "list"],
-        "engines": ["ddg", "sinafin", "baidufin", "thsfin", "dcfin", "juchao"],
+        "engines": ["ddg", "sinafin", "baidufin", "thsfin", "dcfin", "juchao", "thsnews"],
         "new_features": [
             "引擎分发 (engine: ddg | sinafin | baidufin | thsfin | dcfin | juchao)",
             "list 模式: 返回文章列表 + 按需取单篇正文",
