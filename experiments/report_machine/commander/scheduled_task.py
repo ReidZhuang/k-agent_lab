@@ -6,12 +6,12 @@
   1. 加载配置
   2. 交易日判定 → 非交易日退出
   3. 健康检测 (L0→L1→L2→L3) → 失败退出
-  4. 清理昨日 office/output/
-  5. 查所有用户股票池 → 合并去重
-  6. 第一批: POST Writer API（全部股票）
-  7. 第二批: 重试失败的股票
-  8. 分发报告: office/output/ → user/{username}/{stock_name}/
-  9. 写任务日志到 office/log/
+  4. 查所有用户股票池 → 合并去重
+  5. 第一批: POST Writer API（全部股票）
+  6. 第二批: 重试失败的股票
+  7. 分发报告: office/output/ → user/{username}/{stock_name}/
+  8. 写任务日志到 office/log/
+  （2026-07-31 起不再清理 office/output/，历史报告保留）
 
 用法:
     conda run -n stock_agent python3 commander/scheduled_task.py
@@ -608,9 +608,9 @@ def main():
 
     logger.info("  健康检测全部通过")
 
-    # ── 3. 清理旧的 output ──
-    logger.info("--- 3. 清理昨日 output ---")
-    clean_old_output(output_dir, today)
+    # ── 3. 清理旧的 output（2026-07-31 起停用：不再清理，保留历史报告）──
+    # logger.info("--- 3. 清理昨日 output ---")
+    # clean_old_output(output_dir, today)
 
     # ── 4. 查股票池 ──
     logger.info("--- 4. 查询股票池 ---")

@@ -49,7 +49,8 @@ etl/
 ├── init_schema.sql        # 建表脚本（14 张数据表 + 1 张日志表）
 ├── utils.py               # 工具函数（日志、令牌桶、分块）
 └── logs/
-    └── etl_runner.log     # 运行日志
+    ├── etl_runner.log     # ETL 运行日志
+    └── etl_wrapper.log    # 包装脚本日志（[RUN]/[RETRY]/[FAIL] + error_log 写入结果）
 ```
 
 ## 架构：两层数据模型
@@ -169,6 +170,8 @@ Tushare 接口发生 **频率超限** 时自动重试，最多 5 次：
 | 首次失败 | 写 `error_log` 表（`level=WARNING`），等 60s 重试 |
 | 重试成功 | 正常结束 |
 | 重试仍失败 | 写 `error_log` 表（`level=ERROR`），退出码非 0 |
+
+> **error_log 写入加固**（2026-07-31）：`_log_error` 带 30s 锁等待（DB 忙时不再静默失败）+ 最多 3 次重试；参数经环境变量传递，消息内含引号也不会破坏 SQL。每次写入结果（成功/失败及原因）记录到 `logs/etl_wrapper.log`，该文件同时记录包装脚本的 `[RUN]/[RETRY]/[FAIL]/[DONE]` 全程（脚本 stdout 走 cron 邮箱不可见，排查问题看此文件）。
 
 ### 级别三：Cron 级
 

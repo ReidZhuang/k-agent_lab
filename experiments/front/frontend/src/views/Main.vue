@@ -100,6 +100,17 @@
             :file-content="currentFileContent"
           />
         </div>
+
+        <!-- 文档页右侧浮动工具栏 -->
+        <div v-if="activeTab === 'doc' && currentFilePath" class="doc-float-bar">
+          <el-tooltip content="打印文档" placement="left">
+            <button class="doc-toolbar-btn" @click="printDocument" title="打印文档">🖨️</button>
+          </el-tooltip>
+          <div class="doc-toolbar-sep"></div>
+          <!-- 预留按钮位（暂空） -->
+          <div class="doc-btn-placeholder"></div>
+          <div class="doc-btn-placeholder"></div>
+        </div>
       </main>
     </div>
   </div>
@@ -109,6 +120,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Marked } from 'marked'
 import { me, listFiles, getFileContent, getFavorites, addFavorite, removeFavorite, downloadFile, downloadBatch, deleteFile } from '../api/index.js'
 import FileTree from '../components/FileTree.vue'
 import StockPool from '../components/StockPool.vue'
@@ -355,6 +367,67 @@ function onTabChange() {
   // 标签切换时关闭手机端侧栏
   sidebarVisible.value = false
 }
+
+// ── 打印当前文档 ──
+const printMarked = new Marked({ gfm: true, breaks: true })
+
+function printDocument() {
+  if (!currentFileContent.value) return
+
+  const renderedHtml = printMarked.parse(currentFileContent.value)
+  const fileName = currentFilePath.value.split('/').pop() || '文档'
+
+  const printWin = window.open('', '_blank')
+  if (!printWin) {
+    ElMessage.error('打印窗口被浏览器拦截，请允许弹出窗口')
+    return
+  }
+
+  printWin.document.write(`<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>打印 - ${fileName}</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px;
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #333;
+  }
+  h1 { font-size: 1.6rem; border-bottom: 1px solid #d0d7de; padding-bottom: 8px; margin-bottom: 16px; }
+  h2 { font-size: 1.3rem; border-bottom: 1px solid #d0d7de; padding-bottom: 6px; margin: 24px 0 12px; }
+  h3 { font-size: 1.15rem; margin: 20px 0 8px; }
+  h4 { font-size: 1.05rem; margin: 16px 0 6px; }
+  p { margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th, td { border: 1px solid #d0d7de; padding: 8px 14px; text-align: left; }
+  th { background: #f6f8fa; font-weight: 600; }
+  pre { background: #f6f8fa; border: 1px solid #d0d7de; padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-size: 0.9rem; }
+  code { background: rgba(175,184,193,0.2); padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+  pre code { background: none; padding: 0; }
+  blockquote { border-left: 4px solid #d0d7de; padding: 8px 16px; margin: 12px 0; color: #656d76; background: #f9f9f9; }
+  ul, ol { padding-left: 24px; margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+  img { max-width: 100%; }
+  hr { border: none; border-top: 1px solid #d0d7de; margin: 24px 0; }
+  @media print {
+    body { padding: 0; }
+    @page { margin: 2cm; }
+  }
+</style>
+</head>
+<body>${renderedHtml}</body>
+</html>`)
+  printWin.document.close()
+  printWin.focus()
+
+  // 等待内容渲染后弹出打印对话框
+  setTimeout(() => printWin.print(), 400)
+}
 </script>
 
 <style scoped>
@@ -449,7 +522,7 @@ function onTabChange() {
 }
 .sidebar-footer .el-button { flex: 1; }
 
-.main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
 .tabs-bar {
   padding: 0 24px;
   background: #fff;
@@ -464,5 +537,72 @@ function onTabChange() {
   .sidebar { display: none; }
   .sidebar.mobile-open { display: flex; position: fixed; inset: 0; z-index: 100; width: 100%; max-width: 100%; }
   .content-area { padding: 16px; }
+  .doc-float-bar { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   文档页右侧浮动工具栏（竖排）
+   ════════════════════════════════════════════════════════════════ */
+.doc-float-bar {
+  position: absolute;
+  right: 8px;
+  top: 60px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0.35;
+  transition: opacity 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.doc-float-bar:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--wood-200);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.doc-toolbar-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--wood-600);
+  transition: background 0.15s;
+}
+.doc-toolbar-btn:hover { background: var(--wood-100); }
+
+.doc-toolbar-sep {
+  width: 20px;
+  height: 1px;
+  background: var(--wood-200);
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
+/* 预留按钮位：虚线空槽，暂不可点 */
+.doc-btn-placeholder {
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px dashed var(--wood-300);
+  border-radius: 6px;
+  opacity: 0.15;
+  pointer-events: none;
+  flex-shrink: 0;
 }
 </style>

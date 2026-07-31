@@ -18,3 +18,8 @@ experiments/report_machine/office/test_drive/results/debug_logs/
 experiments/report_machine/etl/logs/
 experiments/front/frontend/node_modules/
 .claude/worktrees/
+
+# 报告分发输出（user/ 目录按用户归档的最终报告）
+experiments/report_machine/user/
+# writer 上下文样本
+experiments/report_machine/office/context_samples/

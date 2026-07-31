@@ -365,5 +365,10 @@ md转带个是ms word的工具已经下载好了，你把这个功能也做一�
 
 
 
-
-
+输入改成
+{
+  "stock_names": ["淮北矿业", "博瑞医药", "凯莱英"],
+  "query": "生成该股票的午间收盘分析报告"
+}
+这个query直接放到writer发给reporter的json下，最底层的一个变量就好了
+reporter拿到json后还是按照之前的要求解析报文，query的值放到上下文的最后，单独一行，前面是 "需求：" + query value
