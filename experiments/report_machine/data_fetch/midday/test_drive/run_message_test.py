@@ -1,5 +1,5 @@
 """
-测试脚本：调用 fetch_midday_message.py 的 fetch_all，验证消息补充功能
+测试脚本：调用 fetch_message.py 的 fetch_all，验证消息补充功能
 
 输出：
   - results/message_dict.txt       → fetch_all 返回的原始 dict（JSON 格式）
@@ -26,7 +26,7 @@ for d in [str(MIDDAY_DIR), str(ETL_DIR)]:
 
 OUTPUT_DIR = Path(__file__).parent / "results"
 
-from fetch_midday_message import fetch_all
+from fetch_message import fetch_all
 
 TEST_STOCKS = ["光启技术", "贝达药业", "煌上煌", "药康生物", "腾景科技",
                 "源杰科技", "飞南资源", "爱施德", "华工科技", "百润股份"]

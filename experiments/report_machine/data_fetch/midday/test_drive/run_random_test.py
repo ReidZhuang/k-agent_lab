@@ -21,7 +21,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 from db_manager import DatabaseManager
 from config import DB_PATH
-from fetch_midday_message import fetch_all
+from fetch_message import fetch_all
 
 # 随机取 10 只股票
 db = DatabaseManager(str(DB_PATH))

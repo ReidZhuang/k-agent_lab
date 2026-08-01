@@ -1,5 +1,5 @@
 """
-测试脚本：调用 fetch_midday_message.py — 淮北矿业、博瑞医药、凯莱英、广生堂
+测试脚本：调用 fetch_message.py — 淮北矿业、博瑞医药、凯莱英、广生堂
 
 输出：
   - results/message_dict_4stocks.txt   → fetch_all 原始 dict（JSON）
@@ -26,7 +26,7 @@ for d in [str(MIDDAY_DIR), str(ETL_DIR)]:
 OUTPUT_DIR = Path(__file__).parent / "results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-from fetch_midday_message import fetch_all
+from fetch_message import fetch_all
 
 TEST_STOCKS = ["淮北矿业", "博瑞医药", "凯莱英", "广生堂"]
 

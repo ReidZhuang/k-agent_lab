@@ -1,5 +1,6 @@
 """
-fetch_midday_message.py — 午间消息补充（快讯、热门板块、跌停监控、异动检测）
+fetch_message.py — 消息补充（快讯、热门板块、跌停监控、异动检测）
+报告类型无关: 午间/日终共用（快讯 cutoff 动态化, 调用时刻决定覆盖范围）
 
 功能:
   3. 今日快讯：财联社重要快讯 + 知识图谱关键词匹配（匹配度 > 0.3 才输出）
@@ -11,7 +12,7 @@ fetch_midday_message.py — 午间消息补充（快讯、热门板块、跌停�
 输出: {股票名: 格式化文本, ...}
 
 使用方式:
-  from fetch_midday_message import fetch_all
+  from fetch_message import fetch_all
   data = fetch_all(["光启技术", "贝达药业"])
 
 依赖:
@@ -79,7 +80,7 @@ _ERROR_LOG_DB = None
 
 
 def log_error(
-    module: str = "fetch_midday_message",
+    module: str = "fetch_message",
     function: str = "",
     level: str = "ERROR",
     stock_name: str = "",
@@ -903,8 +904,8 @@ def fetch_all(stock_names: list[str]) -> dict[str, str]:
 def main():
     args = sys.argv[1:]
     if "--help" in args or "-h" in args or not args:
-        print("用法: python fetch_midday_message.py <名称1> [名称2 ...]")
-        print("示例: python fetch_midday_message.py 宁德时代 比亚迪")
+        print("用法: python fetch_message.py <名称1> [名称2 ...]")
+        print("示例: python fetch_message.py 宁德时代 比亚迪")
         sys.exit(0)
 
     result = fetch_all(args)

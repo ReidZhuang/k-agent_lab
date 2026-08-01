@@ -9,8 +9,8 @@
   - 机构持仓/调研/股东户数    → 同花顺 F10 四端点 + stk_surv + stk_holdernumber(与日终同等级)
   - 风险日历(解禁/质押/披露) → share_float + pledge_stat + disclosure_date(与日终同等级)
   - 业绩趋势                → fina_indicator(与日终同等级)
-  - 涨停/异动/快讯(盘中)     → fetch_midday_message 复用(知识图谱行业关键词分级匹配)
-  - 板块地位                → 同花顺板块排名 + 基准 + 热门板块原因
+  - 涨停/异动/快讯(盘中)     → 由 office/fetcher 的 message 路(fetch_message)提供, 本脚本不含
+  - 板块地位                → 同花顺板块排名 + 基准
   - 技术面+成本地图(半日)    → 新浪K线(MA 按昨日收盘基准) + 融资/机构成本锚点
   - 公告补充                → Tushare 业绩预告/快报/增减持/波动/分红/审计
   - 全市场情绪              → 财联社 levistock
@@ -18,8 +18,8 @@
 与旧版 fetch_midday_data.py 的关系:
   - 旧版 11 节保留(行情/板块/技术/公告/情绪/关键词/旧融资单日)
   - 新增 endday 慢数据:融资融券多日(替代旧单日)/机构持仓/机构调研/股东户数/风险日历/业绩趋势
-  - 新增 message 数据:快讯(知识图谱分级匹配)/异动/跌停/热门板块原因
-  - 新输出 15 节,LLM 按新版 noon skill(三问直答+分析为骨数据为证)组织报告
+  - 消息数据(快讯/异动/跌停/热门板块原因)由 message 路(fetch_message)独立提供,
+    本脚本与 fetch_endday_data 一样只含数据, 供通用化后的 fetcher 注册表调度
 
 输入: 个股名称列表 ['宁德时代', '比亚迪']
 输出: {'宁德时代': '内容string', '比亚迪': '内容string', "warning": {...}}
@@ -74,20 +74,14 @@ from fetch_endday_data import (
     _fmt_risk_section, _fmt_finance_section, _fmt_blocktrade_section,
 )
 
-# ── 复用 message 脚本: 快讯(知识图谱分级匹配)/异动/跌停/热门板块原因 ──
-from fetch_midday_message import (
-    _get_stock_codes, fetch_telegraph_news, fetch_abnormal_movements,
-    fetch_limit_down, fetch_hot_sectors,
-)
-
 _SECTION_NAMES = {
     1: "全市场情绪", 2: "行业关键词", 3: "半日行情",
     4: "融资融券多日", 5: "龙虎榜", 6: "资金流",
     7: "机构持仓", 8: "机构调研", 9: "股东户数",
-    10: "风险日历", 11: "涨停异动快讯", 12: "板块地位",
-    13: "技术面成本地图", 14: "业绩趋势", 15: "公告补充", 16: "大宗交易",
+    10: "风险日历", 11: "板块地位",
+    12: "技术面成本地图", 13: "业绩趋势", 14: "公告补充", 15: "大宗交易",
 }
-_CRITICAL_SECTIONS = {1, 3, 4, 6, 13}
+_CRITICAL_SECTIONS = {1, 3, 4, 6, 12}
 
 
 # ══════════════════════════════════════════════════════════════
@@ -184,47 +178,8 @@ def _fmt_quote_section_midday(name: str, q: dict, raw: dict, yd: dict) -> list[s
     return lines
 
 
-def _fmt_abnormal_section(name: str, changes_data: dict, limit_data: dict, news_data: dict) -> list[str]:
-    """午间异常扫描数据: 盘中异动 + 跌停 + 快讯(知识图谱分级匹配)"""
-    lines = []
-    cd = changes_data.get(name, {})
-    if cd.get("has_data"):
-        lines.append("## 【盘中异动】(今日, 实时)")
-        for ch in cd["changes"]:
-            t = ch.get("time", "")
-            label = ch.get("change_type_label", ch.get("change_type", ""))
-            pct = ch.get("change_pct_parsed")
-            price = ch.get("price_parsed")
-            pct_s = f"| 涨跌 {pct}%" if pct is not None else ""
-            price_s = f"| 价 {price}" if price is not None else ""
-            lines.append(f"  - [{t}] {label}{pct_s}{price_s}")
-        lines.append("")
-    ld = limit_data.get(name, {})
-    if ld.get("has_data"):
-        lines.append("## 【跌停/炸板相关】")
-        for item in ld.get("items", []):
-            lines.append(f"  - {item.get('time', '')} {item.get('title', '')} ({item.get('pct', '')})")
-        lines.append("")
-    nd = news_data.get(name, {})
-    if nd.get("has_data"):
-        lines.append("## 【今日快讯】(财联社, 知识图谱行业关键词分级匹配)")
-        for i, item in enumerate(nd["news"], 1):
-            mt = item.get("match_type", "")
-            ms = item.get("match_score")
-            score_str = f" | 相关度: {ms:.2f}" if ms else ""
-            kw_str = ""
-            if item.get("keyword_matches"):
-                kw_str = f" | 相关关键词: {', '.join(item['keyword_matches'][:5])}"
-            lines.append(f"  {i}. [{item.get('time', '')}] {item.get('title', '')}")
-            lines.append(f"     (匹配: {mt}{score_str}{kw_str})")
-        lines.append("")
-    if not lines:
-        return []
-    return lines
-
-
-def _fmt_sector_section_midday(name: str, sr: dict, bm: list, hs: dict) -> list[str]:
-    """午间板块地位: 排名 + 基准 + 热门板块原因"""
+def _fmt_sector_section_midday(name: str, sr: dict, bm: list) -> list[str]:
+    """午间板块地位: 排名 + 基准(热门板块原因由 message 路提供)"""
     lines = []
     if sr.get("by_type"):
         lines.append("## 【板块排名】(今日午间, 同花顺概念/行业)")
@@ -248,15 +203,6 @@ def _fmt_sector_section_midday(name: str, sr: dict, bm: list, hs: dict) -> list[
                 lines.append(f"  {b.get('name', '')}: {pct}%" if pct is not None and pct != "" else f"  {b.get('name', '')}")
             else:
                 lines.append(f"  {b}")
-        lines.append("")
-    hd = hs.get(name, {})
-    if hd.get("has_data"):
-        lines.append("## 【热门板块上涨原因】(今日)")
-        for si in hd["sectors"]:
-            secu_name = si.get("sector", {}).get("secu_name", "")
-            reason = si.get("sector", {}).get("up_reason", "")
-            if secu_name:
-                lines.append(f"  - {secu_name}: {reason}" if reason else f"  - {secu_name}")
         lines.append("")
     if not lines:
         return []
@@ -383,22 +329,10 @@ def fetch_all(stock_names: list[str]) -> dict:
                 cols = [d[1] for d in db.execute("PRAGMA table_info(stg_tencent_snapshot)")]
                 raw_snap[tc] = dict(zip(cols, rr[0]))
 
-    # 4. 消息类数据: 快讯/异动/跌停/热门板块(知识图谱分级匹配)
-    stocks = _get_stock_codes(names)
-    today_str = datetime.now().strftime("%Y%m%d")
+    # 4. 慢数据(板块/技术/公告/情绪/关键词)
+    # 注: 快讯/异动/跌停/热门板块原因由 office/fetcher 的 message 路(fetch_message)独立提供
     prev_td = _tushare_trade_date()
-    msg_data = {}
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        fut_news = pool.submit(fetch_telegraph_news, names, stocks, prev_td, today_str)
-        fut_sectors = pool.submit(fetch_hot_sectors, names, stocks)
-        fut_limit = pool.submit(fetch_limit_down, names, stocks)
-        fut_changes = pool.submit(fetch_abnormal_movements, names, stocks)
-        msg_data["news"] = fut_news.result()
-        msg_data["hot_sectors"] = fut_sectors.result()
-        msg_data["limit_down"] = fut_limit.result()
-        msg_data["changes"] = fut_changes.result()
-
-    # 5. 慢数据(板块/技术/公告/情绪/关键词)
+    today_str = datetime.now().strftime("%Y%m%d")
     sector_rankings = fetch_sector_ranking(names)
     benchmark_data = fetch_ths_daily_benchmark(names)
     tech_data = fetch_technical_analysis(list(zip(names, ts_codes)))
@@ -505,39 +439,33 @@ def fetch_all(stock_names: list[str]) -> dict:
         sec_ok[10] = bool(data.get("risk", {}).get(ts_code, {}))
         lines.append("")
 
-        # 11. 涨停/异动/快讯(盘中, 异常扫描数据源)
-        asec = _fmt_abnormal_section(name, msg_data["changes"], msg_data["limit_down"], msg_data["news"])
-        lines.extend(asec)
-        sec_ok[11] = bool(asec)
-
-        # 12. 板块地位
+        # 11. 板块地位(热门板块原因由 message 路提供)
         gsec = _fmt_sector_section_midday(name, sector_rankings.get(name, {}),
-                                          benchmark_data.get(name, []),
-                                          msg_data["hot_sectors"])
+                                          benchmark_data.get(name, []))
         lines.extend(gsec)
-        sec_ok[12] = bool(gsec)
+        sec_ok[11] = bool(gsec)
 
-        # 13. 技术面+成本地图(半日)
+        # 12. 技术面+成本地图(半日)
         tsec = _fmt_technical_section_midday(name, tech_data.get(name, {}))
         lines.extend(tsec)
-        sec_ok[13] = not tsec[0].startswith("❌")
+        sec_ok[12] = not tsec[0].startswith("❌")
         lines.append("")
 
-        # 14. 业绩趋势
+        # 13. 业绩趋势
         fsec2 = _fmt_finance_section(ts_code, data.get("finance", {}).get(ts_code, {}))
         lines.extend(fsec2)
-        sec_ok[14] = bool(data.get("finance", {}).get(ts_code, {}).get("periods"))
+        sec_ok[13] = bool(data.get("finance", {}).get(ts_code, {}).get("periods"))
         lines.append("")
 
-        # 15. 公告补充
+        # 14. 公告补充
         supp_sec = _fmt_supp_section_midday(name, supp_data.get(name, []))
         lines.extend(supp_sec)
-        sec_ok[15] = bool(supp_sec)
+        sec_ok[14] = bool(supp_sec)
 
-        # 16. 大宗交易(实锤级, 有则写无则略; 午间时点 T-1 窗口)
+        # 15. 大宗交易(实锤级, 有则写无则略; 午间时点 T-1 窗口)
         bsec = _fmt_blocktrade_section(name, data.get("blocktrade", {}).get(ts_code, {"count": 0}))
         lines.extend(bsec)
-        sec_ok[16] = bool(data.get("blocktrade", {}).get(ts_code, {}).get("count"))
+        sec_ok[15] = bool(data.get("blocktrade", {}).get(ts_code, {}).get("count"))
         lines.append("")
 
         result[name] = "\n".join(lines)
