@@ -63,7 +63,7 @@ _SECTION_NAMES = {
     1: "全市场情绪", 2: "今日收盘行情", 3: "融资融券多日",
     4: "龙虎榜", 5: "个股资金流", 6: "机构持仓", 7: "机构调研",
     8: "股东户数", 9: "风险日历", 10: "涨停炸板", 11: "板块地位",
-    12: "技术面成本地图", 13: "业绩趋势", 14: "公告补充",
+    12: "技术面成本地图", 13: "业绩趋势", 14: "公告补充", 15: "大宗交易",
 }
 _CRITICAL_SECTIONS = {1, 2, 3, 5, 12, 13}
 
@@ -421,6 +421,11 @@ def fetch_moneyflow_multi(ts_codes: list[str]) -> dict[str, dict]:
             # moneyflow 买卖双边均计入,总成交额 ≈ 8 项之和 / 2
             df["total_amt"] = (df["buy_elg_amount"] + df["buy_lg_amount"] + df["buy_md_amount"] + df["buy_sm_amount"]
                                + df["sell_elg_amount"] + df["sell_lg_amount"] + df["sell_md_amount"] + df["sell_sm_amount"]) / 2
+            # 日期标注修正: 范围查询在 T 日无数据时返回的 df 非空(数据到 T-1),
+            # 以实际最后一行日期为准(18:30 时点 T 日 moneyflow 可能未更新)
+            real_last = str(df["trade_date"].iloc[-1])
+            if real_last != _today():
+                date_used = real_last
             info["date_used"] = date_used
             info["main_daily_wan"] = [round(v, 2) for v in df["main"].tolist()]
             info["dates"] = df["trade_date"].tolist()
@@ -647,7 +652,8 @@ def _fmt_institution_section(name: str, ts_code: str, ins: dict) -> list[str]:
 # 7. 机构调研 — Tushare stk_surv(近180天)
 # ══════════════════════════════════════════════════════════════
 
-def fetch_survey(ts_codes: list[str], days: int = 180) -> dict[str, dict]:
+def fetch_survey(ts_codes: list[str], days: int = 365) -> dict[str, dict]:
+    """机构调研: stk_surv 近365天(月度频次趋势需长窗口;180天在调研低频股上仅1-2次,无法判'骤增')"""
     end = _today()
     start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=days)).strftime("%Y%m%d")
     result = {}
@@ -662,9 +668,13 @@ def fetch_survey(ts_codes: list[str], days: int = 180) -> dict[str, dict]:
                 info["count"] = len(df)
                 info["by_month"] = {m: int(c) for m, c in df["month"].value_counts().sort_index().items()}
                 info["org_type_dist"] = {k: int(v) for k, v in df["org_type"].value_counts().head(5).items()}
+                # 按调研日去重取最近3次调研(每次展示机构数/方式/地点)
+                last_dates = df["surv_date"].drop_duplicates().tail(3)
                 info["recent"] = [
-                    {"date": r["surv_date"], "org": r.get("rece_org"), "mode": r.get("rece_mode")}
-                    for _, r in df.tail(5).iterrows()]
+                    {"date": d, "org_count": int(df[df["surv_date"] == d].shape[0]),
+                     "mode": df[df["surv_date"] == d]["rece_mode"].iloc[0],
+                     "place": df[df["surv_date"] == d]["rece_place"].iloc[0]}
+                    for d in last_dates]
         except Exception as e:
             log_error(function="fetch_survey", level="WARNING", ts_code=tc,
                       api_name="stk_surv", error_msg=str(e))
@@ -677,16 +687,16 @@ def _fmt_survey_section(ts_code: str, sv: dict) -> list[str]:
     if "error" in sv:
         return [f"❌ 机构调研: {sv['error']}"]
     if not sv.get("count"):
-        return ["## 【机构调研】\n近180天无调研记录。"]
-    lines = [f"## 【机构调研】(近180天, Tushare)"]
+        return ["## 【机构调研】\n近365天无调研记录。"]
+    lines = [f"## 【机构调研】(近365天, Tushare stk_surv)"]
     by_month = sv.get("by_month", {})
     if by_month:
-        lines.append("月度频次: " + " | ".join(f"{m[:4]}-{m[4:]}: {c}次" for m, c in by_month.items()))
+        lines.append("月度频次: " + " | ".join(f"{m[:4]}-{m[4:]}: {c}条" for m, c in by_month.items()))
     od = sv.get("org_type_dist", {})
     if od:
         lines.append("机构类型: " + " | ".join(f"{k}:{v}" for k, v in od.items() if k not in ("--",)))
     for r in (sv.get("recent") or [])[-3:]:
-        lines.append(f"  [{r['date']}] {r.get('org')} ({r.get('mode')})")
+        lines.append(f"  [{r['date']}] 接待机构 {r.get('org_count')}家 ({r.get('mode')}, {r.get('place')})")
     lines.append("")
     return lines
 
@@ -871,6 +881,97 @@ def _fmt_limit_board_section(name: str, lb: dict) -> list[str]:
     yz = lb.get("yesterday_zt")
     if yz:
         lines.append(f"昨日涨停今日表现: 涨跌幅 {yz.get('chg_pct')}% | 状态 {yz.get('status', '?')}")
+    lines.append("")
+    return lines
+
+
+# ══════════════════════════════════════════════════════════════
+# 10b. 大宗交易 — Tushare block_trade(席位实名, 实锤级证据)
+# ══════════════════════════════════════════════════════════════
+
+def fetch_blocktrade(ts_codes: list[str], lookback_days: int = 5) -> dict[str, dict]:
+    """大宗交易: block_trade 全市场单次拉取 → 按股过滤
+
+    策略: 大宗为低频事件, 从 T 日起向前探测 lookback_days 个自然日,
+    取最近有记录的一天(单日无记录是常态, 不视为缺失)。
+    折溢价率需与收盘价对比, 在此用 daily_basic(T-1) 收盘价近似计算。
+
+    Returns:
+        {ts_code: {date_used, count, items: [{date, price, amount_wan, premium_pct,
+                                              buyer, seller, is_inst_buy, is_inst_sell}],
+                   total_wan} } 或 {ts_code: {date_used, count: 0}}
+    """
+    result = {tc: {"date_used": None, "count": 0, "items": []} for tc in ts_codes}
+    try:
+        # 最近 lookback_days 个自然日全市场大宗(单次调用覆盖, 避免逐日多次)
+        end = _today()
+        start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=lookback_days)).strftime("%Y%m%d")
+        df = PRO.block_trade(start_date=start, end_date=end)
+        if df is None or df.empty:
+            return result
+        df = df.sort_values("trade_date", ascending=False)
+        # 收盘价基准(最近交易日 daily_basic, 用于折溢价)
+        ref_prices = {}
+        try:
+            pbd = PRO.daily_basic(trade_date=_tushare_trade_date(),
+                                  fields="ts_code,close")
+            if pbd is not None and not pbd.empty:
+                ref_prices = dict(zip(pbd["ts_code"], pbd["close"]))
+        except Exception:
+            pass
+        for tc in ts_codes:
+            sub = df[df["ts_code"] == tc]
+            if sub.empty:
+                continue
+            items = []
+            for _, r in sub.head(5).iterrows():  # 最多5条
+                price = _safe_float(r.get("price"))
+                ref = ref_prices.get(tc)
+                premium = None
+                if price and ref:
+                    premium = round((price - ref) / ref * 100, 2)
+                buyer = r.get("buyer") or ""
+                seller = r.get("seller") or ""
+                items.append({
+                    "date": str(r.get("trade_date")),
+                    "price": price,
+                    "amount_wan": round(_safe_float(r.get("amount")), 2),  # block_trade.amount 单位=万元
+                    "premium_pct": premium,
+                    "buyer": buyer,
+                    "seller": seller,
+                    "is_inst_buy": "机构专用" in buyer,
+                    "is_inst_sell": "机构专用" in seller,
+                })
+            result[tc] = {
+                "date_used": str(sub.iloc[0]["trade_date"]),
+                "count": len(sub),
+                "items": items,
+                "total_wan": round(float(sub["amount"].sum()), 2),
+            }
+    except Exception as e:
+        log_error(function="fetch_blocktrade", level="WARNING",
+                  api_name="block_trade", error_msg=str(e))
+        for tc in ts_codes:
+            result[tc] = {**result[tc], "error": str(e)[:200]}
+    return result
+
+
+def _fmt_blocktrade_section(name: str, bt: dict) -> list[str]:
+    """大宗交易格式化: 有则 2-4 行(席位定性/折溢价/金额), 无则一行"""
+    if "error" in bt:
+        return [f"❌ 大宗交易: {bt['error']}"]
+    if not bt.get("count"):
+        return [f"## 【大宗交易】\n近5个交易日无大宗交易记录。"]
+    lines = [f"## 【大宗交易】(数据日期 {bt.get('date_used')}, 盘后实锤数据)"]
+    lines.append(f"近期大宗: {bt.get('count')} 笔, 合计 {_fmt_amount_wan(bt.get('total_wan', 0))}")
+    for it in bt.get("items", []):
+        prem = f"{it['premium_pct']:+.2f}%" if it.get("premium_pct") is not None else "折溢价N/A"
+        side = ""
+        if it.get("is_inst_buy") or it.get("is_inst_sell"):
+            side = " [机构参与]"
+        lines.append(f"  - {it['date']} 成交 {it.get('price')}元({prem}) | "
+                     f"{_fmt_amount_wan(it.get('amount_wan'))} | "
+                     f"买:{it.get('buyer')} 卖:{it.get('seller')}{side}")
     lines.append("")
     return lines
 
@@ -1173,6 +1274,7 @@ def fetch_all(stock_names: list[str]) -> dict:
             pool.submit(_task, "risk", fetch_risk_calendar, ts_codes),
             pool.submit(_task, "limitboard", fetch_limit_board, symbol_map),
             pool.submit(_task, "finance", fetch_finance_trend, ts_codes),
+            pool.submit(_task, "blocktrade", fetch_blocktrade, ts_codes),
         ]
         data = {}
         for fut in as_completed(futures):
@@ -1193,6 +1295,7 @@ def fetch_all(stock_names: list[str]) -> dict:
     lb_data = data.get("limitboard") or {}
     sec_data = data.get("sector") or {}
     fin_data = data.get("finance") or {}
+    bt_data = data.get("blocktrade") or {}
 
     # 技术面(依赖 margin 成本 + 机构成本;机构数据按 symbol 键,转为 ts_code 键)
     inst_by_ts = {tc: inst_data.get(sym, {}) for tc, sym in zip(ts_codes, symbols)}
@@ -1298,6 +1401,12 @@ def fetch_all(stock_names: list[str]) -> dict:
             lines.extend(supp)
             lines.append("")
             sec_ok[14] = True
+
+        # 15. 大宗交易(实锤级, 有则写无则略)
+        bsec = _fmt_blocktrade_section(name, bt_data.get(ts_code, {"count": 0}))
+        lines.extend(bsec)
+        sec_ok[15] = bool(bt_data.get(ts_code, {}).get("count"))
+        lines.append("")
 
         result[name] = "\n".join(lines)
         w = _check_completeness(sec_ok)

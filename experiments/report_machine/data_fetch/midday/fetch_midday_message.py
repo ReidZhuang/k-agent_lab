@@ -360,16 +360,16 @@ def _fetch_telegraph_news(date_from: str, date_to: str) -> list[dict]:
                       api_name="lk.news_telegraph_cls", error_msg=str(e),
                       detail=f"date={date_str}")
 
-    # 过滤：只保留今日 11:30 之前的消息
+    # 过滤：今日只保留到"当前时刻"为止的消息（午间调用=上午快讯, 日终调用=全天快讯）
+    # 非今日消息（昨日及更早）全部保留。调用时间决定覆盖范围, 无硬编码 cutoff。
     today_str = datetime.now().strftime("%Y-%m-%d")
-    cutoff = f"{today_str} 11:30:00"
+    now_str = datetime.now().strftime("%H:%M:%S")
 
     filtered = []
     for item in all_news:
         t = item.get("time", "")
-        # 非今日消息全部保留（昨日及之前的），今日只保留 11:30 之前的
         if t.startswith(today_str):
-            if t <= cutoff:
+            if t[11:19] <= now_str:
                 filtered.append(item)
         else:
             filtered.append(item)
