@@ -72,7 +72,10 @@ _HTTP_SESSION.mount("https://", _HTTP_ADAPTER)
 _FALLBACK_DIR = os.path.normpath(os.path.join(_OFFICE_DIR, "fallback"))
 os.makedirs(_FALLBACK_DIR, exist_ok=True)
 _OUTPUT_DIR = os.path.normpath(os.path.join(_OFFICE_DIR, "output"))
-_CONTEXT_SAMPLE_DIR = os.path.normpath(os.path.join(_OFFICE_DIR, "context_samples"))
+# 端到端测试: 可用环境变量 E2E_SUBWRITER_DIR 覆盖 context 样本目录(默认不变)
+_CONTEXT_SAMPLE_DIR = os.path.normpath(
+    os.environ.get("E2E_SUBWRITER_DIR", os.path.join(_OFFICE_DIR, "context_samples"))
+)
 os.makedirs(_CONTEXT_SAMPLE_DIR, exist_ok=True)
 
 # ── FastAPI ──

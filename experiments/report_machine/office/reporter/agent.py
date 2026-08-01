@@ -87,6 +87,30 @@ _OUTPUT_DIR = os.path.normpath(
     os.path.join(_OFFICE_DIR, "output")
 )
 
+# ── 端到端测试保存钩子(生产环境不生效) ──
+# 设置环境变量 E2E_SAVE_DIR 后, 每轮调用 LLM 前保存完整 messages(context)到该目录
+_E2E_SAVE_DIR = os.environ.get("E2E_SAVE_DIR", "").strip()
+if _E2E_SAVE_DIR:
+    os.makedirs(_E2E_SAVE_DIR, exist_ok=True)
+
+
+def _e2e_save_context(stock_name: str, round_num: int, messages: list) -> None:
+    """端到端测试: 保存调用 LLM 前的完整 context(每轮一份)"""
+    if not _E2E_SAVE_DIR:
+        return
+    try:
+        safe = "".join(c for c in stock_name if c.isalnum() or c in "._-")
+        path = os.path.join(_E2E_SAVE_DIR, f"{safe}_round{round_num:02d}.json")
+        payload = {
+            "stock_name": stock_name,
+            "round": round_num,
+            "messages": messages,
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
 
 def _has_fetchable_articles(articles: dict) -> bool:
     """检查是否有 body_avail='有' 的文章"""
@@ -420,6 +444,8 @@ def run(ctx: ReportContext) -> tuple[str, int]:
 
     # ── Agent Loop ──
     for round_num in range(1, MAX_ROUNDS + 1):
+        # 端到端测试: 调用 LLM 前保存完整 context(含 tool 正文追加后的每轮状态)
+        _e2e_save_context(ctx.stock_name, round_num, messages)
         _dl("round_llm_call", stock_name=ctx.stock_name, round=round_num,
             messages_count=len(messages),
             last_role=messages[-1]["role"],
