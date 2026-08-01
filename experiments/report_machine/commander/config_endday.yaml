@@ -1,36 +1,37 @@
-# Commander — 定时任务与健康检测配置
+# Commander — 日终报告定时任务配置(18:30 调度)
+# 与 config.yaml(午间)同结构, 仅 commander.query / report_type 不同
 # ============================================
 
 commander:
-  # 定时任务 query 参数
-  query: "生成该股票的午间收盘分析报告"
+  # 定时任务 query 参数(LLM 按此识别报告类型)
+  query: "生成该股票的日终收盘分析报告"
 
   # 报告类型(驱动 fetcher 取数脚本 + reporter skill 选择): "noon" | "endday"
-  report_type: "noon"
+  report_type: "endday"
 
   # 日志输出目录
   log_dir: /home/stockagent/project_space/research/experiments/report_machine/office/log
 
-  # Office 输出目录（报告暂存）
+  # Office 输出目录(报告暂存)
   output_dir: /home/stockagent/project_space/research/experiments/report_machine/office/output
 
-  # 用户报告存放根目录（user/{username}/）
+  # 用户报告存放根目录(user/{username}/)
   user_base_dir: /home/stockagent/project_space/research/experiments/report_machine/user
 
-  # 前端用户配置（哪些用户参与定时报告）
+  # 前端用户配置(哪些用户参与定时报告)
   users_config: /home/stockagent/project_space/research/experiments/front/config/report_users.yaml
 
-  # 启动超时（秒）- 等待服务健康响应
+  # 启动超时(秒)- 等待服务健康响应
   start_timeout: 30
 
-  # 健康检测总体超时（秒）
+  # 健康检测总体超时(秒)
   health_check_timeout: 120
 
   # 报告日期戳格式
   date_format: "%Y%m%d"
 
 # ── 服务定义 ──────────────────────────────────
-# 按启动依赖顺序排列（先起的在前）
+# 与 config.yaml 完全一致(共用同一套服务)
 services:
   mail_tower:
     name: "mail_tower"

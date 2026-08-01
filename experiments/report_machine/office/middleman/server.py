@@ -100,26 +100,76 @@ app.add_middleware(
 # 工具函数
 # ======================================================================
 
+def _resolve_date_expr(expr: str) -> str:
+    """解析配置中的日期表达式为 YYYYMMDD
+
+    支持:
+      - today                  → 今天
+      - today_or_last_trading  → 今天(交易日)或最近已收盘交易日(非交易日)
+      - prev_trading_day(N)    → 从 end 起点往前推 N 个交易日
+      - YYYYMMDD / YYYY-MM-DD  → 显式日期
+    """
+    cal = _tc.get_calendar()
+    expr = (expr or "").strip()
+    if not expr:
+        return time.strftime("%Y%m%d")
+
+    # 显式日期
+    digits = "".join(ch for ch in expr if ch.isdigit())
+    if len(digits) == 8 and not expr.startswith("prev"):
+        return digits
+
+    if expr == "today":
+        return time.strftime("%Y%m%d")
+    if expr == "today_or_last_trading":
+        today = time.strftime("%Y%m%d")
+        if cal.is_trading_day(today):
+            return today
+        lt = cal.last_trading_day()
+        return lt if lt else today
+
+    # prev_trading_day(N) — 相对于基准日(end)往前推 N 个交易日
+    if expr.startswith("prev_trading_day(") and expr.endswith(")"):
+        try:
+            n = int(expr[len("prev_trading_day("):-1])
+        except (TypeError, ValueError):
+            return time.strftime("%Y%m%d")
+        return cal.prev_trading_day(time.strftime("%Y%m%d"), n=n)
+
+    return time.strftime("%Y%m%d")
+
+
+def _fmt_date(d: str) -> str:
+    """YYYYMMDD → YYYY-MM-DD"""
+    return f"{d[:4]}-{d[4:6]}-{d[6:]}"
+
+
 def _get_date_range(engine: str) -> tuple[str, str]:
-    """计算 engine 需要的日期范围
+    """按配置计算 engine 的日期范围(显式起始/终止日期表达式, 非天数)
 
     Returns:
         (start_date, end_date) 格式 YYYY-MM-DD
     """
-    cal = _tc.get_calendar()
-    today = time.strftime("%Y%m%d")
-    if engine == "qnainfo":
-        # 过去 5 天
-        start = _tc.prev_trading_day(today, n=5)
+    # 配置默认值: 普通资讯+公告 = 近5个交易日(今天或最近已收盘交易日为终点);
+    # qnainfo 保持"今天往前 5 个交易日"
+    dr = _middleman_cfg.get("date_range", {})
+    default = {"start": "prev_trading_day(4)", "end": "today_or_last_trading"}
+    spec = dr.get(engine, default)
+    end = _resolve_date_expr(spec.get("end", "today_or_last_trading"))
+    start_expr = spec.get("start", "prev_trading_day(4)")
+    if start_expr.startswith("prev_trading_day"):
+        # prev_trading_day(N) 以 end 为基准(而非今天), 保证窗口 = 5 个交易日
+        cal = _tc.get_calendar()
+        try:
+            n = int(start_expr[len("prev_trading_day("):-1])
+            start = cal.prev_trading_day(end, n=n)
+        except (TypeError, ValueError):
+            start = cal.prev_trading_day(end, n=4)
         if start is None:
-            start = today
-        return (start[:4] + "-" + start[4:6] + "-" + start[6:8],
-                today[:4] + "-" + today[4:6] + "-" + today[6:8])
+            start = end
     else:
-        # 上一个交易日 ~ 今天
-        prev = cal.last_trading_day()
-        return (prev[:4] + "-" + prev[4:6] + "-" + prev[6:8],
-                today[:4] + "-" + today[4:6] + "-" + today[6:8])
+        start = _resolve_date_expr(start_expr)
+    return (_fmt_date(start), _fmt_date(end))
 
 
 def _call_mail_tower_search(engine: str, stock_code: str) -> dict:

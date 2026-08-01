@@ -115,26 +115,32 @@ def _read_prompt(name: str) -> str:
     return ""
 
 
-def _load_all_skills() -> list[str]:
-    """扫描 skills/ 下所有子目录，加载每个 skill 的 SKILL.md"""
-    skills_dir = os.path.join(_PROMPTS_DIR, "skills")
-    if not os.path.isdir(skills_dir):
+# 报告类型 → skill 目录名 / 中文名
+_SKILL_BY_TYPE = {
+    "noon": "noon_report",
+    "endday": "endday_report",
+}
+_REPORT_TYPE_NAME = {
+    "noon": "午间",
+    "endday": "日终",
+}
+
+
+def _load_skill(skill_name: str) -> list[str]:
+    """按 report_type 只加载对应的一个 skill（避免多 skill 同时注入）"""
+    if not skill_name:
         return []
-    parts = []
-    for name in sorted(os.listdir(skills_dir)):
-        skill_path = os.path.join(skills_dir, name, "SKILL.md")
-        if not os.path.isfile(skill_path):
-            continue
-        with open(skill_path, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-        if content:
-            parts.append(f"### {name}\n\n{content}")
-    return parts
+    skill_path = os.path.join(_PROMPTS_DIR, "skills", skill_name, "SKILL.md")
+    if not os.path.isfile(skill_path):
+        return []
+    with open(skill_path, "r", encoding="utf-8") as f:
+        content = f.read().strip()
+    return [f"### {skill_name}\n\n{content}"] if content else []
 
 
-def _build_system_prompt(stock_name: str, ts_code: str) -> str:
-    """组装 system prompt"""
-    skill_parts = _load_all_skills()
+def _build_system_prompt(stock_name: str, ts_code: str, report_type: str = "noon") -> str:
+    """组装 system prompt（只加载 report_type 对应的 skill）"""
+    skill_parts = _load_skill(_SKILL_BY_TYPE.get(report_type, "noon_report"))
     parts = [
         _read_prompt("soul.md"),
         _read_prompt("agent.md"),
@@ -149,8 +155,9 @@ def _build_system_prompt(stock_name: str, ts_code: str) -> str:
 
 def _build_user_context(ctx: ReportContext) -> str:
     """将 context 组装为用户消息"""
+    report_name = _REPORT_TYPE_NAME.get(ctx.report_type, "午间")
     lines = [
-        f"请生成 {ctx.stock_name}（{ctx.ts_code}）的午间分析报告。",
+        f"请生成 {ctx.stock_name}（{ctx.ts_code}）的{report_name}分析报告。",
         "",
         "数据源包含以下部分：",
         "",
@@ -334,7 +341,7 @@ def _fetch_article_bodies(article_ids: list[str],
 # 输出
 # ======================================================================
 
-def _save_report(stock_name: str, ts_code: str, content: str) -> str:
+def _save_report(stock_name: str, ts_code: str, content: str, report_type: str = "noon") -> str:
     """保存报告到 output 目录
 
     Args:
@@ -365,8 +372,9 @@ def _save_report(stock_name: str, ts_code: str, content: str) -> str:
         else:
             content = content[first_heading:]
 
-    # 保存 .md 版本
-    filename = f"{today}_{stock_name}_午间收盘报告"
+    # 保存 .md 版本（文件名按报告类型）
+    report_name = _REPORT_TYPE_NAME.get(report_type, "午间")
+    filename = f"{today}_{stock_name}_{report_name}收盘报告"
     md_path = os.path.join(stock_dir, filename + ".md")
     with open(md_path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -393,7 +401,7 @@ def run(ctx: ReportContext) -> tuple[str, int]:
     _dl = get_logger("reporter_round")
 
     # ── 组装 prompt ──
-    system_prompt = _build_system_prompt(ctx.stock_name, ctx.ts_code)
+    system_prompt = _build_system_prompt(ctx.stock_name, ctx.ts_code, ctx.report_type)
     user_context = _build_user_context(ctx)
 
     messages = [
@@ -443,7 +451,7 @@ def run(ctx: ReportContext) -> tuple[str, int]:
             # 如果已有部分内容，返回
             partial = _extract_partial(messages)
             if partial:
-                path = _save_report(ctx.stock_name, ctx.ts_code, partial)
+                path = _save_report(ctx.stock_name, ctx.ts_code, partial, ctx.report_type)
                 return path, round_num - 1
             raise
 
@@ -462,7 +470,7 @@ def run(ctx: ReportContext) -> tuple[str, int]:
             content = msg.content or ""
             _dl("round_finish", stock_name=ctx.stock_name, round=round_num,
                 output_len=len(content), output_preview=content[:200])
-            path = _save_report(ctx.stock_name, ctx.ts_code, content)
+            path = _save_report(ctx.stock_name, ctx.ts_code, content, ctx.report_type)
             return path, round_num
 
         if finish == "tool_calls" and msg.tool_calls:
@@ -567,7 +575,7 @@ def run(ctx: ReportContext) -> tuple[str, int]:
                 content_preview=(msg.content or "")[:200])
             # token 超限，可能仍有部分内容
             if msg.content:
-                path = _save_report(ctx.stock_name, ctx.ts_code, msg.content)
+                path = _save_report(ctx.stock_name, ctx.ts_code, msg.content, ctx.report_type)
                 return path, round_num
             break
 
@@ -580,7 +588,7 @@ def run(ctx: ReportContext) -> tuple[str, int]:
         last_assistant_content=(_last_assistant and _last_assistant["content"][:200]) or "")
     partial = _extract_partial(messages)
     if partial:
-        path = _save_report(ctx.stock_name, ctx.ts_code, partial)
+        path = _save_report(ctx.stock_name, ctx.ts_code, partial, ctx.report_type)
         return path, MAX_ROUNDS
 
     log_office_error(

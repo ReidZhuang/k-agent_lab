@@ -45,7 +45,8 @@ class TypeBResponse(BaseModel):
 
 class ReportRequest(BaseModel):
     stock_names: list[str]   # 股票名称列表
-    query: str = ""           # 用户需求描述，如"生成该股票的午间收盘分析报告"
+    query: str = ""           # 用户需求描述，如"生成该股票的日终收盘分析报告"
+    report_type: str = "noon" # 报告类型: "noon"(午间) | "endday"(日终)
 
 
 class SubWorkerResult(BaseModel):
@@ -70,12 +71,13 @@ class ReportContext(BaseModel):
     """Sub writer → Reporter 传递的 context"""
     stock_name: str
     ts_code: str
-    fetch_data: str               # fetch_midday_data 返回的格式化文本
-    fetch_message: str            # fetch_midday_message 返回的格式化文本
+    fetch_data: str               # 数据脚本 fetch_all 返回的格式化文本
+    fetch_message: str            # 消息脚本 fetch_all 返回的格式化文本
     fetch_warnings: dict          # fetch 完整度检查警告
     articles: dict                # {engine: {session_id, preview, ...}}
     middleman_warnings: list[str] # engine 层的异常信息
     query: str = ""               # 用户需求描述
+    report_type: str = "noon"     # "noon"(午间) | "endday"(日终)
 
 
 class ReporterResponse(BaseModel):

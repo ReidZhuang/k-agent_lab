@@ -8,6 +8,16 @@ middleman:
   type_a_queue_timeout: 300
   type_b_max_workers: 64
   type_b_queue_timeout: 120
+  # 资讯/公告日期窗口(显式起始/终止日期表达式, 非天数):
+  #   today / today_or_last_trading / prev_trading_day(N) / YYYYMMDD
+  # 普通资讯+公告 = 近5个交易日; qnainfo 保持现状(今天往前5个交易日)
+  date_range:
+    sinafin:  {start: "prev_trading_day(4)", end: "today_or_last_trading"}
+    baidufin: {start: "prev_trading_day(4)", end: "today_or_last_trading"}
+    thsfin:   {start: "prev_trading_day(4)", end: "today_or_last_trading"}
+    thsnews:  {start: "prev_trading_day(4)", end: "today_or_last_trading"}
+    juchao:   {start: "prev_trading_day(4)", end: "today_or_last_trading"}
+    qnainfo:  {start: "prev_trading_day(5)", end: "today"}
 writer:
   host: localhost
   port: 8310

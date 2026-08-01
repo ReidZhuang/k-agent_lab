@@ -25,11 +25,10 @@ from fastapi.middleware.cors import CORSMiddleware
 _OFFICE_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 if _OFFICE_DIR not in sys.path:
     sys.path.insert(0, _OFFICE_DIR)
-_MIDDAY_DIR = os.path.normpath(
-    os.path.join(_OFFICE_DIR, "..", "data_fetch", "midday")
-)
-if _MIDDAY_DIR not in sys.path:
-    sys.path.insert(0, _MIDDAY_DIR)
+for _d in ("midday", "endday"):
+    _p = os.path.normpath(os.path.join(_OFFICE_DIR, "..", "data_fetch", _d))
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from dlog.debug_logger import get_logger
 import fetcher
@@ -91,7 +90,8 @@ app.add_middleware(
 # ======================================================================
 
 def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
-                     fetch_message_text: str, report_id: str, query: str = "") -> SubWorkerResult:
+                     fetch_message_text: str, report_id: str, query: str = "",
+                     report_type: str = "noon") -> SubWorkerResult:
     """单个股票的 sub writer
 
     流程：
@@ -161,6 +161,7 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
         articles=articles,
         middleman_warnings=middleman_warnings,
         query=query,
+        report_type=report_type,
     )
 
     # ── 保存 context 样本（用于研究 prompt，POST reporter 前保存） ──
@@ -214,10 +215,11 @@ def _run_sub_writer(stock_name: str, stock_info: dict, fetch_data_text: str,
             )
 
     # ── 响应丢失检查：reporter 实际已成功但响应没回来？ ──
+    # 按 report_type 匹配文件名(午间/日终), 与 reporter _save_report 保持一致
+    _REPORT_FNAME = {"noon": "午间收盘报告", "endday": "日终收盘报告"}
     today = time.strftime("%Y%m%d")
-    expected_path = os.path.join(
-        _OUTPUT_DIR, stock_name, f"{today}_{stock_name}_午间收盘报告.md"
-    )
+    expected_name = f"{today}_{stock_name}_{_REPORT_FNAME.get(report_type, '午间收盘报告')}.md"
+    expected_path = os.path.join(_OUTPUT_DIR, stock_name, expected_name)
     if os.path.exists(expected_path):
         log("post_reporter_recovered", stock_name=stock_name,
             output=expected_path, _elapsed=time.time()-t_sub)
@@ -266,9 +268,10 @@ def _sync_create_report(req: ReportRequest) -> ReportResponse:
     report_id = uuid.uuid4().hex[:12]
     stock_names = req.stock_names
     query = req.query
+    report_type = req.report_type
     log = get_logger("writer_api")
     t_start = time.time()
-    log("report_start", report_id=report_id, stocks=stock_names)
+    log("report_start", report_id=report_id, stocks=stock_names, report_type=report_type)
 
     if not stock_names:
         raise HTTPException(status_code=400, detail="股票列表不能为空")
@@ -278,8 +281,8 @@ def _sync_create_report(req: ReportRequest) -> ReportResponse:
     if not infos:
         raise HTTPException(status_code=400, detail="所有股票名称均无法识别")
 
-    # ── 2. Fetcher 取数 ──
-    data_by_stock, warnings_by_tscode = fetcher.fetch_all(stock_names)
+    # ── 2. Fetcher 取数（按 report_type 选择脚本） ──
+    data_by_stock, warnings_by_tscode = fetcher.fetch_all(stock_names, report_type)
     if not data_by_stock:
         return ReportResponse(
             report_id=report_id, total=0, success=0,
@@ -295,7 +298,7 @@ def _sync_create_report(req: ReportRequest) -> ReportResponse:
             data_text = data_by_stock.get(name, {}).get("data", "")
             msg_text = data_by_stock.get(name, {}).get("message", "")
             fut = pool.submit(
-                _run_sub_writer, name, info, data_text, msg_text, report_id, query
+                _run_sub_writer, name, info, data_text, msg_text, report_id, query, report_type
             )
             fut_map[fut] = name
 

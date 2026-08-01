@@ -261,6 +261,7 @@ def deduplicate_stocks(all_pools: dict) -> tuple[list[dict], list[dict], dict]:
 def call_writer(
     stock_names: list[str],
     query: str,
+    report_type: str = "noon",
     writer_url: str = "http://localhost:8310/api/v1/report",
     timeout: int = 600,
 ) -> dict:
@@ -281,7 +282,7 @@ def call_writer(
     try:
         resp = requests.post(
             writer_url,
-            json={"stock_names": stock_names, "query": query},
+            json={"stock_names": stock_names, "query": query, "report_type": report_type},
             timeout=timeout,
         )
         elapsed = time.time() - t0
@@ -549,6 +550,7 @@ def main():
     output_dir = cmd_cfg.get("output_dir", "")
     user_base_dir = cmd_cfg.get("user_base_dir", "")
     query = cmd_cfg.get("query", "")
+    report_type = cmd_cfg.get("report_type", "noon")
     db_path = db_cfg.get("sqlite_path", "")
 
     # 设置日志
@@ -643,7 +645,7 @@ def main():
         batch1_result = {"status": "ok", "total": len(deduped_names),
                          "success": len(deduped_names), "failed": [], "results": []}
     else:
-        batch1_result = call_writer(deduped_names, query)
+        batch1_result = call_writer(deduped_names, query, report_type)
 
     if batch1_result.get("success", 0) > 0:
         logger.info(f"  第一批成功: {batch1_result['success']} 只")
@@ -687,7 +689,7 @@ def main():
             batch2_result = {"status": "ok", "total": len(failed_names),
                              "success": len(failed_names), "failed": []}
         else:
-            batch2_result = call_writer(failed_names, query)
+            batch2_result = call_writer(failed_names, query, report_type)
 
         summary["batch2"] = {
             "total": batch2_result.get("total", 0),
