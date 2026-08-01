@@ -390,7 +390,7 @@ def search_stock(code: str, engine: str) -> dict | None:
 }
 ```
 
-**注意：** 全 error **不消耗** `body_return_count`，不会触发自动关 session。但 error 是**永久结论**——服务端已缓存结果，重试 `/article` 不会重新提取。
+**注意：** error 是**永久结论**——服务端已缓存结果，重试 `/article` 不会重新提取。
 
 #### 5. session_closed 自动关闭（附加状态）
 
@@ -407,7 +407,7 @@ def search_stock(code: str, engine: str) -> dict | None:
 
 **触发条件：**
 - `"close": true` 在请求体中指定
-- 本次是第 10 次成功的正文返回（达到 `max_body_returns: 10` 上限）
+- 45 分钟 TTL 超时自动清理（见第五节）
 
 ### 二、错误返回（HTTP ≠ 200）
 
@@ -448,7 +448,7 @@ def search_stock(code: str, engine: str) -> dict | None:
 
 | 返回特征 | 判断方式 | 重试？ | 间隔 | 最多 | 说明 |
 |:--------:|----------|:-----:|:----:|:---:|------|
-| **processing** | `status == "processing"` | ✅ | 3~5s | **3 次** | 后台线程还没跑完。不消耗 body_return_count，放心重试 |
+| **processing** | `status == "processing"` | ✅ | 3~5s | **3 次** | 后台线程还没跑完，放心重试 |
 | **ready** | `status == "ready"` | ❌ | — | 0 | 成功 |
 | **error** | `status == "error"` | **❌ 不重试** | — | 0 | 服务端已缓存，重试 `/article` 结果一样 |
 | **`session_closed: true`** | 该字段为 true | ❌ | — | 0 | session 已关，需重新 `/search` |
@@ -458,8 +458,8 @@ def search_stock(code: str, engine: str) -> dict | None:
 
 ### 五、关键设计原则
 
-1. **Processing 不消耗 body_return_count** — 随便重试多少次都不算次数
+1. **正文请求无次数限制**（2026-08-01 起移除 max_body_returns 计数机制）— 轮询 `/article` 可无限次
 2. **Error 是永久结论** — 服务端内部已重试耗尽并缓存，客户端重试 `/article` 无意义
-3. **`max_body_returns = 10`** — 足够覆盖正常调用 + 部分 error 剩下的重试机会
+3. **session 仅由显式 `close: true` 或 TTL 关闭**
 4. **session_closed 后不可再调 /article** — 需要重新走 `/search`
 5. **45 分钟 TTL** — session 超时自动清理，防止资源泄漏

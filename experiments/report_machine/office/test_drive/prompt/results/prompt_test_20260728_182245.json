@@ -1,0 +1,19 @@
+{
+  "test": "prompt_test",
+  "status": "ok",
+  "rounds": 2,
+  "elapsed": 15.915760278701782,
+  "output_path": "/home/stockagent/project_space/research/experiments/report_machine/office/output/凯莱英/20260728_凯莱英_midday.md",
+  "output_size": 2268,
+  "checks": {
+    "包含正文标题": false,
+    "包含消息": false,
+    "包含板块": true,
+    "包含技术面": true,
+    "包含风险提示": true,
+    "包含综合研判": true,
+    "标题为凯莱英": true,
+    "不含占位符": true
+  },
+  "all_pass": false
+}

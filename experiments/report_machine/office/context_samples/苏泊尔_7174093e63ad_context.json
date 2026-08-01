@@ -1,0 +1,46 @@
+{
+  "stock_name": "苏泊尔",
+  "ts_code": "002032.SZ",
+  "fetch_data": "## 苏泊尔 (002032.SZ)\n\n- 市场热度: 57（高）\n- 成交额: 1.48万亿（+1516亿）\n- 上涨占比: 78.00% | 赚钱效应: 46%\n- 涨停梯队: 一板51只(晋级率7%) / 二板3只(晋级率23%) / 三板3只(晋级率33%) / 高度板1只\n- 涨跌分布: 上涨3431 / 下跌2000 / 涨停58 / 跌停19\n\n- 涨停58 / 跌停19 / 上涨3431 / 下跌1999\n- 信号: 市场人气较好\n- 涨跌幅分布：涨幅集中在 1%~2%，跌幅集中在 -4%~-1%\n---\n\n📌 股票涉及行业关键词：个护, 养生, 冰箱, 厨卫, 厨房, 厨房小电, 家居, 家电, 小家电, 料理, 服装, 洗衣机, 消费品, 清洁, 烹饪, 白电, 白色家电, 空调, 耐用品, 黑电, 黑色家电\n\n【今日11:30收盘数据】股票名称: 苏 泊 尔 | 代码: 002032 | 当前价: 45.28 | 昨收: 43.85 | 开盘: 43.85 | 最高: 45.3 | 最低: 43.67 | 涨跌幅%: 3.26 | 成交量(手): 27739 | 成交额(万元): 12428.0 | 换手率%: 0.35 | 振幅%: 3.72 | 量比: 1.76 | 均价: 44.8 | 动态市盈率: 17.92 | 市净率: 7.86\n                     总市值(亿元): 362.17 | 流通市值(亿元): 362.01 | 涨停价: 48.24 | 跌停价: 39.47 | 买一价: 45.25 | 卖一价: 45.28 | 外盘(手): 14435 | 内盘(手): 13304\n\n【上一个交易日日终】换手率: 0.3815% | 自由流通换手率: 2.2968% | PE: 15.8274 | PB: 4.8893\n\n【上一个交易日日终融资融券】\n          融资余额: 0.67亿（较前日: +2.50%）\n          融券余额: 0.41亿（较前日: +3.96%）\n\n【今日午间收盘资金流向（逐分钟统计）】\n          净流向: 净流入 4183.84万元（统计分钟数: 121）\n          资金流入 83 分钟 / 流出 37 分钟 | 最大单分钟流入: 609.6万 / 最大单分钟流出: 65.4万\n\n【上一个交易日日终资金细分（元）】\n          大单净额: +26846467.00（买入: 34813631 / 卖出: 7967164）\n          中单净额: +11758418.00（买入: 35384641 / 卖出: 23626223）\n          小单净额: +3233479.00（买入: 7701210 / 卖出: 4467731）\n          合计净额: +41838364.00\n\n\n【技术面关键位置】当前价: None\n          布林带上轨: 45.62 | 布林带下轨: 40.22\n",
+  "fetch_message": "## 苏泊尔 (002032.SZ)\n\n【热门板块上涨原因】\n  ### 家居装饰 (+0.46%)\n  **上涨原因**: 在智能家居市场长期处于追赶者地位之后，苹果公司正准备发起新一轮大举进军，推出一系列全新硬件和软件产品。\n    - 志邦家居 | 涨幅:+10.02% | 标签:['家居']\n    - 坚朗五金 | 涨幅:+10.01% | 标签:['家居装修']\n    - 慕思股份 | 涨幅:+9.99% | 标签:['床垫']\n\n【盘中异动监测】\n  ● 火箭发射（3 次）\n    09:31:33 涨跌幅:+2.07% 42.35元\n    09:32:51 涨跌幅:+2.92% 42.70元\n    09:34:39 涨跌幅:+3.25% 42.84元\n\n  ● 60日新高（1 次）\n    09:40:09 涨跌幅:+3.52% 42.94元\n",
+  "fetch_warnings": {},
+  "articles": {
+    "juchao": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "juchao search failed after retries"
+    },
+    "baidufin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "baidufin search failed after retries"
+    },
+    "sinafin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "sinafin search failed after retries"
+    },
+    "thsfin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "thsfin search failed after retries"
+    },
+    "qnainfo": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "qnainfo search failed after retries"
+    }
+  },
+  "middleman_warnings": [
+    "juchao: juchao search failed after retries",
+    "baidufin: baidufin search failed after retries",
+    "sinafin: sinafin search failed after retries",
+    "thsfin: thsfin search failed after retries",
+    "qnainfo: qnainfo search failed after retries"
+  ]
+}

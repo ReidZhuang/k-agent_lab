@@ -1,0 +1,179 @@
+{
+  "stock_name": "科达自控",
+  "ts_code": "920932.BJ",
+  "fetch_data": "## 科达自控 (920932.BJ)\n\n- 市场热度: 29（低）\n- 成交额: 2.34万亿（+462亿）\n- 上涨占比: 73.00% | 赚钱效应: 40%\n- 涨停梯队: 一板42只(晋级率9%) / 二板6只(晋级率17%) / 三板1只(晋级率60%) / 高度板3只\n- 涨跌分布: 上涨1768 / 下跌3635 / 涨停56 / 跌停76\n\n- 涨停56 / 跌停76 / 上涨1768 / 下跌3635\n- 信号: 市场人气低迷\n- 涨跌幅分布：涨幅集中在 1%~2%，跌幅集中在 -4%~-1%\n---\n\n📌 股票涉及行业关键词：SaaS, 基础软件, 应用软件, 电池, 硬件, 系统软件, 系统集成, 行业SaaS, 软件, 软件行业\n\n\n【上一个交易日日终】换手率: 1.6665% | 自由流通换手率: 2.2383% | PE: None | PB: 1.9537\n\n【上一个交易日日终融资融券】\n          融资余额: 0.16亿（较前日: +0.73%）\n          融券余额: N/A\n\n❌（今日午间收盘）资金流向: 无数据\n\n❌（上一个交易日日终）资金细分: 'NoneType' object has no attribute 'get'\n\n\n❌ 技术面: K线数据不足\n",
+  "fetch_message": "## 科达自控 (920932.BJ)\n\n【今日快讯】\n  1. [2026-07-30 09:27:36] 竞价看龙头\n     （相关方式: 关键词匹配 | 相关度: 0.30 | 相关关键词: 电池）\n     【竞价看龙头】财联社7月30日电，市场焦点股艾艾精工（12天8板）低开4.78%，并购重组的爱丽家居（7板）竞价涨停，化工股金牛化工（9天5板）高开0.98%，摘帽的东晶电子（5天4板）低开0.97%、传智教育（3板）高开7.14%，大消费板块华天酒店（3板）竞价涨停、东百集团（2板）低开2.01%，机器人概念股明新旭腾（3板）高开9.99%、华之杰（5天3板）低开4.16%，锂电池板块孚日股份（5天3板）低开3.70%、圣阳股份（3天2板）低开0.38%。\n\n【热门板块上涨原因】\n  ### 固态电池 (-2.46%)\n  **上涨原因**: 2026年7月21日，国轩控股集团年产20000吨固态电池关键材料项目在安徽安庆正式启动。该项目是行业首条万吨级高纯硫化锂量产产线，计划2027年建成实现全面量产。\n    - 金龙羽 | 涨幅:+10.03% | 标签:['固态电池']\n    - 英联股份 | 涨幅:+10.04% | 标签:['固态电池', '易开盖']\n    - 中国宝安 | 涨幅:+10.00% | 标签:['机器人', '固态电池']\n\n【盘中异动监测】\n  ● 快速反弹（1 次）\n    09:42:05 涨跌幅:+1.88% 11.39元\n",
+  "fetch_warnings": {},
+  "articles": {
+    "thsfin": {
+      "session_id": "s_20260730_152534_293025_817470193",
+      "preview": {
+        "articles": [],
+        "total": 0,
+        "total_raw": 0,
+        "filter_stats": {}
+      },
+      "empty": true,
+      "error": ""
+    },
+    "juchao": {
+      "session_id": "s_20260730_152609_638982_5879972326",
+      "preview": {
+        "articles": [],
+        "total": 0,
+        "total_raw": 0,
+        "filter_stats": {}
+      },
+      "empty": true,
+      "error": ""
+    },
+    "sinafin": {
+      "session_id": "s_20260730_152610_346195_1464479783",
+      "preview": {
+        "articles": [
+          {
+            "id": "a_01",
+            "title": "利好！国家队持股，机构认为中报后可能存在较好介入节点，上调目标价至99元！",
+            "body_avail": "有",
+            "date": "2026-07-30 08:40",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 08:40",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_02",
+            "title": "7月30日沪深两市涨停分析：爱丽家居8连板，明新旭腾、传智教育4连板",
+            "body_avail": "有",
+            "date": "2026-07-30 15:16",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 15:16",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_03",
+            "title": "两倍做多海力士ETF暴涨暴跌投资者巨亏，南方东英稳收3.5亿港元管理费",
+            "body_avail": "有",
+            "date": "2026-07-30 15:07",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 15:07",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_04",
+            "title": "收评：科创50指数大跌超5% 创指跌近4% 白酒板块持续强势",
+            "body_avail": "有",
+            "date": "2026-07-30 15:00",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 15:00",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_05",
+            "title": "连续三年新高！41家上市银行派现6456亿，银行股逆势上攻",
+            "body_avail": "有",
+            "date": "2026-07-30 11:40",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 11:40",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_06",
+            "title": "快讯：创业板指跌近5.2% 已抹平今年全部涨幅",
+            "body_avail": "有",
+            "date": "2026-07-30 10:57",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 10:57",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_07",
+            "title": "但斌接连唱多！韩国杠杆ETF资管规模已下降，“黄金坑”机会即将到来？",
+            "body_avail": "有",
+            "date": "2026-07-30 10:32",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 10:32",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_08",
+            "title": "快讯：创业板指、科创50下挫跌逾4% 半导体芯片、算力硬件股领跌",
+            "body_avail": "有",
+            "date": "2026-07-30 10:26",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 10:26",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_09",
+            "title": "快讯：创指、科创50跌超2% 创新药概念震荡拉升",
+            "body_avail": "有",
+            "date": "2026-07-30 09:59",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 09:59",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_10",
+            "title": "昨日股票ETF净申购414亿元已连续第5天净流入，7月股票ETF净申购4692亿（名单）",
+            "body_avail": "有",
+            "date": "2026-07-30 09:36",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 09:36",
+            "_category": "资讯",
+            "body_status": "processing"
+          }
+        ],
+        "total": 10,
+        "total_raw": 10,
+        "filter_stats": {
+          "raw_count": 10,
+          "filtered_count": 10,
+          "dropped_count": 0,
+          "filter_days": null,
+          "filter_title": null
+        }
+      },
+      "empty": false,
+      "error": ""
+    },
+    "baidufin": {
+      "session_id": "s_20260730_152610_741603_4455914262",
+      "preview": {
+        "articles": [],
+        "total": 0,
+        "total_raw": 0,
+        "filter_stats": {}
+      },
+      "empty": true,
+      "error": ""
+    },
+    "qnainfo": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "qnainfo search failed after retries"
+    }
+  },
+  "middleman_warnings": [
+    "qnainfo: qnainfo search failed after retries"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "stock_name": "峨眉山A",
+  "ts_code": "000888.SZ",
+  "fetch_data": "## 峨眉山A (000888.SZ)\n\n- 市场热度: 70（高）\n- 成交额: 2.3万亿（+2708亿）\n- 上涨占比: 85.00% | 赚钱效应: 54%\n- 涨停梯队: 一板70只(晋级率13%) / 二板6只(晋级率31%) / 三板4只(晋级率33%) / 高度板1只\n- 涨跌分布: 上涨4253 / 下跌1215 / 涨停86 / 跌停9\n\n- 涨停86 / 跌停9 / 上涨4253 / 下跌1214\n- 信号: 市场人气高涨\n- 涨跌幅分布：涨幅集中在 2%~3%，跌幅集中在 -3%~-1%\n---\n\n📌 股票涉及行业关键词：休闲, 休闲度假, 出境游, 国家公园, 娱乐, 教育, 文娱, 旅游, 服务业, 消费服务, 生活服务, 自然, 酒店, 风景名胜, 餐馆\n\n【今日11:30收盘数据】股票名称: 峨眉山Ａ | 代码: 000888 | 当前价: 9.44 | 昨收: 9.52 | 开盘: 9.53 | 最高: 9.64 | 最低: 9.31 | 涨跌幅%: -0.84 | 成交量(手): 103607 | 成交额(万元): 9795.0 | 换手率%: 1.97 | 振幅%: 3.47 | 量比: 0.8 | 均价: 9.45 | 动态市盈率: 21.0 | 市净率: 1.88\n                     总市值(亿元): 49.74 | 流通市值(亿元): 49.74 | 涨停价: 10.47 | 跌停价: 8.57 | 买一价: 9.44 | 卖一价: 9.45 | 外盘(手): 46659 | 内盘(手): 56948\n\n【上一个交易日日终】换手率: 1.6146% | 自由流通换手率: 2.673% | PE: 22.7982 | PB: 1.8409\n\n【上一个交易日日终融资融券】\n          融资余额: 1.68亿（较前日: -1.88%）\n          融券余额: 0.00亿（较前日: +100.29%）\n\n【今日午间收盘资金流向（逐分钟统计）】\n          净流向: 净流出 163.28万元（统计分钟数: 242）\n          资金流入 107 分钟 / 流出 131 分钟 | 最大单分钟流入: 102.5万 / 最大单分钟流出: 187.5万\n\n【上一个交易日日终资金细分（元）】\n          大单净额: -942249.00（买入: 5981710 / 卖出: 6923959）\n          中单净额: +510770.00（买入: 21794916 / 卖出: 21284146）\n          小单净额: -1201296.00（买入: 6478367 / 卖出: 7679663）\n          合计净额: -1632775.00\n\n\n【技术面关键位置】当前价: None\n          布林带上轨: 9.72 | 布林带下轨: 8.68\n",
+  "fetch_message": "## 峨眉山A (000888.SZ)\n\n【热门板块上涨原因】\n  ### 教育产业 (+1.76%)\n  **上涨原因**: 此前国务院印发《教育发展“十五五”规划》，完善科学教育体系，推进人工智能全学段教育，提升学生人工智能素养。\n    - 传智教育 | 涨幅:+9.97% | 标签:['AI', '教育', '摘帽']\n    - 全通教育 | 涨幅:+20.05% | 标签:['教育']\n    - 中公教育 | 涨幅:+10.05% | 标签:['教育', 'AI']\n",
+  "fetch_warnings": {},
+  "articles": {
+    "juchao": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "juchao search failed after retries"
+    },
+    "qnainfo": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "qnainfo search failed after retries"
+    },
+    "thsfin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "thsfin search failed after retries"
+    },
+    "baidufin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "baidufin search failed after retries"
+    },
+    "sinafin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "sinafin search failed after retries"
+    }
+  },
+  "middleman_warnings": [
+    "juchao: juchao search failed after retries",
+    "qnainfo: qnainfo search failed after retries",
+    "thsfin: thsfin search failed after retries",
+    "baidufin: baidufin search failed after retries",
+    "sinafin: sinafin search failed after retries"
+  ]
+}

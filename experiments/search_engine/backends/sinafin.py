@@ -15,7 +15,7 @@
     _category: "资讯" | "公告"
     _known_date: 资讯精确到分钟（YYYY-MM-DD HH:MM），公告仅日期
 """
-import re, time, random
+import re, time, random, os, json
 import httpx
 from .base import SearchBackend
 
@@ -26,6 +26,23 @@ _BULLETIN_URL = "https://vip.stock.finance.sina.com.cn/corp/go.php/vCB_AllBullet
 _HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 }
+
+# 从 mail_tower config.json 读取连接池配置（若存在），否则使用默认值
+_MT_CONFIG_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "mail_tower", "config", "config.json"
+)
+_HTTP_POOL_CFG = {"max_keepalive": 10, "max_connections": 50}
+_HTTP_TIMEOUT = 15
+try:
+    with open(_MT_CONFIG_PATH) as _f:
+        _mt_cfg = json.load(_f)
+    _sinafin_cfg = _mt_cfg.get("search", {}).get("sinafin", {})
+    _pool_cfg = _sinafin_cfg.get("http_pool", {})
+    _HTTP_POOL_CFG["max_keepalive"] = _pool_cfg.get("max_keepalive_connections", 10)
+    _HTTP_POOL_CFG["max_connections"] = _pool_cfg.get("max_connections", 50)
+    _HTTP_TIMEOUT = _mt_cfg.get("extraction", {}).get("timeout", 15)
+except Exception:
+    pass
 
 # 共享连接池（惰性创建，避免 uvicorn fork 后继承半初始化状态）
 _HTTP_CLIENT: httpx.Client | None = None
@@ -43,9 +60,12 @@ def _get_client() -> httpx.Client:
         _HTTP_CLIENT = httpx.Client(
             headers=_HEADERS,
             follow_redirects=True,
-            timeout=15,
+            timeout=_HTTP_TIMEOUT,
             trust_env=False,  # 禁用代理，直连 sinafin
-            limits=httpx.Limits(max_keepalive_connections=10, max_connections=50),
+            limits=httpx.Limits(
+                max_keepalive_connections=_HTTP_POOL_CFG["max_keepalive"],
+                max_connections=_HTTP_POOL_CFG["max_connections"],
+            ),
         )
     return _HTTP_CLIENT
 

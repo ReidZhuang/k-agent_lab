@@ -1252,7 +1252,7 @@ def fetch_supplementary_info(
             if has_data:
                 if not has_ann:
                     has_ann = True
-                supp_lines.append(f"  【{title}】")
+                supp_lines.append(f"## 【{title}】")
                 supp_lines.extend(lines)
                 supp_lines.append("")
 
@@ -1284,7 +1284,7 @@ def fetch_supplementary_info(
         for title, lines in vol_sections:
             if not has_vol:
                 has_vol = True
-            supp_lines.append(f"  【{title}】")
+                supp_lines.append(f"## 【{title}】")
             supp_lines.extend(lines)
             supp_lines.append("")
 
@@ -1788,10 +1788,12 @@ def fetch_all(stock_names: list[str]) -> dict:
         bm = benchmark_data.get(name, [])
         ta = tech_data.get(name, {})
 
-        lines = [f"## {name} ({ts_code})", ""]
+        lines = []
 
         # ── 全市场情绪（财联社，每个个股前均展示） ──
         if market_emotion_text:
+            lines.append("## 【今日全市场情绪】")
+            lines.append("")
             lines.append(market_emotion_text)
             lines.append("---")
             lines.append("")
@@ -1800,7 +1802,8 @@ def fetch_all(stock_names: list[str]) -> dict:
         industry_kws = industry_kw_map.get(ts_code, [])
         if industry_kws:
             kw_text = ", ".join(industry_kws)
-            lines.append(f"📌 股票涉及行业关键词：{kw_text}")
+            lines.append("## 【📌 股票涉及行业关键词】")
+            lines.append(kw_text)
             lines.append("")
 
         # ── 腾讯财经全量字段快照（54字段） ──
@@ -1832,7 +1835,8 @@ def fetch_all(stock_names: list[str]) -> dict:
             if val is not None:
                 raw_items.append(f"{label}: {val}")
         if raw_items:
-            lines.append("【今日11:30收盘数据】" + " | ".join(raw_items[:16]))
+            lines.append("## 【今日11:30收盘数据】")
+            lines.append(" | ".join(raw_items[:16]))
             lines.append("                     " + " | ".join(raw_items[16:]) if raw_items[16:] else "")
         lines.append("")
 
@@ -1842,7 +1846,8 @@ def fetch_all(stock_names: list[str]) -> dict:
         else:
             yd_tro = yd.get("turnover_rate", "N/A")
             yd_tro_f = yd.get("turnover_rate_f", "N/A")
-            lines.append(f"【上一个交易日日终】换手率: {yd_tro}% | "
+            lines.append("## 【上一个交易日日终】")
+            lines.append(f"换手率: {yd_tro}% | "
                          f"自由流通换手率: {yd_tro_f}% | "
                          f"PE: {yd.get('pe', 'N/A')} | PB: {yd.get('pb', 'N/A')}")
             # 对比今日换手
@@ -1860,7 +1865,7 @@ def fetch_all(stock_names: list[str]) -> dict:
         else:
             rzye = mg.get("rzye")
             rqye = mg.get("rqye")
-            lines.append(f"【上一个交易日日终融资融券】")
+            lines.append("## 【上一个交易日日终融资融券】")
             if rzye is None and rqye is None:
                 lines.append(f"          无融资融券信息，股票可能非融资融券标的")
             else:
@@ -1897,7 +1902,7 @@ def fetch_all(stock_names: list[str]) -> dict:
             peak_in_s = f"{peak_in/10000:.1f}万" if isinstance(peak_in, (int, float)) else str(peak_in)
             peak_out_s = f"{abs(peak_out)/10000:.1f}万" if isinstance(peak_out, (int, float)) else str(peak_out)
 
-            lines.append(f"【今日午间收盘资金流向（逐分钟统计）】")
+            lines.append("## 【今日午间收盘资金流向（逐分钟统计）】")
             lines.append(f"          净流向: {direction} {net_s}（统计分钟数: {ticks}）")
             lines.append(f"          资金流入 {inflow_mins} 分钟 / 流出 {outflow_mins} 分钟 | "
                          f"最大单分钟流入: {peak_in_s} / 最大单分钟流出: {peak_out_s}")
@@ -1907,7 +1912,7 @@ def fetch_all(stock_names: list[str]) -> dict:
         if "error" in ca:
             lines.append(f"❌（上一个交易日日终）资金细分: {ca.get('error', '获取失败')}")
         else:
-            lines.append(f"【上一个交易日日终资金细分（元）】")
+            lines.append("## 【上一个交易日日终资金细分（元）】")
             lines.append(f"          大单净额: {ca.get('large_net', 0):+.2f}（买入: {ca.get('buy_large', 0):.0f} / 卖出: {ca.get('sell_large', 0):.0f}）")
             lines.append(f"          中单净额: {ca.get('medium_net', 0):+.2f}（买入: {ca.get('buy_medium', 0):.0f} / 卖出: {ca.get('sell_medium', 0):.0f}）")
             lines.append(f"          小单净额: {ca.get('small_net', 0):+.2f}（买入: {ca.get('buy_small', 0):.0f} / 卖出: {ca.get('sell_small', 0):.0f}）")
@@ -1916,9 +1921,7 @@ def fetch_all(stock_names: list[str]) -> dict:
 
         # ── 板块排名（按类型分组展示） ──
         if sr.get("by_type"):
-            _brief = sr.get("class_brief", True)
-            _title = "概念和行业板块" if _brief else "全部分类"
-            lines.append(f"【今日午间收盘板块排名（同花顺{_title}）】")
+            lines.append("## 【今日午间收盘板块排名（同花顺概念和行业板块）】")
             for tp, group in sr["by_type"].items():
                 label = group["label"]
                 s_list = group["sectors"]
@@ -1948,7 +1951,7 @@ def fetch_all(stock_names: list[str]) -> dict:
 
         # ── 上一个交易日板块全天涨跌幅基准 ──
         if bm:
-            lines.append("【上一个交易日日终板块涨跌幅基准（同花顺板块）】")
+            lines.append("## 【上一个交易日日终板块涨跌幅基准（同花顺板块）】")
             # 按类型分组展示
             cur_label = ""
             for b in bm:
@@ -1968,7 +1971,8 @@ def fetch_all(stock_names: list[str]) -> dict:
         # ── 技术面关键位置 ──
         if "error" not in ta and ta.get("ma5"):
             price = ta.get("price")
-            lines.append(f"【技术面关键位置】当前价: {price}")
+            lines.append("## 【技术面关键位置】")
+            lines.append(f"当前价: {price}")
             for label, display in [("ma5", "MA5"), ("ma10", "MA10"), ("ma20", "MA20/布林中轨")]:
                 val = ta.get(label)
                 dev = ta.get("deviation", {}).get(label, {})
@@ -1986,7 +1990,7 @@ def fetch_all(stock_names: list[str]) -> dict:
         # ── 补充信息（仅在有数据时展示） ──
         supp = supp_data.get(name, [])
         if supp:
-            lines.append(f"【补充信息——{_prev_td}至{_today_str}】")
+            lines.append(f"## 【补充信息——{_prev_td}至{_today_str}】")
             lines.append("")
             ann_header_shown = False
             vol_header_shown = False
@@ -1999,12 +2003,12 @@ def fetch_all(stock_names: list[str]) -> dict:
                     if not vol_header_shown:
                         if ann_header_shown:
                             lines.append("")
-                        lines.append("【昨日波动】")
+                        lines.append("## 【昨日波动】")
                         vol_header_shown = True
                     lines.append(l)
                 else:
                     if not ann_header_shown:
-                        lines.append("【昨日公告】")
+                        lines.append("## 【昨日公告】")
                         ann_header_shown = True
                     lines.append(l)
             lines.append("")

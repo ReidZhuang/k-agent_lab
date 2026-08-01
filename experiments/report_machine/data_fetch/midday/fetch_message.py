@@ -771,12 +771,12 @@ def fetch_all(stock_names: list[str]) -> dict[str, str]:
     for name in stock_names:
         info = stocks.get(name, {})
         ts_code = info.get("ts_code", "")
-        lines = [f"## {name} ({ts_code})", ""]
+        lines = []
 
         # ── 3. 今日快讯 ──
         nd = news_data.get(name, {})
         if nd.get("has_data"):
-            lines.append("【今日快讯】")
+            lines.append("## 【今日快讯】")
             for i, item in enumerate(nd["news"], 1):
                 mt = item.get("match_type", "")
                 ms = item.get("match_score")
@@ -793,7 +793,7 @@ def fetch_all(stock_names: list[str]) -> dict[str, str]:
         # ── 4. 热门板块原因 ──
         sd = sectors_data.get(name, {})
         if sd.get("has_data"):
-            lines.append("【热门板块上涨原因】")
+            lines.append("## 【热门板块上涨原因】")
             for si in sd["sectors"]:
                 sector = si["sector"]
                 secu_name = sector.get("secu_name", "")
@@ -833,7 +833,7 @@ def fetch_all(stock_names: list[str]) -> dict[str, str]:
         # ── 5. 跌停监控 ──
         ld = limit_data.get(name, {})
         if ld.get("has_data"):
-            lines.append("【跌停监控】")
+            lines.append("## 【跌停监控】")
             lines.append("")
             lines.append("  | 股票名称 | 股票代码 | 板块 |")
             lines.append("  |:---------|:---------|:-----|")
@@ -847,7 +847,7 @@ def fetch_all(stock_names: list[str]) -> dict[str, str]:
         # ── 6. 异动检测 ──
         cd = changes_data.get(name, {})
         if cd.get("has_data"):
-            lines.append("【盘中异动监测】")
+            lines.append("## 【盘中异动监测】")
             # 按异动类型分组展示
             by_type = {}
             for ch in cd["changes"]:

@@ -1,0 +1,250 @@
+{
+  "stock_name": "方正阀门",
+  "ts_code": "920082.BJ",
+  "fetch_data": "## 方正阀门 (920082.BJ)\n\n- 市场热度: 31（一般）\n- 成交额: 1.45万亿（-264亿）\n- 上涨占比: 83.00% | 赚钱效应: 56%\n- 涨停梯队: 一板39只(晋级率9%) / 二板6只(晋级率17%) / 三板1只(晋级率80%) / 高度板4只\n- 涨跌分布: 上涨1901 / 下跌3458 / 涨停51 / 跌停46\n\n- 涨停51 / 跌停47 / 上涨1901 / 下跌3458\n- 信号: 市场人气一般\n- 涨跌幅分布：涨幅集中在 1%~2%，跌幅集中在 -4%~-1%\n---\n\n📌 股票涉及行业关键词：五金, 制品, 基础工业, 工业, 工业制造, 工业机械, 工业板块, 工业装备, 工程机械, 机床, 机械, 机械制造, 机械设备, 泵, 石油, 紧固件, 装备, 装备制造, 轴承, 通用机械, 通用设备, 金属, 铸件, 锻件, 阀门, 齿轮\n\n\n【上一个交易日日终】换手率: 2.3596% | 自由流通换手率: 2.3596% | PE: 28.5511 | PB: 3.0332\n\n【上一个交易日日终融资融券】\n          融资余额: 0.08亿（较前日: -8.07%）\n          融券余额: N/A\n\n❌（今日午间收盘）资金流向: 无数据\n\n❌（上一个交易日日终）资金细分: 'NoneType' object has no attribute 'get'\n\n\n❌ 技术面: K线数据不足\n",
+  "fetch_message": "## 方正阀门 (920082.BJ)\n\n【盘中异动监测】\n  ● 火箭发射（4 次）\n    09:31:38 涨跌幅:+2.98% 8.30元\n    09:32:44 涨跌幅:+3.47% 8.34元\n    09:33:59 涨跌幅:+6.58% 8.59元\n    09:35:17 涨跌幅:+9.43% 8.82元\n\n  ● 加速下跌（4 次）\n    09:40:05 涨跌幅:+9.06% 8.79元\n    09:42:05 涨跌幅:+7.57% 8.67元\n    09:47:05 涨跌幅:+5.58% 8.51元\n    09:48:08 涨跌幅:+5.09% 8.47元\n",
+  "fetch_warnings": {},
+  "articles": {
+    "sinafin": {
+      "session_id": "s_20260730_122319_856273_1975490854",
+      "preview": {
+        "articles": [
+          {
+            "id": "a_01",
+            "title": "利好！国家队持股，机构认为中报后可能存在较好介入节点，上调目标价至99元！",
+            "body_avail": "有",
+            "date": "2026-07-30 08:40",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 08:40",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_02",
+            "title": "连续三年新高！41家上市银行派现6456亿，银行股逆势上攻",
+            "body_avail": "有",
+            "date": "2026-07-30 11:40",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 11:40",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_03",
+            "title": "快讯：创业板指跌近5.2% 已抹平今年全部涨幅",
+            "body_avail": "有",
+            "date": "2026-07-30 10:57",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 10:57",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_04",
+            "title": "但斌接连唱多！韩国杠杆ETF资管规模已下降，“黄金坑”机会即将到来？",
+            "body_avail": "有",
+            "date": "2026-07-30 10:32",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 10:32",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_05",
+            "title": "快讯：创业板指、科创50下挫跌逾4% 半导体芯片、算力硬件股领跌",
+            "body_avail": "有",
+            "date": "2026-07-30 10:26",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 10:26",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_06",
+            "title": "快讯：创指、科创50跌超2% 创新药概念震荡拉升",
+            "body_avail": "有",
+            "date": "2026-07-30 09:59",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 09:59",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_07",
+            "title": "昨日股票ETF净申购414亿元已连续第5天净流入，7月股票ETF净申购4692亿（名单）",
+            "body_avail": "有",
+            "date": "2026-07-30 09:36",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 09:36",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_08",
+            "title": "华泰宏观：美联储7月按兵不动，但悬念犹存",
+            "body_avail": "有",
+            "date": "2026-07-30 07:38",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 07:38",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_09",
+            "title": "与连平商榷：平准基金不能只做'救火队'，更要做'均输官'",
+            "body_avail": "有",
+            "date": "2026-07-30 07:37",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 07:37",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_10",
+            "title": "操盘必读：影响股市利好或利空消息_2026年7月30日_财经新闻",
+            "body_avail": "有",
+            "date": "2026-07-30 07:29",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-30 07:29",
+            "_category": "资讯",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_11",
+            "title": "方正阀门：股东拟减持股份的预披露公告",
+            "body_avail": "有",
+            "date": "2026-07-29",
+            "date_source": "sinafin",
+            "date_confidence": "high",
+            "snippet": "2026-07-29",
+            "_category": "公告",
+            "body_status": "processing"
+          }
+        ],
+        "total": 11,
+        "total_raw": 11,
+        "filter_stats": {
+          "raw_count": 11,
+          "filtered_count": 11,
+          "dropped_count": 0,
+          "filter_days": null,
+          "filter_title": null
+        }
+      },
+      "empty": false,
+      "error": ""
+    },
+    "juchao": {
+      "session_id": "s_20260730_122319_392422_2600378716",
+      "preview": {
+        "articles": [
+          {
+            "id": "a_01",
+            "title": "股东拟减持股份的预披露公告",
+            "body_avail": "有",
+            "date": "2026-07-29",
+            "date_source": "juchao",
+            "date_confidence": "high",
+            "snippet": "股东拟减持股份的预披露公告",
+            "_category": "公告",
+            "_announce_id": "1225445903",
+            "_announce_time": "2026-07-29",
+            "body_status": "processing"
+          }
+        ],
+        "total": 1,
+        "total_raw": 1,
+        "filter_stats": {
+          "raw_count": 1,
+          "filtered_count": 1,
+          "dropped_count": 0,
+          "filter_days": null,
+          "filter_title": null
+        }
+      },
+      "empty": false,
+      "error": ""
+    },
+    "qnainfo": {
+      "session_id": "s_20260730_122319_506906_9504553061",
+      "preview": {
+        "articles": [],
+        "total": 0,
+        "total_raw": 0,
+        "filter_stats": {}
+      },
+      "empty": true,
+      "error": ""
+    },
+    "thsfin": {
+      "session_id": "s_20260730_122319_272914_408143199",
+      "preview": {
+        "articles": [
+          {
+            "id": "a_01",
+            "title": "更多>> 《方正阀门:股东拟减持股份的预披露公告》",
+            "body_avail": "有",
+            "date": "2026-07-29",
+            "date_source": "thsfin",
+            "date_confidence": "high",
+            "snippet": "发布公告： 更多>> 《方正阀门:股东拟减持股份的预披露公告》",
+            "_category": "发布公告",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_02",
+            "title": "公司高管陈永兴、李川华计划自2026-08-19起至2026-11-18，拟减持不超过57.25万股，占总股本比例0.28%",
+            "body_avail": "无",
+            "date": "2026-07-29",
+            "date_source": "thsfin",
+            "date_confidence": "high",
+            "snippet": "增减持计划： 公司高管陈永兴、李川华计划自2026-08-19起至2026-11-18，拟减持不超过57.25万股，占总股本比例0.28%",
+            "_category": "增减持计划",
+            "body_status": "processing"
+          },
+          {
+            "id": "a_03",
+            "title": "详情>> 融资余额763.0万元，融资净买入额-66.94万元",
+            "body_avail": "无",
+            "date": "2026-07-29",
+            "date_source": "thsfin",
+            "date_confidence": "high",
+            "snippet": "融资融券： 详情>> 融资余额763.0万元，融资净买入额-66.94万元",
+            "_category": "融资融券",
+            "body_status": "processing"
+          }
+        ],
+        "total": 3,
+        "total_raw": 3,
+        "filter_stats": {
+          "raw_count": 3,
+          "filtered_count": 3,
+          "dropped_count": 0,
+          "filter_days": null,
+          "filter_title": null
+        }
+      },
+      "empty": false,
+      "error": ""
+    },
+    "baidufin": {
+      "session_id": "",
+      "preview": null,
+      "empty": null,
+      "error": "baidufin search failed after retries"
+    }
+  },
+  "middleman_warnings": [
+    "baidufin: baidufin search failed after retries"
+  ]
+}
