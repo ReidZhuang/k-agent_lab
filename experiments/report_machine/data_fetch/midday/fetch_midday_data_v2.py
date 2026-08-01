@@ -68,10 +68,10 @@ from fetch_midday_data import (
 from fetch_endday_data import (
     fetch_margin_analysis, fetch_lhb, fetch_moneyflow_multi, fetch_snowball_flow,
     fetch_ths_institution, fetch_survey, fetch_holdernumber,
-    fetch_risk_calendar, fetch_finance_trend,
+    fetch_risk_calendar, fetch_finance_trend, fetch_blocktrade,
     _fmt_margin_section, _fmt_lhb_section, _fmt_moneyflow_section,
     _fmt_institution_section, _fmt_survey_section, _fmt_holdernumber_section,
-    _fmt_risk_section, _fmt_finance_section,
+    _fmt_risk_section, _fmt_finance_section, _fmt_blocktrade_section,
 )
 
 # ── 复用 message 脚本: 快讯(知识图谱分级匹配)/异动/跌停/热门板块原因 ──
@@ -85,7 +85,7 @@ _SECTION_NAMES = {
     4: "融资融券多日", 5: "龙虎榜", 6: "资金流",
     7: "机构持仓", 8: "机构调研", 9: "股东户数",
     10: "风险日历", 11: "涨停异动快讯", 12: "板块地位",
-    13: "技术面成本地图", 14: "业绩趋势", 15: "公告补充",
+    13: "技术面成本地图", 14: "业绩趋势", 15: "公告补充", 16: "大宗交易",
 }
 _CRITICAL_SECTIONS = {1, 3, 4, 6, 13}
 
@@ -351,6 +351,7 @@ def fetch_all(stock_names: list[str]) -> dict:
             pool.submit(_task, "holdernumber", fetch_holdernumber, ts_codes),
             pool.submit(_task, "risk", fetch_risk_calendar, ts_codes),
             pool.submit(_task, "finance", fetch_finance_trend, ts_codes),
+            pool.submit(_task, "blocktrade", fetch_blocktrade, ts_codes),
         ]
         data = {}
         for fut in as_completed(futures):
@@ -532,6 +533,12 @@ def fetch_all(stock_names: list[str]) -> dict:
         supp_sec = _fmt_supp_section_midday(name, supp_data.get(name, []))
         lines.extend(supp_sec)
         sec_ok[15] = bool(supp_sec)
+
+        # 16. 大宗交易(实锤级, 有则写无则略; 午间时点 T-1 窗口)
+        bsec = _fmt_blocktrade_section(name, data.get("blocktrade", {}).get(ts_code, {"count": 0}))
+        lines.extend(bsec)
+        sec_ok[16] = bool(data.get("blocktrade", {}).get(ts_code, {}).get("count"))
+        lines.append("")
 
         result[name] = "\n".join(lines)
         w = _check_completeness_midday(sec_ok)
