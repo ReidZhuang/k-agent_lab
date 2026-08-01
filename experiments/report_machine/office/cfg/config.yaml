@@ -17,7 +17,7 @@ middleman:
     thsfin:   {start: "prev_trading_day(4)", end: "today_or_last_trading"}
     thsnews:  {start: "prev_trading_day(4)", end: "today_or_last_trading"}
     juchao:   {start: "prev_trading_day(4)", end: "today_or_last_trading"}
-    qnainfo:  {start: "prev_trading_day(5)", end: "today"}
+    qnainfo:  {start: "prev_trading_day(5)", end: "today_or_last_trading"}
 writer:
   host: localhost
   port: 8310
