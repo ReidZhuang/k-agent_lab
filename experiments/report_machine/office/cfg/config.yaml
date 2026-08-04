@@ -24,6 +24,7 @@ writer:
   workers: 4
   main_pool_workers: 4
   sub_worker_max_workers: 64
+  sub_writer_total_timeout: 1500  # sub writer 对 reporter 的总闸(秒): 首次请求开始计时, 非 ok 无限重试, 到点直接失败
 reporter:
   host: localhost
   port: 8312
@@ -37,7 +38,9 @@ reporter:
     model: deepseek-v4-flash
     max_tokens: 20000
     api_base: https://api.deepseek.com
-    timeout: 130
+    timeout: 180          # read(空闲)超时: 两次数据之间的最大间隔, 非总时长
+    connect_timeout: 10   # 建立连接超时
+    max_retries: 2        # SDK 对超时/429/5xx 的重试次数(最多 3 次尝试), 每次尝试独立请求
 database:
   path: /home/stockagent/project_space/database/report_market.db
 logging:

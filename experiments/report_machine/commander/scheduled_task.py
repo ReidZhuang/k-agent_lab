@@ -8,7 +8,7 @@
   3. 健康检测 (L0→L1→L2→L3) → 失败退出
   4. 查所有用户股票池 → 合并去重
   5. 第一批: POST Writer API（全部股票）
-  6. 第二批: 重试失败的股票
+  6. 失败记录(不再重投: 重试由 sub writer 总闸内完成)
   7. 分发报告: office/output/ → user/{username}/{stock_name}/
   8. 写任务日志到 office/log/
   （2026-07-31 起不再清理 office/output/，历史报告保留）
@@ -263,7 +263,7 @@ def call_writer(
     query: str,
     report_type: str = "noon",
     writer_url: str = "http://localhost:8310/api/v1/report",
-    timeout: int = 600,
+    timeout: tuple = (30, None),
 ) -> dict:
     """POST Writer API 生成报告
 
@@ -662,14 +662,16 @@ def main():
         if n not in failed_names
     ]
 
-    # ── 6. 第二批：重试 ──
+    # ── 6. 失败记录（2026-08-04 起不再重投）──
+    # 原 batch2 重新 POST writer 会从头取数(完全重复)且有双份生成风险;
+    # 重试已由 sub writer 在总闸(25 分钟)内完成——reporter 返回 error 时用同一 context 无限重试。
+    # 到达这里的失败 = 总闸耗尽或 writer 自身故障, 只记录 DB。
     final_failed = []
+    second_success = []
+    summary["batch2"] = {"total": 0, "success": 0, "failed": []}
     if failed_names:
-        logger.info(f"--- 6. 第二批: 重试 {len(failed_names)} 只失败股票 ---")
-
-        # 记录第一批失败到 DB
+        logger.info(f"--- 6. 失败 {len(failed_names)} 只, 记录错误(不再重投) ---")
         for fname in failed_names:
-            # 找 ts_code
             fts = next(
                 (d["ts_code"] for d in deduped_items if d["name"] == fname),
                 ""
@@ -679,46 +681,11 @@ def main():
                 function="batch1_writer",
                 stock_name=fname,
                 ts_code=fts,
-                error_msg=f"第一批生成失败",
+                error_msg=f"生成失败(子任务总闸内重试后仍失败)",
                 error_code="BATCH1_FAILED",
             )
             logger.warning(f"  {fname}: 记录失败")
-
-        if args.dry_run:
-            logger.info(f"  [预览] 将重试: {failed_names}")
-            batch2_result = {"status": "ok", "total": len(failed_names),
-                             "success": len(failed_names), "failed": []}
-        else:
-            batch2_result = call_writer(failed_names, query, report_type)
-
-        summary["batch2"] = {
-            "total": batch2_result.get("total", 0),
-            "success": batch2_result.get("success", 0),
-            "failed": batch2_result.get("failed", []),
-        }
-
-        final_failed = batch2_result.get("failed", [])
-
-        # 记录第二批失败
-        for fname in final_failed:
-            fts = next(
-                (d["ts_code"] for d in deduped_items if d["name"] == fname),
-                ""
-            )
-            log_error_to_db(
-                db_path=db_path,
-                function="batch2_writer",
-                stock_name=fname,
-                ts_code=fts,
-                error_msg=f"第二批(重试)仍失败",
-                error_code="BATCH2_FAILED",
-            )
-            logger.error(f"  {fname}: 重试仍失败")
-
-        second_success = [n for n in failed_names if n not in final_failed]
-    else:
-        second_success = []
-        summary["batch2"] = {"total": 0, "success": 0, "failed": []}
+        final_failed = failed_names
 
     # ── 所有成功的股票 ──
     all_success = first_success + second_success

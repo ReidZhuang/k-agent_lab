@@ -75,6 +75,21 @@ async def generate_report(ctx: ReportContext):
         )
         _log("after_run_in_executor", report_id=report_id, stock_name=ctx.stock_name,
              rounds=rounds_used, output=output_path or "", _elapsed=time.time()-t0)
+    except agent.EmptyLLMResponseError as e:
+        # LLM 返回空内容 → 明确失败(2026-08-04): writer 收到 error 后在总闸内重试
+        log_office_error(
+            module="office.reporter",
+            function="generate_report",
+            level="ERROR",
+            stock_name=ctx.stock_name, ts_code=ctx.ts_code,
+            error_msg=str(e),
+            error_code="REPORTER_EMPTY_RESPONSE",
+        )
+        return ReporterResponse(
+            report_id=report_id,
+            status="error",
+            error=str(e),
+        )
     except Exception as e:
         log_office_error(
             module="office.reporter",
@@ -91,9 +106,10 @@ async def generate_report(ctx: ReportContext):
         )
 
     if not output_path:
+        # 无任何内容可交付(如达到最大轮次未生成)→ 统一 error(2026-08-04 删除 partial 状态)
         return ReporterResponse(
             report_id=report_id,
-            status="partial",
+            status="error",
             error="未生成完整报告",
             rounds=rounds_used,
         )

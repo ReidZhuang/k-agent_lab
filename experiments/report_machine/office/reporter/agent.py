@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 import requests
+from httpx import Timeout
 from openai import OpenAI
 
 # ── 调试日志 ──
@@ -52,6 +53,12 @@ if not API_KEY:
 DEFAULT_MODEL = _ds_cfg.get("model", "deepseek-v4-flash")
 DEFAULT_MAX_TOKENS = _ds_cfg.get("max_tokens", 4000)
 API_BASE_URL = _ds_cfg.get("api_base", "https://api.deepseek.com")
+# LLM 调用超时(2026-08-04):
+#   read=timeout: 两次数据之间的空闲上限(非总时长)——服务端挂死/无响应时触发;
+#   connect: 建连超时; max_retries: SDK 对超时/429/5xx 的重试次数(每次尝试独立请求)
+LLM_READ_TIMEOUT = _ds_cfg.get("timeout", 180)
+LLM_CONNECT_TIMEOUT = _ds_cfg.get("connect_timeout", 10)
+LLM_MAX_RETRIES = _ds_cfg.get("max_retries", 2)
 MAX_ROUNDS = _reporter_cfg.get("max_loop_rounds", 8)
 ARTICLE_TIMEOUT = _reporter_cfg.get("article_timeout", 120)
 MIDDLEMAN_URL = (
@@ -62,6 +69,10 @@ MIDDLEMAN_URL = (
 _PROMPTS_DIR = os.path.join(os.path.dirname(__file__), _reporter_cfg.get("prompts_dir", "prompts"))
 
 _ARTICLE_TOOL_NAME = _reporter_cfg.get("article_tool_name", "get_article_body")
+
+
+class EmptyLLMResponseError(Exception):
+    """LLM 返回空内容(finish=length 且 content 为空)——明确失败, 不再空转 _extract_partial"""
 
 # ── 工具定义 ──
 _GET_ARTICLE_BODY_TOOL = {
@@ -419,7 +430,8 @@ def run(ctx: ReportContext) -> tuple[str, int]:
     Returns:
         (output_path, rounds_used)
     """
-    client = OpenAI(api_key=API_KEY, base_url=API_BASE_URL)
+    client = OpenAI(
+        api_key=API_KEY, base_url=API_BASE_URL, max_retries=LLM_MAX_RETRIES)
 
     # ── 调试日志 ──
     _dl = get_logger("reporter_round")
@@ -459,7 +471,8 @@ def run(ctx: ReportContext) -> tuple[str, int]:
                 tools=tools or None,
                 tool_choice=tool_choice,
                 max_tokens=DEFAULT_MAX_TOKENS,
-                timeout=_ds_cfg.get("timeout", 130),
+                timeout=Timeout(
+                    LLM_READ_TIMEOUT, connect=LLM_CONNECT_TIMEOUT),
             )
             llm_elapsed = time.time() - t0
         except Exception as e:
@@ -603,7 +616,18 @@ def run(ctx: ReportContext) -> tuple[str, int]:
             if msg.content:
                 path = _save_report(ctx.stock_name, ctx.ts_code, msg.content, ctx.report_type)
                 return path, round_num
-            break
+            # 空内容 → 明确失败(2026-08-04): 不再空转 _extract_partial, 直接抛异常
+            _dl("round_empty", stock_name=ctx.stock_name, round=round_num)
+            log_office_error(
+                module="office.reporter",
+                function="agent.run",
+                level="ERROR",
+                stock_name=ctx.stock_name, ts_code=ctx.ts_code,
+                error_msg=f"LLM 返回空内容(finish=length, round={round_num})",
+                error_code="REPORTER_EMPTY_RESPONSE",
+            )
+            raise EmptyLLMResponseError(
+                f"LLM 返回空内容(finish=length, round={round_num})")
 
     # 达到最大轮次，取已有内容
     # 取最后一次 assistant 消息的内容做日志
