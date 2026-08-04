@@ -143,11 +143,11 @@ def _fmt_technical_section_midday(name: str, ta: dict) -> list[str]:
     return lines
 
 
-def _fmt_quote_section_midday(name: str, q: dict, raw: dict, yd: dict) -> list[str]:
+def _fmt_quote_section_midday(name: str, ts_code: str, q: dict, raw: dict, yd: dict) -> list[str]:
     """午间半日行情: 11:30 快照 + 腾讯全量字段 + 昨日对比"""
     if not q or "error" in q:
         return [f"❌ 半日行情: {q.get('error', '无数据')}"]
-    lines = [f"## 【今日11:30收盘数据】(快照)"]
+    lines = [f"## 【今日11:30收盘 {name} ({ts_code})情况】(快照)"]
     _FOCUS_FIELDS = [
         ("price", "当前价"), ("chg_pct", "涨跌幅%"), ("prev_close", "昨收"),
         ("open", "开盘"), ("high", "最高"), ("low", "最低"),
@@ -373,7 +373,8 @@ def fetch_all(stock_names: list[str]) -> dict:
     for info in infos:
         name, ts_code, xq_code = info["name"], info["ts_code"], info["xueqiu"]
         sec_ok = {}
-        lines = [f"## {name} ({ts_code})", ""]
+        # 首节为全市场情绪(所有股票共享一份市场数据), 标题用"全市场情况"而非股票名
+        lines = [f"## 全市场情况", ""]
 
         # 1. 全市场情绪
         if market_emotion_text:
@@ -390,7 +391,7 @@ def fetch_all(stock_names: list[str]) -> dict:
         sec_ok[2] = bool(kws)
 
         # 3. 半日行情
-        qsec = _fmt_quote_section_midday(name, quotes.get(name, {}),
+        qsec = _fmt_quote_section_midday(name, ts_code, quotes.get(name, {}),
                                          raw_snap.get(ts_code, {}),
                                          yesterday_data.get(ts_code, {}))
         lines.extend(qsec)

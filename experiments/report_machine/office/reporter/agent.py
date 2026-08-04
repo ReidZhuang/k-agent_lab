@@ -604,6 +604,12 @@ def run(ctx: ReportContext) -> tuple[str, int]:
                                 body = art.get("body_text", "")
                                 truncated = art.get("truncated", False)
                                 tool_result_parts.append(f"**文章 {art_id}**")
+                                # 标题/发布日期(2026-08-04): Type B 返回含 title/date,
+                                # 之前组装时丢弃, LLM 无法识别正文对应哪篇文章
+                                if art.get("title"):
+                                    tool_result_parts.append(f"标题：{art['title']}")
+                                if art.get("date"):
+                                    tool_result_parts.append(f"发布日期：{art['date']}")
                                 tool_result_parts.append(body)
                                 if truncated:
                                     tool_result_parts.append(

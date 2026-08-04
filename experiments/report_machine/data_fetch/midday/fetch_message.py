@@ -3,7 +3,7 @@ fetch_message.py — 消息补充（快讯、热门板块、跌停监控、异�
 报告类型无关: 午间/日终共用（快讯 cutoff 动态化, 调用时刻决定覆盖范围）
 
 功能:
-  3. 今日快讯：财联社重要快讯 + 知识图谱关键词匹配（匹配度 > 0.3 才输出）
+  3. 今日快讯：财联社重要快讯 + 知识图谱关键词匹配（匹配度 > 0.35 才输出）
   4. 热门板块原因：热门板块上涨逻辑 + 个股关键词匹配板块标题
   5. 跌停监控：东方财富跌停板池中筛选关注的个股
   6. 异动检测：实时盘口异动（火箭发射、大笔买入等）全量循环 + 筛选
@@ -387,7 +387,7 @@ def _match_news_for_stocks(
     匹配规则（按条目逐条匹配，一条快讯可匹配多只股票）:
       1. 股票中文名在 title/content 中
       2. 股票代码 (xxxxxx.sz/xxxxxx.sh) 在 title/content 中
-      3. 知识图谱关键词匹配度 > 0.3
+      3. 知识图谱关键词匹配度 > 0.35
 
     Returns:
         {stock_name: [{title, content, time, match_type, match_score, keyword_matches}], ...}
@@ -430,10 +430,10 @@ def _match_news_for_stocks(
             # 3. 知识图谱关键词匹配（名称/代码均未命中时 *0.75）
             else:
                 adjusted = raw_score * 0.75
-                if adjusted > 0.3:
+                if adjusted > 0.35:
                     matched = True
                     match_type = "关键词匹配"
-                    match_score = round(adjusted, 4)
+                    match_score = adjusted  # 不 round, 保留原始值(2026-08-04)
                     # 记录匹配到的行业关键词
                     kws = _neo4j_keywords_for_matching(ts_code)
                     matched_keywords = [kw["keyword"] for kw in kws if kw["keyword"] in full_text]

@@ -171,10 +171,10 @@ def fetch_quotes_endday(stock_names: list[str]) -> tuple[dict[str, dict], str]:
     return result, (snap_time or "")
 
 
-def _fmt_quote_section(name: str, q: dict, snap_time: str) -> list[str]:
+def _fmt_quote_section(name: str, ts_code: str, q: dict, snap_time: str) -> list[str]:
     if not q or "error" in q:
         return [f"❌ 收盘行情获取失败: {q.get('error', '无数据')}"]
-    lines = [f"## 【今日收盘行情】(快照时间: {snap_time})"]
+    lines = [f"## 【今日收盘 {name} ({ts_code})情况】(快照时间: {snap_time})"]
     items = [
         f"收盘价: {q.get('price')}", f"涨跌幅: {q.get('chg_pct')}%",
         f"开盘: {q.get('open')}", f"最高: {q.get('high')}", f"最低: {q.get('low')}",
@@ -1323,7 +1323,7 @@ def fetch_all(stock_names: list[str]) -> dict:
 
         # 2. 收盘行情
         q = quotes.get(name, {})
-        qsec = _fmt_quote_section(name, q, snap_time)
+        qsec = _fmt_quote_section(name, ts_code, q, snap_time)
         lines.extend(qsec)
         sec_ok[2] = not (not q or "error" in q)
         lines.append("")
