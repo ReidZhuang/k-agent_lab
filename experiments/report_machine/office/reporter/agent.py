@@ -2,7 +2,7 @@
 Agent Loop — DeepSeek 报告生成核心
 
 接收 ReportContext → 组装 prompt → 进入 agent loop（最多 8 轮）
-  → LLM 返回 tool call → 解析 article_ids → 调 middleman Type B → 返回正文
+  → LLM 返回 tool call → 解析 articles(按 engine 分组) → 调 middleman Type B → 返回正文
   → LLM 返回 final answer → 保存为 md 文档
 
 遵循 exp02 的 agent loop 模式（OpenAI SDK + tool definition + prompt assembler）。
@@ -68,7 +68,7 @@ MIDDLEMAN_URL = (
 
 _PROMPTS_DIR = os.path.join(os.path.dirname(__file__), _reporter_cfg.get("prompts_dir", "prompts"))
 
-_ARTICLE_TOOL_NAME = _reporter_cfg.get("article_tool_name", "get_article_body")
+_ARTICLE_TOOL_NAME = _reporter_cfg.get("article_tool_name", "fetch_article_body")
 
 
 class EmptyLLMResponseError(Exception):
@@ -83,13 +83,21 @@ _GET_ARTICLE_BODY_TOOL = {
         "parameters": {
             "type": "object",
             "properties": {
-                "article_ids": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "需要获取正文的文章 ID 列表，如 ['a_01', 'a_02']。只应包含 body_avail='有' 的文章。",
+                "articles": {
+                    "type": "object",
+                    "description": (
+                        "按来源引擎分组的文章 ID 映射。"
+                        "key 必须原样使用『相关新闻资讯列表』中 **来源:** 标注的引擎名(如 thsnews/sinafin/thsfin/baidufin);"
+                        "value 是该引擎下需要获取正文的文章 ID 数组, ID 原样抄写 ID: 字段的值(如 'a_01'), 禁止添加引擎前缀(如 'thsnews_a_01' 是错误的)。"
+                        "不同引擎的 ID 可能重复, 必须按引擎分组表达, 不得合并或改名。"
+                    ),
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
                 }
             },
-            "required": ["article_ids"],
+            "required": ["articles"],
         },
     },
 }
@@ -174,7 +182,7 @@ def _load_skill(skill_name: str) -> list[str]:
 
 
 def _build_system_prompt(stock_name: str, ts_code: str, report_type: str = "noon") -> str:
-    """组装 system prompt（只加载 report_type 对应的 skill）"""
+    """组装 system prompt（只加载 report_type 对应的 skill + 工具技能文档）"""
     skill_parts = _load_skill(_SKILL_BY_TYPE.get(report_type, "noon_report"))
     parts = [
         _read_prompt("soul.md"),
@@ -185,6 +193,12 @@ def _build_system_prompt(stock_name: str, ts_code: str, report_type: str = "noon
         parts.append("")
         parts.append("## 工具技能说明")
         parts.extend(skill_parts)
+    # 工具技能文档(fetch_article_body/SKILL.md, 2026-08-04 接入):
+    # 与 function 定义配套的工具规则(输出格式硬性要求等), 名字与 prompts 中工具名统一
+    tool_skill = _load_skill("fetch_article_body")
+    if tool_skill:
+        parts.append("")
+        parts.extend(tool_skill)
     return "\n\n".join(p for p in parts if p)
 
 
@@ -262,17 +276,39 @@ def _build_user_context(ctx: ReportContext) -> str:
 # Tool Call 处理
 # ======================================================================
 
-def _fetch_article_bodies(article_ids: list[str],
-                           articles_meta: dict) -> tuple[dict, list[str]]:
-    """获取文章正文
+def _group_legacy_ids(article_ids: list[str],
+                      articles_meta: dict) -> dict:
+    """兼容旧格式: LLM 未按 engine 分组输出时, 用 id_map 反查归组
 
-    1. 按 engine 分组（从 articles_meta 查询每个 article_id 所属 engine）
+    含 engine 前缀宽容匹配(如 'thsnews_a_01' → engine=thsnews, id=a_01)。
+    """
+    id_map = {}
+    for engine, result in articles_meta.items():
+        preview = result.get("preview")
+        if not preview:
+            continue
+        for art in preview.get("articles", []):
+            aid = art.get("id", "")
+            id_map[aid] = engine
+            id_map[f"{engine}_{aid}"] = engine
+    groups = {}
+    for aid in article_ids:
+        engine = id_map.get(aid)
+        if engine:
+            groups.setdefault(engine, []).append(aid)
+    return groups
+
+
+def _fetch_article_bodies(article_reqs: dict,
+                           articles_meta: dict) -> tuple[dict, list[str]]:
+    """获取文章正文(按 engine 分组请求)
+
+    1. 按 engine 直接分组(LLM 按来源引擎分组输出, 见 fetch_article_body 技能)
     2. 验证 body_avail
     3. 并发调 middleman Type B
-    4. 120s 超时
 
     Args:
-        article_ids: LLM 请求的 article_ids
+        article_reqs: {engine: [article_id, ...]} —— LLM 按 engine 分组的请求
         articles_meta: {engine: {session_id, preview, ...}}
 
     Returns:
@@ -280,42 +316,30 @@ def _fetch_article_bodies(article_ids: list[str],
         results: {engine: [article_data, ...]} 或 {engine: {}}
         warnings: 异常信息列表
     """
-    # ── 建立 article_id → (engine, session_id, body_avail) 映射 ──
-    id_map = {}  # article_id -> {engine, session_id, body_avail}
-    for engine, result in articles_meta.items():
-        preview = result.get("preview")
-        if not preview:
-            continue
-        articles = preview.get("articles", [])
-        session_id = result.get("session_id", "")
-        for art in articles:
-            aid = art.get("id", "")
-            if aid in article_ids:
-                id_map[aid] = {
-                    "engine": engine,
-                    "session_id": session_id,
-                    "body_avail": art.get("body_avail", "无"),
-                }
-
-    # ── 过滤无效的 article_id ──
-    valid_ids = {aid for aid in article_ids
-                 if aid in id_map and id_map[aid]["body_avail"] == "有"}
-    invalid_count = len(article_ids) - len(valid_ids)
     warnings = []
-    if invalid_count:
-        warnings.append(f"{invalid_count} 篇文章无正文，已跳过")
+    invalid_count = 0
+    engine_groups = {}  # engine -> {session_id, article_ids: [有效ids]}
+    for engine, ids in (article_reqs or {}).items():
+        result = articles_meta.get(engine)
+        preview = result.get("preview") if result else None
+        if not preview:
+            invalid_count += len(ids)
+            continue
+        session_id = result.get("session_id", "")
+        art_by_id = {a.get("id"): a for a in preview.get("articles", [])}
+        valid = []
+        for aid in ids:
+            art = art_by_id.get(aid)
+            if art and art.get("body_avail") == "有":
+                valid.append(aid)
+            else:
+                invalid_count += 1
+        if valid:
+            engine_groups[engine] = {
+                "session_id": session_id, "article_ids": valid}
 
-    # ── 按 engine 分组 ──
-    engine_groups = {}
-    for aid in valid_ids:
-        info = id_map[aid]
-        key = info["engine"]
-        if key not in engine_groups:
-            engine_groups[key] = {
-                "session_id": info["session_id"],
-                "article_ids": [],
-            }
-        engine_groups[key]["article_ids"].append(aid)
+    if invalid_count:
+        warnings.append(f"{invalid_count} 篇文章无正文或引擎不存在，已跳过")
 
     if not engine_groups:
         return {}, warnings + ["没有可获取正文的文章"]
@@ -549,13 +573,21 @@ def run(ctx: ReportContext) -> tuple[str, int]:
                     except json.JSONDecodeError:
                         continue
 
-                    article_ids = args.get("article_ids", [])
-                    if not article_ids:
+                    # 新格式(2026-08-04): LLM 按 engine 分组输出 {engine: [ids]};
+                    # 兼容旧格式 list(LLM 未遵守时用 id_map 反查归组, 记 warning 便于观察)
+                    article_reqs = args.get("articles") or {}
+                    legacy_ids = args.get("article_ids", [])
+                    if not article_reqs and legacy_ids:
+                        article_reqs = _group_legacy_ids(legacy_ids, ctx.articles)
+                        _dl("round_tool_legacy_format", stock_name=ctx.stock_name,
+                            round=round_num,
+                            warning="LLM 未按 engine 分组格式输出, 已按旧格式兼容解析")
+                    if not article_reqs:
                         continue
 
                     # 验证 body_avail + 调 middleman
                     body_results, body_warnings = _fetch_article_bodies(
-                        article_ids, ctx.articles
+                        article_reqs, ctx.articles
                     )
 
                     # 组装 tool result
@@ -594,7 +626,7 @@ def run(ctx: ReportContext) -> tuple[str, int]:
                         "content": "\n".join(tool_result_parts),
                     })
                     _dl("round_tool_result", stock_name=ctx.stock_name,
-                        round=round_num, article_ids=article_ids,
+                        round=round_num, article_reqs=article_reqs,
                         engines_with_data=[k for k, v in body_results.items()
                                           if v.get("status") == "ready" and v.get("articles")],
                         warnings=body_warnings,

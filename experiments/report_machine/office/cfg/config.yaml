@@ -33,10 +33,10 @@ reporter:
   max_loop_rounds: 8
   article_timeout: 600
   prompts_dir: prompts_deepseek
-  article_tool_name: get_article_body
+  article_tool_name: fetch_article_body  # 与 prompts(agent.md/soul.md/SKILL.md)中的工具名统一
   deepseek:
     model: deepseek-v4-flash
-    max_tokens: 20000
+    max_tokens: 64000
     api_base: https://api.deepseek.com
     timeout: 180          # read(空闲)超时: 两次数据之间的最大间隔, 非总时长
     connect_timeout: 10   # 建立连接超时
