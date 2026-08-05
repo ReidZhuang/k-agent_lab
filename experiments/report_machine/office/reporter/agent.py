@@ -202,30 +202,44 @@ def _build_system_prompt(stock_name: str, ts_code: str, report_type: str = "noon
     return "\n\n".join(p for p in parts if p)
 
 
-def _build_user_context(ctx: ReportContext) -> str:
-    """将 context 组装为用户消息"""
+def _build_user_messages(ctx: ReportContext) -> list[dict]:
+    """组装 user 消息列表(2026-08-05): 用户需求独立成一条消息, 引起 LLM 注意
+
+    Returns:
+        [{role: "user", content: 需求}, {role: "user", content: 数据}]
+    """
     report_name = _REPORT_TYPE_NAME.get(ctx.report_type, "午间")
-    lines = [
-        f"请生成 {ctx.stock_name}（{ctx.ts_code}）的{report_name}分析报告。",
+
+    # 消息 1: 用户需求(独立醒目, 置于数据之前)
+    req_lines = [
+        "### 用户需求",
         "",
+        f"请生成 {ctx.stock_name}（{ctx.ts_code}）的{report_name}分析报告。",
+    ]
+    if ctx.query:
+        req_lines.append(f"需求：{ctx.query}")
+    req_msg = {"role": "user", "content": "\n".join(req_lines)}
+
+    # 消息 2: 数据(原 _build_user_context 内容, 不含需求引导)
+    data_lines = [
         "数据源包含以下部分：",
         "",
     ]
 
     if ctx.fetch_data:
-        lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）盘中数据")
-        lines.append(ctx.fetch_data)
-        lines.append("")
+        data_lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）盘中数据")
+        data_lines.append(ctx.fetch_data)
+        data_lines.append("")
 
     if ctx.fetch_message:
-        lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）盘中消息")
-        lines.append(ctx.fetch_message)
-        lines.append("")
+        data_lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）盘中消息")
+        data_lines.append(ctx.fetch_message)
+        data_lines.append("")
 
     # 展示可用的新闻文章（带 body_avail 标签）
     if ctx.articles:
-        lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）相关新闻资讯列表")
-        lines.append("")
+        data_lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）相关新闻资讯列表")
+        data_lines.append("")
         for engine, result in ctx.articles.items():
             preview = result.get("preview")
             if not preview:
@@ -234,7 +248,7 @@ def _build_user_context(ctx: ReportContext) -> str:
             if not articles:
                 continue
             error = result.get("error", "")
-            lines.append(f"**来源: {engine}**" + (f"（{error}）" if error else ""))
+            data_lines.append(f"**来源: {engine}**" + (f"（{error}）" if error else ""))
             for art in articles:
                 title = art.get("title", "")
                 art_id = art.get("id", "")
@@ -242,34 +256,31 @@ def _build_user_context(ctx: ReportContext) -> str:
                 snippet = art.get("snippet", "")[:200]
                 date = art.get("date", "")
                 category = art.get("_category", "")
-                lines.append(f"  - ID: {art_id}")
-                lines.append(f"    body_avail: {body_avail}")
-                lines.append(f"    title: {title}")
+                data_lines.append(f"  - ID: {art_id}")
+                data_lines.append(f"    body_avail: {body_avail}")
+                data_lines.append(f"    title: {title}")
                 if date:
-                    lines.append(f"    时间: {date}")
+                    data_lines.append(f"    时间: {date}")
                 if category:
-                    lines.append(f"    分类: {category}")
+                    data_lines.append(f"    分类: {category}")
                 if snippet and engine != "sinafin":
-                    lines.append(f"    摘要: {snippet}")
-                lines.append("")
+                    data_lines.append(f"    摘要: {snippet}")
+                data_lines.append("")
 
     if ctx.middleman_warnings:
-        lines.append("### 注意事项")
+        data_lines.append("### 注意事项")
         for w in ctx.middleman_warnings:
-            lines.append(f"- {w}")
-        lines.append("")
-
-    if ctx.query:
-        lines.append(f"需求：{ctx.query}")
-        lines.append("")
+            data_lines.append(f"- {w}")
+        data_lines.append("")
 
     if _has_fetchable_articles(ctx.articles):
-        lines.append(f"请开始你的分析。如果需要查看文章正文，使用 {_ARTICLE_TOOL_NAME} 工具。")
+        data_lines.append(f"请开始你的分析。如果需要查看文章正文，使用 {_ARTICLE_TOOL_NAME} 工具。")
     else:
-        lines.append("请开始你的分析。")
-    lines.append("")
-    lines.append("【关键提醒】输出最终报告时，直接以 Markdown 标题开头，不要有任何前缀、思考过程或过渡语句。")
-    return "\n".join(lines)
+        data_lines.append("请开始你的分析。")
+    data_lines.append("")
+    data_lines.append("【关键提醒】输出最终报告时，直接以 Markdown 标题开头，不要有任何前缀、思考过程或过渡语句。")
+
+    return [req_msg, {"role": "user", "content": "\n".join(data_lines)}]
 
 
 # ======================================================================
@@ -462,12 +473,10 @@ def run(ctx: ReportContext) -> tuple[str, int]:
 
     # ── 组装 prompt ──
     system_prompt = _build_system_prompt(ctx.stock_name, ctx.ts_code, ctx.report_type)
-    user_context = _build_user_context(ctx)
+    user_messages = _build_user_messages(ctx)
 
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_context},
-    ]
+    # 消息结构: system → user(用户需求, 独立醒目) → user(数据)
+    messages = [{"role": "system", "content": system_prompt}] + user_messages
 
     # ── 判断是否有可获取正文的文章 ──
     has_articles = _has_fetchable_articles(ctx.articles)
@@ -476,7 +485,7 @@ def run(ctx: ReportContext) -> tuple[str, int]:
 
     _dl("agent_start", stock_name=ctx.stock_name, ts_code=ctx.ts_code,
         has_articles=has_articles, num_engines=len(ctx.articles),
-        user_context_len=len(user_context))
+        user_context_len=sum(len(m.get("content") or "") for m in user_messages))
 
     # ── Agent Loop ──
     for round_num in range(1, MAX_ROUNDS + 1):
