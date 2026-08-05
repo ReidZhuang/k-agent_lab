@@ -712,12 +712,21 @@ def fetch_holdernumber(ts_codes: list[str]) -> dict[str, dict]:
         try:
             df = PRO.stk_holdernumber(ts_code=tc)
             if df is not None and not df.empty:
-                df = df.sort_values("end_date").tail(4)
+                # 过滤缺失记录: end_date 为空 或 holder_num 为 NaN 的期不得进入序列
+                df = df[df["end_date"].notna() & df["holder_num"].notna()]
+                df = df.sort_values("end_date").drop_duplicates("end_date", keep="last").tail(4)
                 info["periods"] = [{"end_date": r["end_date"], "holder_num": r["holder_num"]}
                                    for _, r in df.iterrows()]
                 if len(df) >= 2:
                     cur, prev = float(df["holder_num"].iloc[-1]), float(df["holder_num"].iloc[-2])
                     info["chg_pct"] = round((cur - prev) / prev * 100, 2)
+                if len(df) >= 1:
+                    last_end = str(df["end_date"].iloc[-1])
+                    days = (datetime.strptime(_today(), "%Y%m%d")
+                            - datetime.strptime(last_end, "%Y%m%d")).days
+                    quarter_end = last_end[4:6] + last_end[6:8] in ("0331", "0630", "0930", "1231")
+                    info["staleness_days"] = max(days, 0)
+                    info["disclosure_type"] = "季度披露" if quarter_end else "月度披露"
         except Exception as e:
             log_error(function="fetch_holdernumber", level="WARNING", ts_code=tc,
                       api_name="stk_holdernumber", error_msg=str(e))
@@ -733,10 +742,20 @@ def _fmt_holdernumber_section(hn: dict) -> list[str]:
         return ["## 【股东户数】\n暂无数据。"]
     lines = [f"## 【股东户数】"]
     for p in hn["periods"]:
-        lines.append(f"  {p['end_date']}: {p['holder_num']:,} 户")
+        lines.append(f"  {p['end_date']}: {p['holder_num']:,.0f} 户")
     if hn.get("chg_pct") is not None:
         trend = "筹码集中(户数减少)" if hn["chg_pct"] < 0 else "筹码分散(户数增加)"
         lines.append(f"最新期变化: {hn['chg_pct']:+.2f}% → {trend}")
+    if hn.get("staleness_days") is not None:
+        d = hn["staleness_days"]
+        if d <= 30:
+            flag = "数据较新,可作为近期筹码信号"
+        elif d <= 90:
+            flag = "数据一般,作参考并与期内股价走势结合判断"
+        else:
+            flag = "数据滞后,仅作趋势背景,不作近期判断依据"
+        lines.append(f"⚠️ 数据时效: 最新期 {hn['periods'][-1]['end_date']},"
+                     f"距今 {d} 天({hn.get('disclosure_type', '')}),{flag}")
     lines.append("")
     return lines
 
