@@ -209,15 +209,15 @@ def _build_user_messages(ctx: ReportContext) -> list[dict]:
         [{role: "user", content: 需求}, {role: "user", content: 数据}]
     """
     report_name = _REPORT_TYPE_NAME.get(ctx.report_type, "午间")
+    # 数据/消息块标题按报告类型区分: 日终→"日终数据/消息", 午间→"盘中数据/消息"
+    data_label = "盘中" if ctx.report_type == "noon" else "日终"
 
-    # 消息 1: 用户需求(独立醒目, 置于数据之前)
+    # 消息 1: 用户需求(独立醒目, 置于数据之前; 需求内容已含在首行, 不重复拼接 query)
     req_lines = [
         "### 用户需求",
         "",
         f"请生成 {ctx.stock_name}（{ctx.ts_code}）的{report_name}分析报告。",
     ]
-    if ctx.query:
-        req_lines.append(f"需求：{ctx.query}")
     req_msg = {"role": "user", "content": "\n".join(req_lines)}
 
     # 消息 2: 数据(原 _build_user_context 内容, 不含需求引导)
@@ -227,12 +227,12 @@ def _build_user_messages(ctx: ReportContext) -> list[dict]:
     ]
 
     if ctx.fetch_data:
-        data_lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）盘中数据")
+        data_lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）{data_label}数据")
         data_lines.append(ctx.fetch_data)
         data_lines.append("")
 
     if ctx.fetch_message:
-        data_lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）盘中消息")
+        data_lines.append(f"### {ctx.stock_name}（{ctx.ts_code}）{data_label}消息")
         data_lines.append(ctx.fetch_message)
         data_lines.append("")
 
