@@ -349,6 +349,169 @@ CREATE INDEX IF NOT EXISTS idx_intraday_time ON mid_stock_intraday(fetch_time);
 CREATE INDEX IF NOT EXISTS idx_intraday_code ON mid_stock_intraday(ts_code);
 CREATE INDEX IF NOT EXISTS idx_intraday_date ON mid_stock_intraday(trade_date);
 
+-- ========================== 累积型贴源表(2026-08-06 新增) ==========================
+-- 注意: 以下表为【存量+增量累积型】(回填历史 + 每日增量), 用 CREATE TABLE IF NOT EXISTS,
+--       init_schema() 重跑时【不重建、不清数据】(与上方按天重建的表不同)
+
+-- 16. 券商评级与盈利预测(stg_report_rc, 接口 report_rc, 每晚19~22点更新)
+CREATE TABLE IF NOT EXISTS stg_report_rc (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts_code     TEXT NOT NULL,            -- 股票代码
+    name        TEXT,                     -- 股票名称
+    report_date TEXT NOT NULL,            -- 研报日期 YYYYMMDD
+    report_title TEXT,                    -- 报告标题
+    report_type TEXT,                     -- 报告类型
+    classify    TEXT,                     -- 报告分类
+    org_name    TEXT NOT NULL,            -- 机构名称
+    author_name TEXT,                     -- 作者
+    quarter     TEXT NOT NULL,            -- 预测报告期 如 2026Q4
+    op_rt       REAL,                     -- 预测营业收入(万元)
+    op_pr       REAL,                     -- 预测营业利润(万元)
+    tp          REAL,                     -- 预测利润总额(万元)
+    np          REAL,                     -- 预测净利润(万元)
+    eps         REAL,                     -- 预测每股收益(元)
+    pe          REAL,                     -- 预测市盈率
+    rd          REAL,                     -- 预测股息率
+    roe         REAL,                     -- 预测净资产收益率
+    ev_ebitda   REAL,                     -- 预测EV/EBITDA
+    rating      TEXT,                     -- 卖方评级
+    max_price   REAL,                     -- 预测最高目标价
+    min_price   REAL,                     -- 预测最低目标价
+    imp_dg      TEXT,                     -- 机构关注度
+    create_time TEXT,                     -- TS数据更新时间
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(ts_code, report_date, org_name, quarter)
+);
+CREATE INDEX IF NOT EXISTS idx_report_rc_code ON stg_report_rc(ts_code);
+CREATE INDEX IF NOT EXISTS idx_report_rc_date ON stg_report_rc(report_date);
+
+-- 17. 融资融券明细(stg_margin, 接口 margin_detail, 每天8:30更新T-1)
+CREATE TABLE IF NOT EXISTS stg_margin (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_date  TEXT NOT NULL,            -- 交易日期
+    ts_code     TEXT NOT NULL,            -- TS股票代码
+    name        TEXT,                     -- 股票名称
+    rzye        REAL,                     -- 融资余额(元)
+    rqye        REAL,                     -- 融券余额(元)
+    rzmre       REAL,                     -- 融资买入额(元)
+    rqyl        REAL,                     -- 融券余量(股)
+    rzche       REAL,                     -- 融资偿还额(元)
+    rqchl       REAL,                     -- 融券偿还量(股)
+    rqmcl       REAL,                     -- 融券卖出量(股,份,手)
+    rzrqye      REAL,                     -- 融资融券余额(元)
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(trade_date, ts_code)
+);
+CREATE INDEX IF NOT EXISTS idx_margin_code ON stg_margin(ts_code);
+CREATE INDEX IF NOT EXISTS idx_margin_date ON stg_margin(trade_date);
+
+-- 18. 龙虎榜(stg_top_list, 接口 top_list, 当日17:30后更新)
+CREATE TABLE IF NOT EXISTS stg_top_list (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_date  TEXT NOT NULL,            -- 交易日期
+    ts_code     TEXT NOT NULL,            -- TS代码
+    name        TEXT,                     -- 名称
+    close       REAL,                     -- 收盘价
+    pct_change  REAL,                     -- 涨跌幅
+    turnover_rate REAL,                   -- 换手率
+    amount      REAL,                     -- 总成交额
+    l_sell      REAL,                     -- 龙虎榜卖出额
+    l_buy       REAL,                     -- 龙虎榜买入额
+    l_amount    REAL,                     -- 龙虎榜成交额
+    net_amount  REAL,                     -- 龙虎榜净买入额
+    net_rate    REAL,                     -- 龙虎榜净买额占比
+    amount_rate REAL,                     -- 龙虎榜成交额占比
+    float_values REAL,                    -- 当日流通市值
+    reason      TEXT,                     -- 上榜理由
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(trade_date, ts_code, reason)   -- 同一股同一天可多条(不同上榜理由)
+);
+CREATE INDEX IF NOT EXISTS idx_top_list_code ON stg_top_list(ts_code);
+CREATE INDEX IF NOT EXISTS idx_top_list_date ON stg_top_list(trade_date);
+
+-- 19. 大宗交易(stg_block_trade, 接口 block_trade)
+CREATE TABLE IF NOT EXISTS stg_block_trade (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts_code     TEXT NOT NULL,            -- TS代码
+    trade_date  TEXT NOT NULL,            -- 交易日期
+    price       REAL,                     -- 成交价
+    vol         REAL,                     -- 成交量(万股)
+    amount      REAL,                     -- 成交金额(万元)
+    buyer       TEXT,                     -- 买方营业部
+    seller      TEXT,                     -- 卖方营业部
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(ts_code, trade_date, price, vol, buyer, seller)
+);
+CREATE INDEX IF NOT EXISTS idx_block_trade_code ON stg_block_trade(ts_code);
+CREATE INDEX IF NOT EXISTS idx_block_trade_date ON stg_block_trade(trade_date);
+
+-- 20. 十大流通股东(stg_top10_floatholder, 接口 top10_floatholders, 季度披露)
+CREATE TABLE IF NOT EXISTS stg_top10_floatholder (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts_code     TEXT NOT NULL,            -- TS股票代码
+    ann_date    TEXT,                     -- 公告日期
+    end_date    TEXT NOT NULL,            -- 报告期 YYYYMMDD
+    holder_name TEXT NOT NULL,            -- 股东名称
+    hold_amount REAL,                     -- 持有数量(股)
+    hold_ratio  REAL,                     -- 占总股本比例(%)
+    hold_float_ratio REAL,                -- 占流通股本比例(%)
+    hold_change REAL,                     -- 持股变动
+    holder_type TEXT,                     -- 股东类型
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(ts_code, end_date, holder_name)
+);
+CREATE INDEX IF NOT EXISTS idx_top10_code ON stg_top10_floatholder(ts_code);
+CREATE INDEX IF NOT EXISTS idx_top10_date ON stg_top10_floatholder(end_date);
+
+-- 21. 北向持股(stg_hk_hold, 接口 hk_hold, 2024-08-20起季度披露)
+CREATE TABLE IF NOT EXISTS stg_hk_hold (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    code        TEXT,                     -- 原始代码
+    trade_date  TEXT NOT NULL,            -- 交易日期
+    ts_code     TEXT NOT NULL,            -- TS代码
+    name        TEXT,                     -- 股票名称
+    vol         INTEGER,                  -- 持股数量(股)
+    ratio       REAL,                     -- 持股占比(%)
+    exchange    TEXT,                     -- SH沪股通/SZ深股通/HK港股通
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(ts_code, trade_date)
+);
+CREATE INDEX IF NOT EXISTS idx_hk_hold_code ON stg_hk_hold(ts_code);
+CREATE INDEX IF NOT EXISTS idx_hk_hold_date ON stg_hk_hold(trade_date);
+
+-- 22. 筹码分布-每日汇总(stg_cyq_perf, 接口 cyq_perf, 每天18~19点更新)
+CREATE TABLE IF NOT EXISTS stg_cyq_perf (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts_code     TEXT NOT NULL,            -- 股票代码
+    trade_date  TEXT NOT NULL,            -- 交易日期
+    his_low     REAL,                     -- 历史最低价
+    his_high    REAL,                     -- 历史最高价
+    cost_5pct   REAL,                     -- 5分位成本
+    cost_15pct  REAL,                     -- 15分位成本
+    cost_50pct  REAL,                     -- 50分位成本
+    cost_85pct  REAL,                     -- 85分位成本
+    cost_95pct  REAL,                     -- 95分位成本
+    weight_avg  REAL,                     -- 加权平均成本
+    winner_rate REAL,                     -- 胜率
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(ts_code, trade_date)
+);
+CREATE INDEX IF NOT EXISTS idx_cyq_perf_code ON stg_cyq_perf(ts_code);
+CREATE INDEX IF NOT EXISTS idx_cyq_perf_date ON stg_cyq_perf(trade_date);
+
+-- 23. 筹码分布-分价位(stg_cyq_chips, 接口 cyq_chips, 每天18~19点更新)
+CREATE TABLE IF NOT EXISTS stg_cyq_chips (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts_code     TEXT NOT NULL,            -- 股票代码
+    trade_date  TEXT NOT NULL,            -- 交易日期
+    price       REAL,                     -- 成本价格
+    percent     REAL,                     -- 价格占比(%)
+    etl_time    TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(ts_code, trade_date, price)
+);
+CREATE INDEX IF NOT EXISTS idx_cyq_chips_code ON stg_cyq_chips(ts_code);
+CREATE INDEX IF NOT EXISTS idx_cyq_chips_date ON stg_cyq_chips(trade_date);
+
 -- ========================== 元数据 ==========================
 
 -- 15. 更新日志
