@@ -11,7 +11,7 @@
   - 北向持股      → DB stg_hk_hold(季度披露, 港交所 2024-08 停发日度)
   - 十大流通股东  → DB stg_top10_floatholder(季度披露)
   - 机构调研      → Tushare stk_surv(730天, 显式 fields, 名单+纪要2500截断)
-  - 券商评级      → DB stg_report_rc(ETL 22:00 全市场入库,读库优先;库空→实时+写回库)
+  - 券商评级      → DB stg_report_rc(ETL 22:00 全市场入库,仅读库;接口停用中,库空提示等待)
   - 股东户数      → Tushare stk_holdernumber(最近4期)
   - 风险日历      → Tushare share_float(解禁) + pledge_stat(质押) + disclosure_date(披露计划)
   - 涨停/炸板     → Tushare kpl_list + levistock 涨停池/昨日涨停
@@ -1545,11 +1545,17 @@ def _fmt_top10_section(ts_code: str, tp: dict) -> list[str]:
 #     库空 → 实时单股拉取 + 写回库(幂等) + warning
 # ══════════════════════════════════════════════════════════════
 
-def fetch_report_rc(ts_codes: list[str], lookback_days: int = 365) -> dict[str, dict]:
-    """券商评级: 读库近 12 月(stg_report_rc); 库空 → 实时回退并写回库
+# report_rc 接口已【全面停用】(2026-08-06 用户指示): 禁止任何调用, 报告侧纯读库。
+# 实时回退逻辑已删除(用户明确表示不需要回退); 库空 → 输出提示等待 ETL 数据。
+# 恢复接入见 office/demand/report_rc_dev_log_20260806.md
+_REPORT_RC_DISABLED_MSG = "评级数据缺失(报告侧不实时拉取): 等待 ETL 回填/增量入库"
 
-    注意: 19:30 报告时 22:00 增量未跑 → 用昨日入库数据(标注 latest_report_date);
-    回退仅限库空(ETL 失败)场景, 且写回库避免重复消耗 report_rc 试用额度(10次/天)。
+
+def fetch_report_rc(ts_codes: list[str], lookback_days: int = 365) -> dict[str, dict]:
+    """券商评级: 仅读库 stg_report_rc 近 12 月(ETL 22:00 全市场入库)
+
+    停用说明(2026-08-06): 原实时回退逻辑已删除, 库空直接提示等待 ETL 数据,
+    不调用 report_rc 接口(试用额度已耗尽, 用户要求全面停用)。
     """
     end = _today()
     start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=lookback_days)).strftime("%Y%m%d")
@@ -1563,34 +1569,9 @@ def fetch_report_rc(ts_codes: list[str], lookback_days: int = 365) -> dict[str, 
                 "FROM stg_report_rc WHERE ts_code=? AND report_date>=? "
                 "ORDER BY report_date DESC", (tc, start))
             if not rows:
-                # 实时回退: 单股拉取 + 写回库
-                df = PRO.report_rc(ts_code=tc, start_date=start, end_date=end)
-                if df is None or df.empty:
-                    info["error"] = "库空且实时拉取无数据"
-                    result[tc] = info
-                    continue
-                rows2 = [(
-                    r["ts_code"], r.get("name", ""), r["report_date"],
-                    r.get("report_title", ""), r.get("report_type", ""), r.get("classify", ""),
-                    r["org_name"], r.get("author_name", ""), r["quarter"],
-                    r.get("op_rt"), r.get("op_pr"), r.get("tp"), r.get("np"),
-                    r.get("eps"), r.get("pe"), r.get("rd"), r.get("roe"), r.get("ev_ebitda"),
-                    r.get("rating", ""), r.get("max_price"), r.get("min_price"),
-                    r.get("imp_dg", ""), r.get("create_time", ""),
-                ) for _, r in df.iterrows()]
-                db.insert_batch("stg_report_rc",
-                    ["ts_code", "name", "report_date", "report_title", "report_type",
-                     "classify", "org_name", "author_name", "quarter",
-                     "op_rt", "op_pr", "tp", "np", "eps", "pe", "rd", "roe", "ev_ebitda",
-                     "rating", "max_price", "min_price", "imp_dg", "create_time"],
-                    rows2, ignore=True)
-                log_error(function="fetch_report_rc", level="WARNING", ts_code=tc,
-                          api_name="report_rc_db_fallback",
-                          error_msg=f"库空, 已实时回退并写回 {len(rows2)} 行")
-                rows = [(r["ts_code"], r.get("name", ""), r["report_date"], r.get("report_title", ""),
-                         r["org_name"], r["quarter"], r.get("np"), r.get("eps"),
-                         r.get("rating", ""), r.get("max_price"), r.get("min_price"))
-                        for r in df.to_dict("records")]
+                info["error"] = _REPORT_RC_DISABLED_MSG
+                result[tc] = info
+                continue
             # 统计
             latest_date = max(r[2] for r in rows)
             # 评级分布(近12月)
@@ -1872,7 +1853,7 @@ def fetch_all(stock_names: list[str]) -> dict:
     data["cyq"] = fetch_cyq_db(ts_codes)              # 筹码读库
     data["northbound"] = fetch_northbound_db(ts_codes)  # 北向读库
     data["top10"] = fetch_top10_db(ts_codes)          # 十大流通股东读库
-    data["report_rc"] = fetch_report_rc(ts_codes)     # 券商评级读库(+实时回退)
+    data["report_rc"] = fetch_report_rc(ts_codes)     # 券商评级仅读库(接口停用中)
     margin_data = data.get("margin") or {}
     lhb_data = data.get("lhb") or {}
     mf_data = data.get("moneyflow") or {}

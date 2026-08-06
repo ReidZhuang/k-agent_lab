@@ -1,10 +1,14 @@
 """
 ETL: 券商评级与盈利预测(stg_report_rc, 接口 report_rc)
 
-频控(试用档): 1次/分钟 + 每天 10 次请求 — 脚本内以每天调用次数为最硬约束
+⚠️ 2026-08-06 起【全面停用】(用户指示): 试用档额度(10次/小时 + 10次/天)因测试耗尽,
+    禁止任何调用。恢复条件: 用户明确允许后, 删除下方 DISABLED 保护并参考
+    office/demand/report_rc_dev_log_20260806.md 的恢复步骤。
+
+频控(试用档, 已停用): 1次/分钟 + 10次/小时 + 10次/天 — 脚本内以每天调用次数为最硬约束
 更新窗口: 每晚 19~22 点更新当日数据
 
-用法:
+用法(停用期无效):
   python etl_report_rc.py                # 增量: 库内 MAX(report_date)+1 ~ 今天, 全市场
   python etl_report_rc.py --backfill 20260201 [20260806] [--slice-days 14]
                                          # 回填: 按 slice-days 分片(默认14天/片, 片内<3000条),
@@ -13,6 +17,16 @@ ETL: 券商评级与盈利预测(stg_report_rc, 接口 report_rc)
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+
+# ════════════════════════════════════════════════════════════════
+# 停用保护(2026-08-06, 用户指示): 任何入口直接退出, 不触碰 report_rc 接口
+# 恢复时删除本块即可(读库/写库逻辑均保留, 仅接口调用被屏蔽)
+DISABLED = True
+if DISABLED:
+    print("etl_report_rc 已停用: report_rc 接口接入暂缓(用户指示 2026-08-06)。"
+          "详见 office/demand/report_rc_dev_log_20260806.md")
+    sys.exit(0)
+# ════════════════════════════════════════════════════════════════
 
 import tushare as ts
 
