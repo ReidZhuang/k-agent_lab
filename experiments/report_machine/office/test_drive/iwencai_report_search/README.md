@@ -76,6 +76,24 @@ python search_report.py "贵州茅台 研报" --size 5 --output raw.json   # 写
 PDF 直链拼接：`https://ms.10jqka.com.cn/<path>`。
 ⚠️ 实测坑：该路径 HEAD/GET 均返回 `200 application/pdf` 但 **body 为空**（2026-05 的旧研报，download_tmp 为临时目录，文件已被清理）。推测新发布研报立即下载可行，旧研报只能通过 url 页面阅读文本。
 
+### PDF 全渠道探查结论（2026-08-07，广生堂两篇研报）
+
+| 渠道 | 结果 |
+| --- | --- |
+| 详情接口 `path` → `https://ms.10jqka.com.cn/download_tmp/<hash>.pdf` | 200 application/pdf 但 body 恒为空（已试 UA/Referer/cookie/压缩全组合） |
+| 网页正文页 `window.pdfUrl`（`news.10jqka.com.cn/field/sr/20260520/58153563.shtml`） | `pdfUrl = ""`——页面有"查看研报原文"机制（非空时 iframe 加载 PDF），但该研报服务端为空，即**官方网页端无 PDF 附件** |
+| `gateway/market/api/v1/` 下 7 种下载接口猜测 | 全 404 |
+| APP 数据域 `dq.10jqka.com.cn`、`report.10jqka.com.cn` | 404 / 域名不存在 |
+
+**结论：该研报公网无 PDF 下载渠道，完整正文以 notice-detail 的 `content` 字段为准**（与网页摘要同源，实测逐字一致）。
+
+### 网页端验证发现的端倪
+
+- 研报 news URL 结构：`news.10jqka.com.cn/field/sr/YYYYMMDD/<newsId>.shtml`，日期段=发布日，可直接按 URL 反查
+- 网页正文与 notice-detail `content` 逐字一致 → 数据同源，接口可信
+- 三个系统 ID 互不相等：`duid`（搜索接口，如 ead63780908e6131）≠ `extra.seq`（如 6260545）≠ news ID（如 58153563）
+- 用户实测网页研报中心近半年仅 1 篇，与 API 返回一致 → 覆盖面等价，无额外增量来源
+
 ## 5. 搜索行为实测（2026-08-07，query="广生堂 研报"）
 
 - **每次调用固定只返回 3 个片段**（size=3/10/50/100 结果一样），最多覆盖 2 篇研报
@@ -115,6 +133,7 @@ PDF 直链拼接：`https://ms.10jqka.com.cn/<path>`。
 | `transform_reports.py` | 原始响应 → 结构化研报列表：按 uid 去重合并段落、调详情接口补全文+PDF、输出 `reports_list.json`/`reports_list.csv`。用法：`python transform_reports.py <raw响应.json>` |
 | `probe_pagination.py` | 分页参数探查脚本（结论：全部无效） |
 | `probe_pdf_domains.py` | PDF 域名探查脚本（结论：仅 ms.10jqka.com.cn 可用） |
+| `probe_gateway_apis.py` | gateway 下载接口探查脚本（结论：全 404，无下载接口） |
 | `raw_guangshengtang.json` 等 | 广生堂各 query 原始响应存档 |
 | `report_detail.json` | notice-detail 详情接口样例响应 |
 | `reports_list.json` / `.csv` | 结构化研报列表（含全文/正文 url/pdf_url） |
