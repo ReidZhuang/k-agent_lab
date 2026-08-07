@@ -67,7 +67,7 @@ python search_report.py "贵州茅台 研报" --size 5 --output raw.json   # 写
 
 | 字段 | 说明 |
 | --- | --- |
-| `content` | 研报完整正文（全文） |
+| `content` | ⚠️ **内容摘要**（非全文，约 843 字，四段式：事件/核心观点/盈利预测/风险提示，与网页"内容摘要"逐字一致） |
 | `path` | PDF 文件相对路径，如 `download_tmp/cde23b4b9e9c313d.pdf` |
 | `ext` | `pdf`（确认研报格式为 PDF） |
 | `organize` / `researcher` | 机构 / 作者 |
@@ -85,7 +85,9 @@ PDF 直链拼接：`https://ms.10jqka.com.cn/<path>`。
 | `gateway/market/api/v1/` 下 7 种下载接口猜测 | 全 404 |
 | APP 数据域 `dq.10jqka.com.cn`、`report.10jqka.com.cn` | 404 / 域名不存在 |
 
-**结论：该研报公网无 PDF 下载渠道，完整正文以 notice-detail 的 `content` 字段为准**（与网页摘要同源，实测逐字一致）。
+**结论：该研报公网无 PDF 下载渠道。全文不可整篇获取，可用数据分两层：**
+1. **原文片段**：搜索接口 `source_original` = 研报 PDF 的解析原文（含表格文本，如"股票投资评级/买入|维持/最新收盘价122.40/财务预测表"），整篇约 60 段（`total`），但单次调用固定只返回 top 2-3 段且**无分页**；换不同关键词 query 可钓出不同段落（实测"盈利预测 风险提示"钓出 2025-08-03 篇的财务预测表），但无法保证集齐全部
+2. **内容摘要**：notice-detail 的 `content` = 编辑整理的四段式摘要（与网页摘要逐字一致），非原文
 
 ### 网页端验证发现的端倪
 
