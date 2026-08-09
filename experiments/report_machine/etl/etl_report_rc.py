@@ -1,32 +1,23 @@
 """
 ETL: 券商评级与盈利预测(stg_report_rc, 接口 report_rc)
 
-⚠️ 2026-08-06 起【全面停用】(用户指示): 试用档额度(10次/小时 + 10次/天)因测试耗尽,
-    禁止任何调用。恢复条件: 用户明确允许后, 删除下方 DISABLED 保护并参考
-    office/demand/report_rc_dev_log_20260806.md 的恢复步骤。
+⚠️ 停用记录(2026-08-06): 曾因试用额度耗尽被用户要求全面停用, 2026-08-06 用户授权恢复。
+    记录文档: office/demand/report_rc_dev_log_20260806.md
 
-频控(试用档, 已停用): 1次/分钟 + 10次/小时 + 10次/天 — 脚本内以每天调用次数为最硬约束
+频控(试用档): 1次/分钟 + 10次/小时 + 10次/天 — 请求到达即计数, 失败也算
 更新窗口: 每晚 19~22 点更新当日数据
 
-用法(停用期无效):
+用法:
   python etl_report_rc.py                # 增量: 库内 MAX(report_date)+1 ~ 今天, 全市场
-  python etl_report_rc.py --backfill 20260201 [20260806] [--slice-days 14]
+  python etl_report_rc.py --backfill 20260201 [20260806] [--slice-days 14] [--paginate]
                                          # 回填: 按 slice-days 分片(默认14天/片, 片内<3000条),
+                                         #   --paginate: 同区间内用 offset 分页循环拉全(每页3000)
                                          #   每天调用次数由调度方控制, 脚本不自动节流
 """
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
-
-# ════════════════════════════════════════════════════════════════
-# 停用保护(2026-08-06, 用户指示): 任何入口直接退出, 不触碰 report_rc 接口
-# 恢复时删除本块即可(读库/写库逻辑均保留, 仅接口调用被屏蔽)
-DISABLED = True
-if DISABLED:
-    print("etl_report_rc 已停用: report_rc 接口接入暂缓(用户指示 2026-08-06)。"
-          "详见 office/demand/report_rc_dev_log_20260806.md")
-    sys.exit(0)
-# ════════════════════════════════════════════════════════════════
 
 import tushare as ts
 
@@ -46,30 +37,54 @@ COLUMNS = ["ts_code", "name", "report_date", "report_title", "report_type",
            "rating", "max_price", "min_price", "imp_dg", "create_time"]
 
 
-def fetch_range(start: str, end: str) -> int:
-    """全市场拉取 [start, end] 报告区间, 单次调用(上限3000条)
+def fetch_range(start: str, end: str, paginate: bool = False) -> int:
+    """全市场拉取 [start, end] 报告区间
 
-    若达到 3000 截断: 记录告警并返回已入库行数(调用方需缩小切片重试)
+    Args:
+        paginate: True 时同区间内 offset 分页循环(每页 3000, 直到拉全);
+                  分页防死循环: 若某页 report_date 集合与上一页完全相同, 视为 offset 无效中止
     """
-    df = safe_api_call(PRO.report_rc, logger=logger, retry_wait=61,
-                       start_date=start, end_date=end)
-    if df is None or df.empty:
-        logger.info(f"  [{start}~{end}] 返回空")
-        return 0
-    rows = [(
-        r["ts_code"], r.get("name", ""), r["report_date"],
-        r.get("report_title", ""), r.get("report_type", ""), r.get("classify", ""),
-        r["org_name"], r.get("author_name", ""), r["quarter"],
-        r.get("op_rt"), r.get("op_pr"), r.get("tp"), r.get("np"),
-        r.get("eps"), r.get("pe"), r.get("rd"), r.get("roe"), r.get("ev_ebitda"),
-        r.get("rating", ""), r.get("max_price"), r.get("min_price"),
-        r.get("imp_dg", ""), r.get("create_time", ""),
-    ) for _, r in df.iterrows()]
-    n = db.insert_batch(TABLE, COLUMNS, rows, ignore=True)
-    logger.info(f"  [{start}~{end}] 拉取 {len(rows)} 行(含重复跳过), 入库 {n}")
-    if len(rows) >= 3000:
-        logger.warning(f"  ⚠️  切片 [{start}~{end}] 达到 3000 上限疑似截断, 需缩小切片")
-    return n
+    total = 0
+    offset = 0
+    prev_dates = None
+    while True:
+        # 分钟级频控(1次/分钟, 实测 2026-08-06): 页间必须等待 ≥61s, 否则第2页即被拒
+        if offset > 0:
+            time.sleep(62)
+        # 单次调用, 失败即停不重试(用户要求 2026-08-06): 试用档额度是稀缺资源, 重试消耗窗口计数
+        try:
+            df = PRO.report_rc(start_date=start, end_date=end, offset=offset, limit=3000)
+        except Exception as e:
+            logger.error(f"  [{start}~{end}] 页{offset//3000} report_rc 调用失败(不再重试): {e}")
+            break
+        if df is None or df.empty:
+            logger.info(f"  [{start}~{end}] 页{offset//3000} 返回空, 结束")
+            break
+        rows = [(
+            r["ts_code"], r.get("name", ""), r["report_date"],
+            r.get("report_title", ""), r.get("report_type", ""), r.get("classify", ""),
+            r["org_name"], r.get("author_name", ""), r["quarter"],
+            r.get("op_rt"), r.get("op_pr"), r.get("tp"), r.get("np"),
+            r.get("eps"), r.get("pe"), r.get("rd"), r.get("roe"), r.get("ev_ebitda"),
+            r.get("rating", ""), r.get("max_price"), r.get("min_price"),
+            r.get("imp_dg", ""), r.get("create_time", ""),
+        ) for _, r in df.iterrows()]
+        n = db.insert_batch(TABLE, COLUMNS, rows, ignore=True)
+        total += n
+        logger.info(f"  [{start}~{end}] 页{offset//3000}: 拉取 {len(rows)}, 入库 {n}(累计 {total})")
+        if not paginate or len(rows) < 3000:
+            break
+        # 分页防死循环: 本页日期集合与上页相同 → offset 对该区间无效(如按日排序 offset 被忽略)
+        dates = tuple(sorted(df["report_date"].unique()))
+        if prev_dates is not None and dates == prev_dates:
+            logger.error(f"  ⚠️  offset 分页疑似无效(页{offset//3000}日期集合与上页相同), 中止; "
+                         f"改用 --slice-days 按日期分片")
+            break
+        prev_dates = dates
+        offset += 3000
+    if paginate and total >= 3000:
+        logger.info(f"  ✅ [{start}~{end}] 分页完成, 共 {total} 行")
+    return total
 
 
 def etl_increment():
@@ -99,23 +114,60 @@ def etl_increment():
         return 0
 
 
-def etl_backfill(start: str, end: str, slice_days: int = 14):
-    """回填: 按 slice_days 分片, 每片 1 次调用
+def etl_backfill(start: str, end: str, slice_days: int = 14, paginate: bool = False,
+                 overlap_days: int = 2):
+    """回填: 自动跳过已入库区间, 只拉缺口; 缺口按 slice_days 分片
 
-    注意: 受试用档每天 10 次限制, 调用方应分批执行(每天 7-8 片)
+    断点续传(2026-08-07 用户要求, 避免重复拉取): 先查库内已入库日期覆盖 [lo, hi],
+    目标区间 [start, end] 与之求差得到缺口区间列表, 仅拉缺口部分,
+    不再重拉已入库数据(接口额度是稀缺资源, 重复拉取 = 白花调用次数)。
+    overlap_days: 缺口边界向库内重叠 N 天——截断页的边界日期(库内 MIN/MAX 那天)
+                  可能只入库了一部分, 重叠重拉可补齐当天缺失行(INSERT OR IGNORE 幂等,
+                  多拉的行不重复入库)。默认 2 天。
+    注意: 仅处理头部/尾部缺口; 若库中存在中间空洞, 需人工分区间回填。
+
+    用法:
+      python etl_report_rc.py --backfill 20260206 [20260806] [--slice-days 14] [--paginate] [--overlap-days 2]
     """
     s = datetime.now().isoformat()
-    d_start = datetime.strptime(start, "%Y%m%d")
-    d_end = datetime.strptime(end, "%Y%m%d")
+    r = db.execute(f"SELECT MIN(report_date), MAX(report_date) FROM {TABLE}")
+    lo, hi = (r[0][0], r[0][1]) if r and r[0][0] else (None, None)
+
+    # 缺口 = [start, end] \ [lo, hi](区间差, 边界各向库内重叠 overlap_days 天)
+    gaps = [(start, end)]
+    if lo and hi:
+        ov = timedelta(days=overlap_days)
+        lo_d = datetime.strptime(lo, "%Y%m%d")
+        hi_d = datetime.strptime(hi, "%Y%m%d")
+        if end < lo or start > hi:
+            gaps = [(start, end)]  # 无重叠
+        else:
+            gaps = []
+            if start < lo:
+                # 头部缺口: [start, lo-1+overlap](重叠 lo 起 overlap 天)
+                head_end = (lo_d - timedelta(days=1) + ov).strftime("%Y%m%d")
+                gaps.append((start, min(end, head_end)))
+            if end > hi:
+                # 尾部缺口: [hi+1-overlap, end](重叠 hi 起 overlap 天)
+                tail_start = (hi_d + timedelta(days=1) - ov).strftime("%Y%m%d")
+                gaps.append((max(start, tail_start), end))
+    if not gaps:
+        logger.info(f"  已入库覆盖 {lo}~{hi}, 目标 {start}~{end} 完全在库内, 无缺口, 跳过")
+        return 0
+
     total = 0
-    cur = d_start
-    while cur <= d_end:
-        seg_end = min(cur + timedelta(days=slice_days - 1), d_end)
-        total += fetch_range(cur.strftime("%Y%m%d"), seg_end.strftime("%Y%m%d"))
-        cur = seg_end + timedelta(days=1)
+    for gs, ge in gaps:
+        logger.info(f"  缺口区间: {gs}~{ge}(库内覆盖 {lo}~{hi}, 边界重叠 {overlap_days} 天)")
+        d_start = datetime.strptime(gs, "%Y%m%d")
+        d_end = datetime.strptime(ge, "%Y%m%d")
+        cur = d_start
+        while cur <= d_end:
+            seg_end = min(cur + timedelta(days=slice_days - 1), d_end)
+            total += fetch_range(cur.strftime("%Y%m%d"), seg_end.strftime("%Y%m%d"), paginate)
+            cur = seg_end + timedelta(days=1)
     db.log_update(batch_id(), "report_rc", TABLE, end, s,
                   datetime.now().isoformat(), "SUCCESS", total, total)
-    logger.info(f"  回填完成: {start}~{end}, 共 {total} 行")
+    logger.info(f"  回填完成: {start}~{end}(缺口已拉), 共 {total} 行")
     return total
 
 
@@ -129,6 +181,10 @@ if __name__ == "__main__":
         _slice = 14
         if "--slice-days" in args:
             _slice = int(args[args.index("--slice-days") + 1])
-        etl_backfill(_start, _end, _slice)
+        _paginate = "--paginate" in args
+        _overlap = 2
+        if "--overlap-days" in args:
+            _overlap = int(args[args.index("--overlap-days") + 1])
+        etl_backfill(_start, _end, _slice, _paginate, _overlap)
     else:
         etl_increment()
