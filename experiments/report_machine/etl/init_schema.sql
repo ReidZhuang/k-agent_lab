@@ -351,6 +351,10 @@ CREATE INDEX IF NOT EXISTS idx_intraday_date ON mid_stock_intraday(trade_date);
 
 -- 15. 同花顺一级板块涨幅排名 + 板块内涨幅前5个股（由 stg_ths_member + stg_tencent_snapshot 计算）
 --     板块涨幅 = 流通市值加权 Σ(个股权重×个股涨幅)，权重=流通市值（文档要求自由流通市值，快照以流通市值近似）
+--     排名过滤(同花顺规则, 2026-08-10 确认):
+--       1) 流动性: 流通市值<5亿 或 成交额<1000万的成分股临时剔除出指数计算(不改成分列表)
+--       2) 门槛: 有效成分数 概念≥10 / 行业≥5 / 特色≥20 / 其余≥5, 不足不纳入排名
+--       3) 观察期: 成立<90天的新概念指数(list_date)不纳入排名
 --     个股并列排序：涨跌幅 → 成交额 → 换手率 → 流通市值（文档次级因子中封单量/封板时间快照无数据，用后三者）
 DROP TABLE IF EXISTS mid_ths_sector_top5;
 CREATE TABLE mid_ths_sector_top5 (
@@ -361,14 +365,15 @@ CREATE TABLE mid_ths_sector_top5 (
     sector_name      TEXT,                 -- 板块名称
     sector_type      TEXT,                 -- 板块类型 I行业/N概念/TH特色/R地域/BB宽基/S风格统计/ST风格因子
     sector_cat       TEXT,                 -- 同花顺一级分类：行业/概念/特色/地域/综合
-    sector_rank      INTEGER,              -- 板块涨幅排名（流通市值加权涨幅降序）
-    sector_chg_pct   REAL,                 -- 板块涨幅（流通市值加权）
-    sector_avg_chg_pct REAL,               -- 板块平均涨幅（简单平均，参考）
+    sector_rank      INTEGER,              -- 板块涨幅排名（流通市值加权涨幅降序, 已过滤）
+    sector_chg_pct   REAL,                 -- 板块涨幅（流通市值加权, 剔除流动性不足成分后）
+    sector_avg_chg_pct REAL,               -- 板块平均涨幅（简单平均, 参考）
     member_count     INTEGER,              -- 总成分股数
-    valid_count      INTEGER,              -- 有效快照数
-    up_count         INTEGER,              -- 上涨家数
-    limit_up_count   INTEGER,              -- 涨停家数
-    sector_amount_wan REAL,                -- 板块总成交额（万元）
+    valid_count      INTEGER,              -- 有效快照数（有价格）
+    filtered_count   INTEGER,              -- 通过流动性过滤的成分数（流通市值≥5亿 且 成交额≥1000万）
+    up_count         INTEGER,              -- 上涨家数（过滤后口径）
+    limit_up_count   INTEGER,              -- 涨停家数（过滤后口径）
+    sector_amount_wan REAL,                -- 板块总成交额（万元, 过滤后口径）
     stock_rank       INTEGER,              -- 板块内个股排名 1~5
     stock_ts_code    TEXT,                 -- 个股代码
     stock_name       TEXT,                 -- 个股名称
