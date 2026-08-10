@@ -586,6 +586,98 @@ def etl_mid_stock_intraday():
     return total
 
 
+# 同花顺一级分类映射（stg_ths_index.type → 五分类）
+SECTOR_CAT_MAP = {
+    "I": "行业", "N": "概念", "TH": "特色", "R": "地域",
+    "BB": "综合", "S": "综合", "ST": "综合",
+}
+
+
+def etl_mid_ths_sector_top5():
+    """同花顺一级板块涨幅（流通市值加权）+ 板块内涨幅前5个股
+
+    板块涨幅 = Σ(个股权重 × 个股涨幅)，权重 = 个股流通市值 / 板块流通市值之和
+    （文档要求自由流通市值加权，腾讯快照仅有流通市值，以其近似）
+    个股并列排序：涨跌幅 → 成交额 → 换手率 → 流通市值
+    （文档次级因子为封单量→封板时间→成交额→换手率→流通市值，前两者快照无数据）
+    """
+    logger.info("[mid_ths_top5] 计算同花顺一级板块涨幅与个股Top5...")
+    fetch_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    td = today_trade_date()
+
+    snap = db.execute(
+        "SELECT DISTINCT fetch_time FROM stg_tencent_snapshot ORDER BY fetch_time DESC LIMIT 1")
+    if not snap:
+        logger.warning("  无腾讯快照")
+        return 0
+    snap_time = snap[0][0]
+
+    # 1) 板块级：流通市值加权涨幅 + 板块统计
+    sectors = db.execute("""
+        SELECT m.ts_code, i.name, i.type,
+               COUNT(DISTINCT m.con_code) AS mc,
+               COUNT(DISTINCT CASE WHEN s.price IS NOT NULL THEN m.con_code END) AS vc,
+               ROUND(SUM(s.chg_pct * s.market_cap_flow) / NULLIF(SUM(s.market_cap_flow), 0), 2) AS w_chg,
+               ROUND(AVG(s.chg_pct), 2) AS avg_c,
+               SUM(CASE WHEN s.chg_pct > 0 THEN 1 ELSE 0 END) AS up,
+               SUM(CASE WHEN s.limit_up > 0 AND s.price >= s.limit_up - 0.005 THEN 1 ELSE 0 END) AS lu,
+               ROUND(SUM(s.amount_wan), 2) AS amt
+        FROM stg_ths_member m
+        LEFT JOIN stg_ths_index i ON m.ts_code = i.ts_code
+        LEFT JOIN stg_tencent_snapshot s ON m.con_code = s.ts_code AND s.fetch_time = ?
+        GROUP BY m.ts_code
+        HAVING vc > 0
+    """, (snap_time,))
+    sectors.sort(key=lambda r: r[5] if r[5] is not None else -1e9, reverse=True)
+
+    # 2) 个股级：每板块按排序链取涨幅前5（窗口函数，sqlite>=3.25）
+    stocks = db.execute("""
+        SELECT sec, ts_code, name, chg_pct, amount_wan, turnover_rate, market_cap_flow, lu
+        FROM (
+            SELECT m.ts_code AS sec, s.ts_code, s.name, s.chg_pct, s.amount_wan,
+                   s.turnover_rate, s.market_cap_flow,
+                   CASE WHEN s.limit_up > 0 AND s.price >= s.limit_up - 0.005 THEN 1 ELSE 0 END AS lu,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY m.ts_code
+                       ORDER BY s.chg_pct DESC, s.amount_wan DESC,
+                                s.turnover_rate DESC, s.market_cap_flow DESC
+                   ) AS rn
+            FROM stg_ths_member m
+            JOIN stg_tencent_snapshot s ON m.con_code = s.ts_code AND s.fetch_time = ?
+            WHERE s.price IS NOT NULL
+        )
+        WHERE rn <= 5
+    """, (snap_time,))
+
+    top5 = {}
+    for sec, code, name, chg, amt, tr, mv, lu in stocks:
+        top5.setdefault(sec, []).append((code, name, chg, amt, tr, mv, lu))
+
+    insert = []
+    for rank, (sec, name, typ, mc, vc, w_chg, avg_c, up, lu, amt) in enumerate(sectors, start=1):
+        for srank, (code, sname, schg, samt, str_, smv, slu) in enumerate(top5.get(sec, []), start=1):
+            insert.append((
+                fetch_time, td, sec, name, typ, SECTOR_CAT_MAP.get(typ, ""),
+                rank, w_chg, avg_c, mc, vc, up, lu, amt,
+                srank, code, sname, schg, samt, str_, smv, slu,
+            ))
+
+    if insert:
+        db.insert_batch("mid_ths_sector_top5", [
+            "fetch_time", "trade_date", "sector_ts_code", "sector_name",
+            "sector_type", "sector_cat",
+            "sector_rank", "sector_chg_pct", "sector_avg_chg_pct",
+            "member_count", "valid_count", "up_count", "limit_up_count",
+            "sector_amount_wan",
+            "stock_rank", "stock_ts_code", "stock_name", "stock_chg_pct",
+            "stock_amount_wan", "stock_turnover_rate", "stock_mv_flow",
+            "is_limit_up",
+        ], insert)
+
+    logger.info(f"  mid_ths_sector_top5: {len(sectors)} 板块 / {len(insert)} 行")
+    return len(insert)
+
+
 # ====================================================================
 # 第 4 组: 股票基础信息
 # ====================================================================
@@ -706,6 +798,13 @@ def run_all():
     except Exception as e:
         log_it("mid_stock_intraday", "mid_stock_intraday", 0, s, datetime.now().isoformat(), "FAILED", str(e))
 
+    s = datetime.now().isoformat()
+    try:
+        n = etl_mid_ths_sector_top5()
+        log_it("mid_ths_sector_top5", "mid_ths_sector_top5", n, s, datetime.now().isoformat())
+    except Exception as e:
+        log_it("mid_ths_sector_top5", "mid_ths_sector_top5", 0, s, datetime.now().isoformat(), "FAILED", str(e))
+
     elapsed = time.time() - t0
     logger.info(f"\n✅ ETL 完成！总耗时 {elapsed:.1f}s ({elapsed/60:.1f}min)")
 
@@ -725,6 +824,7 @@ if __name__ == "__main__":
     if "--mid-only" in args:
         etl_mid_sector()
         etl_mid_stock_intraday()
+        etl_mid_ths_sector_top5()
         sys.exit(0)
     if "--stock-basic-only" in args:
         etl_stock_basic()

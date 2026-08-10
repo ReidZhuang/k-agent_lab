@@ -349,6 +349,40 @@ CREATE INDEX IF NOT EXISTS idx_intraday_time ON mid_stock_intraday(fetch_time);
 CREATE INDEX IF NOT EXISTS idx_intraday_code ON mid_stock_intraday(ts_code);
 CREATE INDEX IF NOT EXISTS idx_intraday_date ON mid_stock_intraday(trade_date);
 
+-- 15. 同花顺一级板块涨幅排名 + 板块内涨幅前5个股（由 stg_ths_member + stg_tencent_snapshot 计算）
+--     板块涨幅 = 流通市值加权 Σ(个股权重×个股涨幅)，权重=流通市值（文档要求自由流通市值，快照以流通市值近似）
+--     个股并列排序：涨跌幅 → 成交额 → 换手率 → 流通市值（文档次级因子中封单量/封板时间快照无数据，用后三者）
+DROP TABLE IF EXISTS mid_ths_sector_top5;
+CREATE TABLE mid_ths_sector_top5 (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    fetch_time       TEXT NOT NULL,        -- 取数时间
+    trade_date       TEXT NOT NULL,        -- 交易日
+    sector_ts_code   TEXT NOT NULL,        -- 板块代码
+    sector_name      TEXT,                 -- 板块名称
+    sector_type      TEXT,                 -- 板块类型 I行业/N概念/TH特色/R地域/BB宽基/S风格统计/ST风格因子
+    sector_cat       TEXT,                 -- 同花顺一级分类：行业/概念/特色/地域/综合
+    sector_rank      INTEGER,              -- 板块涨幅排名（流通市值加权涨幅降序）
+    sector_chg_pct   REAL,                 -- 板块涨幅（流通市值加权）
+    sector_avg_chg_pct REAL,               -- 板块平均涨幅（简单平均，参考）
+    member_count     INTEGER,              -- 总成分股数
+    valid_count      INTEGER,              -- 有效快照数
+    up_count         INTEGER,              -- 上涨家数
+    limit_up_count   INTEGER,              -- 涨停家数
+    sector_amount_wan REAL,                -- 板块总成交额（万元）
+    stock_rank       INTEGER,              -- 板块内个股排名 1~5
+    stock_ts_code    TEXT,                 -- 个股代码
+    stock_name       TEXT,                 -- 个股名称
+    stock_chg_pct    REAL,                 -- 个股涨跌幅%
+    stock_amount_wan REAL,                 -- 个股成交额（万元）
+    stock_turnover_rate REAL,              -- 个股换手率%
+    stock_mv_flow    REAL,                 -- 个股流通市值（亿元）
+    is_limit_up      INTEGER,              -- 是否涨停（price >= limit_up-0.005）
+    etl_time         TEXT DEFAULT (datetime('now','localtime'))
+);
+CREATE INDEX IF NOT EXISTS idx_top5_time ON mid_ths_sector_top5(fetch_time);
+CREATE INDEX IF NOT EXISTS idx_top5_sector ON mid_ths_sector_top5(sector_ts_code);
+CREATE INDEX IF NOT EXISTS idx_top5_rank ON mid_ths_sector_top5(sector_rank);
+
 -- ========================== 累积型贴源表(2026-08-06 新增) ==========================
 -- 注意: 以下表为【存量+增量累积型】(回填历史 + 每日增量), 用 CREATE TABLE IF NOT EXISTS,
 --       init_schema() 重跑时【不重建、不清数据】(与上方按天重建的表不同)
