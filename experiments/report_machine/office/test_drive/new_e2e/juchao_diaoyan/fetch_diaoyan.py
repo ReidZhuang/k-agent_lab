@@ -72,15 +72,18 @@ def lookup_stock(keyword: str) -> dict | None:
     return {"code": it["code"], "orgId": it["orgId"], "name": it.get("zwjc")}
 
 
-def infer_column(code: str) -> str:
-    """按代码段推断巨潮 column(交易所)"""
+def infer_column(code: str) -> tuple[str, str]:
+    """按代码段推断巨潮 (column, plate)
+
+    实测: 沪市(column=sse)必须带 plate=sh 才有数据;深市(column=szse) plate 留空即可
+    """
     if code.startswith(("60", "68", "90")):
-        return "sse"
+        return "sse", "sh"
     if code.startswith(("00", "30", "20")):
-        return "szse"
+        return "szse", "sz"
     if code.startswith(("8", "4", "92")):
-        return "bj"
-    return "szse"
+        return "bj", "bj"
+    return "szse", "sz"
 
 
 def fetch_diaoyan_list(stock: dict, start: str = "", end: str = "",
@@ -89,7 +92,7 @@ def fetch_diaoyan_list(stock: dict, start: str = "", end: str = "",
 
     Returns: [{title, date, adjunct_url, pdf_url}]
     """
-    column = infer_column(stock["code"])
+    column, plate = infer_column(stock["code"])
     se_date = f"{start}~{end}" if start and end else ""
     items: list[dict] = []
     page = 1
@@ -97,7 +100,7 @@ def fetch_diaoyan_list(stock: dict, start: str = "", end: str = "",
         data = {
             "pageNum": page, "pageSize": PAGE_SIZE,
             "column": column, "tabName": "relation",
-            "plate": "", "stock": f'{stock["code"]},{stock["orgId"]}',
+            "plate": plate, "stock": f'{stock["code"]},{stock["orgId"]}',
             "searchkey": "", "secid": "", "category": "", "trade": "",
             "seDate": se_date, "sortName": "", "sortType": "", "isHLtitle": "true",
         }
