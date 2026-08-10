@@ -155,6 +155,84 @@ def fetch_reports(sina_code: str, start_date: str = "", end_date: str = "",
     return items
 
 
+# ── 研报正文抓取(vReport_Show 详情页, HTML 非 PDF) ──
+
+_BODY_PAT = re.compile(
+    r'<div class="content">\s*<h1>(.*?)</h1>\s*'
+    r'<div class="creab">(.*?)</div>\s*'
+    r'<div class="blk_container">\s*<p>(.*?)</p>',
+    re.DOTALL,
+)
+
+
+def _clean_body(html_frag: str) -> str:
+    """清洗正文片段: <br>→换行, 去标签, 清理空白"""
+    text = re.sub(r"<br\s*/?>", "\n", html_frag, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = text.replace("&nbsp;", " ")
+    # 每行去首尾空白, 丢弃纯空白行(消除 <br> + &nbsp; 组合产生的脏空行)
+    lines = [ln.strip() for ln in text.split("\n")]
+    text = "\n".join(ln for ln in lines if ln)
+    return text.strip()
+
+
+def fetch_report_body(url: str) -> dict | None:
+    """抓取单篇研报详情页正文
+
+    Returns: {title, category, org, date, body} 或 None(解析失败)
+    """
+    try:
+        html = fetch_page(url)
+    except Exception as e:
+        print(f"[sina_report] 正文抓取失败: {e}", flush=True)
+        return None
+    m = _BODY_PAT.search(html)
+    if not m:
+        return None
+    title = re.sub(r"<[^>]+>", "", m.group(1)).strip()
+    creab = m.group(2)
+    category = org = date = ""
+    for span in re.findall(r"<span>(.*?)</span>", creab, re.DOTALL):
+        text = re.sub(r"<[^>]+>", "", span).strip()
+        if text.startswith("类别："):
+            category = text.replace("类别：", "")
+        elif text.startswith("机构："):
+            org = text.replace("机构：", "")
+        elif text.startswith("日期："):
+            date = text.replace("日期：", "")
+    body = _clean_body(m.group(3))
+    if not body:
+        return None
+    return {"title": title, "category": category, "org": org, "date": date, "body": body}
+
+
+def save_bodies(items: list[dict], out_dir: str) -> str:
+    """抓取 items 中每篇正文,保存为 txt,返回输出目录"""
+    body_dir = os.path.join(out_dir, "body")
+    os.makedirs(body_dir, exist_ok=True)
+    ok = 0
+    for i, it in enumerate(items, 1):
+        info = fetch_report_body(it["url"])
+        if not info:
+            print(f"  ✗ [{i}] {it['date']} {it['org']} — 正文解析失败")
+            continue
+        safe = re.sub(r'[\\/:*?"<>|\s]+', "_", f"{it['date']}_{it['org']}")[:60]
+        path = os.path.join(body_dir, f"{i:02d}_{safe}.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(f"标题: {info['title']}\n")
+            f.write(f"类别: {info['category']}\n")
+            f.write(f"机构: {info['org']}\n")
+            f.write(f"日期: {info['date']}\n")
+            f.write(f"原文: {it['url']}\n\n")
+            f.write(info["body"])
+        it["body_file"] = os.path.relpath(path, out_dir)
+        ok += 1
+        print(f"  ✓ [{i}] {it['date']} {it['org']} — 正文 {len(info['body'])} 字")
+        time.sleep(0.3)
+    print(f"[正文] 成功 {ok}/{len(items)} 篇 → {body_dir}")
+    return body_dir
+
+
 def main():
     ap = argparse.ArgumentParser(description="新浪研报列表抓取")
     ap.add_argument("symbol", help="新浪格式代码,如 sz002821(002821/sz002821/002821.SZ 均可)")
@@ -162,6 +240,8 @@ def main():
     ap.add_argument("--end", default="", help="截止日期 YYYY-MM-DD(默认今天)")
     ap.add_argument("--max", type=int, default=None, help="最多取N条")
     ap.add_argument("--pages", type=int, default=None, help="最多翻N页")
+    ap.add_argument("--body", type=int, default=0,
+                    help="抓最近N篇研报正文(vReport_Show 详情页 HTML)")
     args = ap.parse_args()
 
     sina_code = resolve_code(args.symbol)
@@ -182,11 +262,17 @@ def main():
                            "output", "sina_report")
     os.makedirs(out_dir, exist_ok=True)
     fname = f"{sina_code}_{args.start or 'all'}_{args.end}.json"
-    with open(os.path.join(out_dir, fname), "w", encoding="utf-8") as f:
+    out_full = os.path.join(out_dir, fname)
+    with open(out_full, "w", encoding="utf-8") as f:
         json.dump({"symbol": sina_code, "start": args.start, "end": args.end,
                    "total": len(items), "items": items},
                   f, ensure_ascii=False, indent=2)
-    print(f"\n[输出] → {os.path.join(out_dir, fname)}")
+    print(f"\n[输出] → {out_full}")
+
+    # 正文抓取
+    if args.body > 0:
+        print(f"\n[正文] 抓取最近 {args.body} 篇...")
+        save_bodies(items[:args.body], out_dir)
 
 
 if __name__ == "__main__":
