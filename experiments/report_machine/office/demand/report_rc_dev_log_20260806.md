@@ -88,6 +88,11 @@ _REPORT_RC_DISABLED_MSG = "评级数据缺失(报告侧不实时拉取): 等待 
 - **恢复**: 数据恢复且用户允许后, 将 `etl_report_rc.py` 加回同一 cron 行(在 etl_block_trade.py 之前)
   - 注意: `run_if_trading_day.sh etl_report_rc.py` 会自动把日志写到 `etl/logs/etl_report_rc.log`
 
+**✅ 2026-08-10 已恢复(用户批准)**: 22:00 行恢复为
+`etl_report_rc.py && etl_block_trade.py`(report_rc 在前)。
+同时修复增量起点逻辑(见 §6.10): 从 MAX+1 改为 MAX-2(重叠 2 天回补
+数据源晚到数据, INSERT OR IGNORE 幂等), 增量每次 1 次调用, 额度充裕。
+
 ### 4.4 探测脚本(临时文件, 随会话清理)
 
 - `/home/stockagent/.claude/jobs/e231042d/tmp/probe_reportrc.py`(61 分钟间隔自动探测, **未运行过**)
@@ -227,6 +232,36 @@ _REPORT_RC_DISABLED_MSG = "评级数据缺失(报告侧不实时拉取): 等待 
 **遗留事项**:
 1. **8/8~8/9 增量未拉**(MAX=20260807): 需 1-2 次调用, 待频控窗口释放后补(次日即可)
 2. 存量拉全后恢复 22:00 cron 增量(见 §4.3, 在 etl_block_trade 之前)——需用户允许
+
+---
+
+### 6.10 增量恢复 + 重叠回补修复 (2026-08-10) — 22:00 cron 恢复
+
+**8/10 22:54 手动增量**(1 次调用, 窗口已释放): `[20260808~20260810]` 拉取 391 行,
+入库 388(3 行撞 UNIQUE(ts_code, report_date, org_name, quarter) 被 IGNORE),
+MAX 20260807 → **20260810**, 库 76,388 行, 8/8(周六,61)/8/9(181)/8/10(146)。
+→ 半年覆盖核实: 区间 186 天中 179 个有数据日全在档, 仅春节(2/15~2/20)与
+劳动节(5/1)休市 7 天无数据, 无实质缺天。
+
+**审查发现问题**(cron 恢复前, 用户要求检查脚本):
+1. **增量起点无重叠**: `etl_increment` 起点 = MAX+1, 接口每晚 19~22 点才更新当日数据,
+   22:00 运行时晚到研报会随 MAX 前移**永久丢失**(8/10 工作日仅 146 行 < 平时 300+ 即疑点)
+2. **主 checkout 落后**: 断点续传版(§6.9 改造)只在 worktree 分支, 主 checkout 仍是旧版
+   (无 62s 页间等待、backfill 无断点续传)
+
+**修复**(worktree 分支, 已同步主 checkout):
+1. `etl_increment` 起点改为 **MAX-2**(重叠 2 天回补晚到数据, INSERT OR IGNORE 幂等;
+   每天 22:00 1 次调用, 相对 10次/天 额度充裕) — 明晚起 8/10 晚到数据自动回补
+2. 主 checkout 同步为断点续传新版(62s 页间等待 + backfill 缺口续传 + `--overlap-days`)
+3. 满页防御: 非分页模式恰好 3000 条时告警(疑似截断, 不静默丢数据)
+4. docstring 时间线修正(8/6 停用, 8/10 恢复)
+
+**cron 恢复**(2026-08-10 22:5x, 用户批准):
+`0 22 * * * ... run_if_trading_day.sh etl_report_rc.py && ... run_if_trading_day.sh etl_block_trade.py`
+(report_rc 在前; 包装脚本的重试仅在进程级崩溃时触发, fetch_range 接口失败走 break 不抛异常,
+故不会触发包装脚本重试 — 与"单次失败即停"纪律一致)
+
+**频控纪律不变**: 单次调用失败即停不重试; 无自动监控; 24h 滚动窗口(1次/分钟 + 10次/小时 + 10次/天)。
 
 ---
 
