@@ -426,8 +426,9 @@ def fetch_all(stock_names: list[str]) -> dict:
         sec_ok[7] = bool(inst_data.get(symbols[infos.index(info)], {}).get("rate"))
         lines.append("")
 
-        # 8. 机构调研
-        ssec = _fmt_survey_section(ts_code, data.get("survey", {}).get(ts_code, {}))
+        # 8. 机构调研(午间不输出纪要全文, 只出概要+名单; 2026-08-11)
+        ssec = _fmt_survey_section(ts_code, data.get("survey", {}).get(ts_code, {}),
+                                   with_minutes=False)
         lines.extend(ssec)
         sec_ok[8] = bool(data.get("survey", {}).get(ts_code, {}).get("count"))
         lines.append("")
