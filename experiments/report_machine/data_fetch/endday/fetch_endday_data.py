@@ -877,7 +877,14 @@ def fetch_survey(ts_codes: list[str], days: int = 730) -> dict[str, dict]:
     return result
 
 
-def _fmt_survey_section(ts_code: str, sv: dict) -> list[str]:
+def _fmt_survey_section(ts_code: str, sv: dict, with_minutes: bool = True) -> list[str]:
+    """机构调研节渲染
+
+    Args:
+        with_minutes: 是否输出最新纪要全文(前2500字符)。
+            午间报告为盘中决策场景, 纪要时效差(数月前), 只出概要+名单(2026-08-11);
+            日终报告保留纪要全文。
+    """
     if "error" in sv:
         return [f"❌ 机构调研: {sv['error']}"]
     if not sv.get("count"):
@@ -904,8 +911,8 @@ def _fmt_survey_section(ts_code: str, sv: dict) -> list[str]:
             lines.append(f"    [{r['date']}] 名单: 聚合披露无逐机构名单({len(names)}条)")
         else:
             lines.append(f"    [{r['date']}] 名单: " + " | ".join(names[:15]))
-    # 最新1次纪要(2500字符截断)
-    if sv.get("minutes"):
+    # 最新1次纪要(2500字符截断; 午间场景不输出, 2026-08-11)
+    if with_minutes and sv.get("minutes"):
         lines.append(f"最新调研纪要({sv['recent'][0]['date']}, 前2500字符):")
         lines.append(sv["minutes"].replace("\n", " "))
         if sv.get("minutes_truncated"):
@@ -1646,14 +1653,63 @@ def fetch_report_rc(ts_codes: list[str], lookback_days: int = 180) -> dict[str, 
     return result
 
 
+_RC_DETAIL_DAYS = 90      # 逐条展示窗口: 近90天(2026-08-11 双轨制)
+_RC_DETAIL_MAX = 25       # 逐条封顶份数(防长尾稀释; 超出仅入统计)
+
+
 def _fmt_report_rc_section(ts_code: str, rc: dict) -> list[str]:
+    """券商评级与盈利预测节(2026-08-11 双轨制, 日终/午间同源)
+
+    统计区(6个月全量): 评级分布 + 目标价区间 — 回答"机构整体什么态度", 成本几百字符
+    逐条区(近90天, 封顶25份): 每份报告评级/目标价/盈利预测 — 回答"当下态度 vs 现价";
+      近90天无研报时回退最近25份, 保证 LLM 永远能看到逐条数据
+    更早研报仅入统计不逐条(目标价/预测锚定发布时点, 对现价判断已失效)
+    """
     if "error" in rc:
         return [f"❌ 券商评级: {rc['error']}"]
     n = rc.get("n_reports", 0)
+    reports = rc.get("reports") or []
     lines = [f"## 【券商评级与盈利预测】(研报 {n} 份, 覆盖 {rc.get('earliest_report_date')}~"
              f"{rc.get('latest_report_date')}; 采集口径近6个月, 22点增量次日生效)"]
     lines.append("⚠️ 字段口径: op_pr(tushare 字段名)实测为毛利额, 非营业利润")
-    for i, g in enumerate(rc.get("reports") or [], 1):
+
+    # ── 统计区(6个月全量) ──
+    dist = {}
+    for g in reports:
+        norm = g.get("rating_norm") or "其他"
+        dist[norm] = dist.get(norm, 0) + 1
+    order = ["买入", "增持", "中性", "回避", "行业相对", "无评级", "其他"]
+    dist_str = " | ".join(f"{k}:{dist[k]}" for k in order if dist.get(k))
+    prices_lo = [g["min_price"] for g in reports if g.get("min_price") is not None]
+    prices_hi = [g["max_price"] for g in reports if g.get("max_price") is not None]
+    stat_parts = []
+    if dist_str:
+        stat_parts.append(f"评级分布: {dist_str}")
+    # 库中目标价仅 min_price 有值(单边门槛), max_price 恒空; 用 min/min + max/min 表达区间
+    if prices_lo and prices_hi:
+        stat_parts.append(f"目标价区间 {min(prices_lo):.2f}~{max(prices_hi):.2f}元")
+    elif prices_lo:
+        s = f"目标价 ≥{min(prices_lo):.2f}元"
+        if max(prices_lo) > min(prices_lo):
+            s += f"(最高 {max(prices_lo):.2f}元)"
+        stat_parts.append(s)
+    elif prices_hi:
+        stat_parts.append(f"目标价 ≤{max(prices_hi):.2f}元")
+    if stat_parts:
+        lines.append("📊 统计(6个月): " + " | ".join(stat_parts))
+
+    # ── 逐条区(近90天, 封顶25份; 空则回退最近25份) ──
+    cutoff = (datetime.strptime(_today(), "%Y%m%d") - timedelta(days=_RC_DETAIL_DAYS)).strftime("%Y%m%d")
+    detail = [g for g in reports if g["date"] >= cutoff]
+    fallback = not detail
+    if fallback:
+        detail = reports  # 近90天无研报 → 回退最近(已按日期倒序)
+    truncated = len(detail) > _RC_DETAIL_MAX
+    detail = detail[:_RC_DETAIL_MAX]
+    lines.append(f"【近{_RC_DETAIL_DAYS}天逐条研报】({len(detail)}份"
+                 + (f", 近90天无研报回退最近{_RC_DETAIL_MAX}份" if fallback else "")
+                 + "):")
+    for i, g in enumerate(detail, 1):
         tag = "[行业]" if g.get("rtype") == "非个股" else "[个股]"
         head = f"{i}. {tag} {g['date']} {g['org']}《{g['title']}》"
         attrs = []
@@ -1701,6 +1757,8 @@ def _fmt_report_rc_section(ts_code: str, rc: dict) -> list[str]:
             if v["ev_ebitda"] is not None:
                 parts.append(f"EV/EBITDA {v['ev_ebitda']:.2f}")
             lines.append("  " + " | ".join(parts))
+    if truncated:
+        lines.append(f"…(其余 {n - len(detail)} 份为更早研报, 仅入统计, 不逐条展示)")
     lines.append("")
     return lines
 

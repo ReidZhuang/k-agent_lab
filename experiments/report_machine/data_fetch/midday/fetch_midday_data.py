@@ -1914,10 +1914,10 @@ def fetch_all(stock_names: list[str]) -> dict:
                     lines.append(f"          融券余额: {rqye_s}")
         lines.append("")
 
-        # ── 机构调研(与日终同格式) ──
+        # ── 机构调研(与日终同格式; 午间不输出纪要全文, 2026-08-11) ──
         sv = survey_data.get(ts_code, {})
         if sv:
-            sv_sec = _fd_fmt_survey(ts_code, sv)
+            sv_sec = _fd_fmt_survey(ts_code, sv, with_minutes=False)
             lines.extend(sv_sec)
             lines.append("")
 
