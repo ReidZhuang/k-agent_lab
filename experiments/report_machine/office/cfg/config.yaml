@@ -32,7 +32,7 @@ reporter:
   thread_pool_size: 64
   max_loop_rounds: 8
   article_timeout: 600
-  prompts_dir: prompts_v4
+  prompts_dir: prompts_v5
   article_tool_name: fetch_article_body  # 与 prompts(agent.md/soul.md/SKILL.md)中的工具名统一
   deepseek:
     model: deepseek-v4-flash
