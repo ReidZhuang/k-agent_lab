@@ -11,7 +11,8 @@
   - 北向持股      → DB stg_hk_hold(季度披露, 港交所 2024-08 停发日度)
   - 十大流通股东  → DB stg_top10_floatholder(季度披露)
   - 机构调研      → Tushare stk_surv(730天, 显式 fields, 名单+纪要2500截断)
-  - 券商评级      → DB stg_report_rc(ETL 22:00 全市场入库,仅读库;接口停用中,库空提示等待)
+  - 券商评级      → DB stg_report_rc(ETL 22:00 全市场入库,仅读库;2026-08-11 恢复完整读库解析:
+                    评级归一化新标签/行业报告保留标注/同日多券商研报合并展示)
   - 股东户数      → Tushare stk_holdernumber(最近4期)
   - 风险日历      → Tushare share_float(解禁) + pledge_stat(质押) + disclosure_date(披露计划)
   - 涨停/炸板     → Tushare kpl_list + levistock 涨停池/昨日涨停
@@ -1541,21 +1542,49 @@ def _fmt_top10_section(ts_code: str, tp: dict) -> list[str]:
 
 
 # ══════════════════════════════════════════════════════════════
-# 18. 券商评级与盈利预测 — DB stg_report_rc 读库优先(ETL 22:00 全市场)
-#     库空 → 实时单股拉取 + 写回库(幂等) + warning
-# ══════════════════════════════════════════════════════════════
+# 18. 券商评级与盈利预测 — DB stg_report_rc 读库(ETL 22:00 全市场入库)
+#     2026-08-11 逐条展示版(用户指示: 不聚合, 以每一条调研报告为粒度直接展示):
+#       - 采集口径: 最近 6 个月(180天), 头部标注真实覆盖区间
+#       - 不过滤报告类型: 行业/策略报告(report_type='非个股')保留并标注 [行业], 可作语料
+#       - 每份报告一条: (报告日期, 机构, 标题) 去重, 多预测期(quarter)行并列展示
+#       - 每条预测行仅展示有值的指标(用户原则: 字段为空指标不输出); 过期预测保留不过滤
+#       - 评级/报告类型/分类(非默认值)/作者/目标价等报告属性原样展示, 不做任何统计聚合
+#       - 评级归一化 rating_norm 保留为解析层数据标签(31种→6档), 文本输出不展示(用户指示)
+#     report_rc 接口不调用(2026-08-06 起用户要求报告侧纯读库), 库空提示等待 ETL。
+_REPORT_RC_DISABLED_MSG = "库中无该股研报数据(报告侧不实时拉取): 等待 ETL 22:00 增量入库"
 
-# report_rc 接口已【全面停用】(2026-08-06 用户指示): 禁止任何调用, 报告侧纯读库。
-# 实时回退逻辑已删除(用户明确表示不需要回退); 库空 → 输出提示等待 ETL 数据。
-# 恢复接入见 office/demand/report_rc_dev_log_20260806.md
-_REPORT_RC_DISABLED_MSG = "评级数据缺失(报告侧不实时拉取): 等待 ETL 回填/增量入库"
+# 评级归一化映射(覆盖库内全部 31 种原始值 → 6 档): 仅作解析层数据标签, 库表字段不动
+_RATING_NORM_MAP = {
+    "买入": "买入", "强烈推荐": "买入", "强推": "买入", "推荐": "买入", "买进": "买入",
+    "Buy": "买入", "BUY": "买入",
+    "增持": "增持", "谨慎增持": "增持", "谨慎推荐": "增持",
+    "中性": "中性", "Neutral": "中性", "持有": "中性", "Hold": "中性", "HOLD": "中性",
+    "Equal weight": "中性", "Market-Perform": "中性", "区间操作": "中性",
+    "卖出": "回避", "Sell": "回避", "SELL": "回避", "减持": "回避",
+    "Underperform": "回避", "Underweight": "回避",
+    "跑赢行业": "行业相对", "优于大市": "行业相对", "强于大市": "行业相对",
+    "Outperform": "行业相对", "Overweight": "行业相对",
+    "无": "无评级", "未知": "无评级",
+}
 
 
-def fetch_report_rc(ts_codes: list[str], lookback_days: int = 365) -> dict[str, dict]:
-    """券商评级: 仅读库 stg_report_rc 近 12 月(ETL 22:00 全市场入库)
+def _norm_rating(rating: str) -> str:
+    """评级归一化(数据标签, 不改原值)"""
+    return _RATING_NORM_MAP.get((rating or "").strip(), "其他")
 
-    停用说明(2026-08-06): 原实时回退逻辑已删除, 库空直接提示等待 ETL 数据,
-    不调用 report_rc 接口(试用额度已耗尽, 用户要求全面停用)。
+
+def fetch_report_rc(ts_codes: list[str], lookback_days: int = 180) -> dict[str, dict]:
+    """券商评级与盈利预测: 读库 stg_report_rc(ETL 22:00 全市场入库), 逐条报告粒度
+
+    2026-08-11 逐条展示版(取代聚合共识版, 用户指示: 不聚合, 以每一条调研报告为粒度):
+      - 采集口径: 最近 6 个月(lookback_days=180), 头部标注真实覆盖区间
+      - 每份报告一条: (报告日期, 机构, 标题) 去重, 多预测期(quarter)行并列;
+        过期预测保留不过滤; 不做任何均值/分布/计数聚合
+      - 报告级属性(rating/classify/author/目标价)取组内非空值 — 稀疏字段仅部分行有值
+      - 字段口径(官方): op_rt=预测营业收入(万元), op_pr=预测营业利润(万元,
+        实测≈毛利额, 名实不符, 格式化时标注), tp=利润总额, np=净利润,
+        eps=每股收益(元), pe=市盈率, rd=股息率, roe=净资产收益率,
+        ev_ebitda=EV/EBITDA, max_price/min_price=最高/最低目标价(元)
     """
     end = _today()
     start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=lookback_days)).strftime("%Y%m%d")
@@ -1565,62 +1594,48 @@ def fetch_report_rc(ts_codes: list[str], lookback_days: int = 365) -> dict[str, 
         try:
             rows = db.execute(
                 "SELECT ts_code, name, report_date, report_title, org_name, quarter,"
-                " np, eps, rating, max_price, min_price "
+                " np, eps, rating, max_price, min_price, report_type,"
+                " classify, author_name, op_rt, op_pr, tp, pe, rd, roe, ev_ebitda "
                 "FROM stg_report_rc WHERE ts_code=? AND report_date>=? "
-                "ORDER BY report_date DESC", (tc, start))
+                "ORDER BY report_date DESC, create_time DESC", (tc, start))
             if not rows:
                 info["error"] = _REPORT_RC_DISABLED_MSG
                 result[tc] = info
                 continue
-            # 统计
-            latest_date = max(r[2] for r in rows)
-            # 评级分布(近12月)
-            rating_dist = {}
+            # 报告粒度分组: 同一份报告多预测期行合并(标题/机构/日期相同);
+            # 报告级属性取组内非空值, 目标价等稀疏字段可能仅部分预测期行有值
+            groups = {}
             for r in rows:
-                rt = (r[8] or "未知").strip()
-                rating_dist[rt] = rating_dist.get(rt, 0) + 1
-            # 目标价共识(近3月, max_price 非空)
-            start3m = (datetime.strptime(end, "%Y%m%d") - timedelta(days=90)).strftime("%Y%m%d")
-            tp_rows = [r for r in rows if r[2] >= start3m and r[9] is not None]
-            tp_vals = [float(r[9]) for r in tp_rows]
-            tp_consensus = None
-            if tp_vals:
-                tp_consensus = {
-                    "avg": round(sum(tp_vals) / len(tp_vals), 2),
-                    "max": max(tp_vals), "min": min(tp_vals), "n": len(tp_vals),
-                }
-            # 分季度净利/EPS 共识(最新一份研报的预测)
-            quarter_rows = {}
-            for r in rows:
-                q = r[5]
-                if q and r[6] is not None:
-                    quarter_rows.setdefault(q, []).append(r)
-            q_consensus = {}
-            for q, qr in sorted(quarter_rows.items(), key=lambda x: x[0]):
-                nps = [float(x[6]) for x in qr if x[6] is not None]
-                epss = [float(x[7]) for x in qr if x[7] is not None]
-                if nps:
-                    q_consensus[q] = {
-                        "np_yi": round(sum(nps) / len(nps) / 1e4, 2),  # 万元 → 亿元
-                        "eps": round(sum(epss) / len(epss), 3) if epss else None,
-                        "n": len(nps),
-                    }
-            # 最新 3 份研报(不同 report_date)
-            seen_dates = []
-            reports = []
-            for r in rows:
-                if r[2] not in seen_dates:
-                    seen_dates.append(r[2])
-                    reports.append({"date": r[2], "title": (r[3] or "")[:60],
-                                    "org": r[4], "rating": r[8] or ""})
-                if len(seen_dates) >= 3:
-                    break
+                key = (r[2], r[4], r[3] or "")
+                g = groups.get(key)
+                if g is None:
+                    g = groups[key] = {
+                        "date": r[2], "org": r[4], "title": r[3] or "",
+                        "rtype": r[11] or "", "classify": r[12] or "",
+                        "rating": r[8] or "", "author": r[13] or "",
+                        "max_price": None, "min_price": None, "quarters": {}}
+                if r[8]:
+                    g["rating"] = r[8]
+                if r[12]:
+                    g["classify"] = r[12]
+                if r[13]:
+                    g["author"] = r[13]
+                if r[9] is not None and g["max_price"] is None:
+                    g["max_price"] = r[9]
+                if r[10] is not None and g["min_price"] is None:
+                    g["min_price"] = r[10]
+                if r[5]:
+                    g["quarters"][r[5]] = {
+                        "op_rt": r[14], "op_pr": r[15], "tp": r[16], "np": r[6],
+                        "eps": r[7], "pe": r[17], "rd": r[18], "roe": r[19],
+                        "ev_ebitda": r[20]}
+            reports = sorted(groups.values(), key=lambda g: g["date"], reverse=True)
+            for g in reports:
+                g["rating_norm"] = _norm_rating(g["rating"])  # 归一化数据标签(输出不展示)
             info = {
-                "latest_report_date": latest_date,
-                "n": len(rows),
-                "rating_dist": rating_dist,
-                "tp_consensus": tp_consensus,
-                "quarter_consensus": q_consensus,
+                "earliest_report_date": min(g["date"] for g in reports),
+                "latest_report_date": max(g["date"] for g in reports),
+                "n_reports": len(reports),
                 "reports": reports,
             }
         except Exception as e:
@@ -1634,20 +1649,58 @@ def fetch_report_rc(ts_codes: list[str], lookback_days: int = 365) -> dict[str, 
 def _fmt_report_rc_section(ts_code: str, rc: dict) -> list[str]:
     if "error" in rc:
         return [f"❌ 券商评级: {rc['error']}"]
-    lines = [f"## 【券商评级与盈利预测】(近12月研报 {rc.get('n', 0)} 条, 研报截至 {rc.get('latest_report_date')}; 22点增量次日生效)"]
-    rd = rc.get("rating_dist", {})
-    if rd:
-        top = sorted(rd.items(), key=lambda x: -x[1])[:4]
-        lines.append("评级分布: " + " | ".join(f"{k} {v}" for k, v in top))
-    tp = rc.get("tp_consensus")
-    if tp:
-        lines.append(f"目标价共识(近3月 {tp['n']} 家): {tp['min']} ~ {tp['max']}元(均值 {tp['avg']}元)")
-    qc = rc.get("quarter_consensus", {})
-    if qc:
-        qs = " | ".join(f"{q}: 净利 {v['np_yi']}亿 EPS {v['eps']}元({v['n']}家)" for q, v in list(qc.items())[:3])
-        lines.append(f"盈利预测共识: {qs}")
-    for rep in (rc.get("reports") or [])[:3]:
-        lines.append(f"  [{rep['date']}] {rep['title']} — {rep['org']}({rep['rating']})")
+    n = rc.get("n_reports", 0)
+    lines = [f"## 【券商评级与盈利预测】(研报 {n} 份, 覆盖 {rc.get('earliest_report_date')}~"
+             f"{rc.get('latest_report_date')}; 采集口径近6个月, 22点增量次日生效)"]
+    lines.append("⚠️ 字段口径: op_pr(tushare 字段名)实测为毛利额, 非营业利润")
+    for i, g in enumerate(rc.get("reports") or [], 1):
+        tag = "[行业]" if g.get("rtype") == "非个股" else "[个股]"
+        head = f"{i}. {tag} {g['date']} {g['org']}《{g['title']}》"
+        attrs = []
+        if g.get("rating"):
+            attrs.append(f"卖方评级：{g['rating']}")
+        if g.get("rtype") and g["rtype"] != "非个股":
+            attrs.append(f"报告类型：{g['rtype']}")
+        if g.get("classify") and g["classify"] not in ("一般报告", "无"):
+            attrs.append(f"分类：{g['classify']}")
+        if g.get("author") and g["author"] != "无":
+            attrs.append(f"作者：{g['author']}")
+        if attrs:
+            head += " | " + " | ".join(attrs)
+        lines.append(head)
+        # 目标价(报告级, 有值才输出; 稀疏字段可能只有一端)
+        tp = []
+        if g.get("min_price") is not None and g.get("max_price") is not None:
+            tp.append(f"目标价 {g['min_price']:.2f}~{g['max_price']:.2f}元")
+        elif g.get("min_price") is not None:
+            tp.append(f"目标价 ≥{g['min_price']:.2f}元")
+        elif g.get("max_price") is not None:
+            tp.append(f"目标价 ≤{g['max_price']:.2f}元")
+        if tp:
+            lines.append("  " + " | ".join(tp))
+        # 各预测期行(升序: 近→远), 仅展示有值的指标(字段为空指标不输出)
+        for q in sorted(g.get("quarters", {})):
+            v = g["quarters"][q]
+            parts = [f"{q}:"]
+            if v["op_rt"] is not None:
+                parts.append(f"营收 {v['op_rt'] / 1e4:.2f}亿")
+            if v["op_pr"] is not None:
+                parts.append(f"毛利 {v['op_pr'] / 1e4:.2f}亿")
+            if v["tp"] is not None:
+                parts.append(f"利润总额 {v['tp'] / 1e4:.2f}亿")
+            if v["np"] is not None:
+                parts.append(f"净利润 {v['np'] / 1e4:.2f}亿")
+            if v["eps"] is not None:
+                parts.append(f"EPS {v['eps']:.2f}元")
+            if v["pe"] is not None:
+                parts.append(f"PE {v['pe']:.2f}")
+            if v["roe"] is not None:
+                parts.append(f"ROE {v['roe']:.2f}%")
+            if v["rd"] is not None:
+                parts.append(f"股息率 {v['rd']:.2f}%")
+            if v["ev_ebitda"] is not None:
+                parts.append(f"EV/EBITDA {v['ev_ebitda']:.2f}")
+            lines.append("  " + " | ".join(parts))
     lines.append("")
     return lines
 
