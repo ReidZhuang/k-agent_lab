@@ -103,15 +103,20 @@ ball.set_token("xq_a_token={xq_a_token}; u={u}")
 
 
 def verify_token(xq_a_token: str, u: str) -> bool:
-    """验证 Token 是否有效"""
+    """验证 Token 是否有效
+
+    注意: 必须用资金流接口 capital_flow(校验严格, 失效返回 400016)。
+    行情接口 quotec 对 token 校验宽松, 失效 token 也能通过(曾导致误报有效)。
+    """
     try:
         import pysnowball as ball
         ball.set_token(f"xq_a_token={xq_a_token}; u={u}")
-        data = ball.quotec("SZ300750")
+        from pysnowball.capital import capital_flow
+        data = capital_flow("SZ000001")
         if isinstance(data, dict) and data.get("error_code") == 0:
-            price = data.get("data", [{}])[0].get("current", "?")
-            _log(f"✅ Token 有效! 宁德时代当前价: {price}")
+            _log(f"✅ Token 有效! (资金流接口 error_code=0)")
             return True
+        _log(f"❌ Token 失效! 资金流接口返回: {data.get('error_code') if isinstance(data, dict) else data}")
         return False
     except Exception as e:
         _log(f"❌ Token 验证异常: {e}")

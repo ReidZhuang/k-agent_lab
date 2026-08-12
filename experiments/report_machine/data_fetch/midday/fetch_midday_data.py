@@ -282,12 +282,53 @@ def fetch_margin(ts_codes: list[str]) -> dict[str, dict]:
 _SNOWBALL_INITED = False
 
 
+def _refresh_token_file(token_path: Path) -> tuple[str, str]:
+    """调用 snowball_token/refresh_token.py --force 刷新, 返回 (xq, u); 失败返回 ("", "")"""
+    import subprocess
+    import sys as _sys
+    _refresh_script = Path(__file__).resolve().parent.parent.parent / "snowball_token" / "refresh_token.py"
+    if not _refresh_script.exists():
+        return "", ""
+    try:
+        result = subprocess.run(
+            [_sys.executable, str(_refresh_script), "--force"],
+            capture_output=True, text=True, timeout=180,
+        )
+        print(result.stdout, file=sys.stderr)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+    except Exception as e:
+        print(f"[snowball] 刷新进程异常: {e}", file=sys.stderr)
+        return "", ""
+    if token_path.exists():
+        import json
+        with open(token_path) as f:
+            cfg = json.load(f)
+        return cfg.get("xq_a_token", ""), cfg.get("u", "")
+    return "", ""
+
+
+def _check_token_valid() -> bool:
+    """用敏感接口 capital_flow 实测 token 有效性
+
+    注意: 行情接口(quotec)对 token 校验宽松, 失效 token 也能通过;
+    资金流接口 capital_flow 校验严格(失效返回 error_code 400016), 用它验证。
+    """
+    import pysnowball as ball
+    try:
+        from pysnowball.capital import capital_flow
+        d = capital_flow("SZ000001")  # 平安银行, 稳定存在
+        return bool(d and d.get("error_code") == 0)
+    except Exception:
+        return False
+
+
 def _init_snowball():
+    """取数前初始化雪球 token: 文件缺失或 token 失效(400016)时自动刷新"""
     global _SNOWBALL_INITED
     if _SNOWBALL_INITED:
         return
     try:
-        # 先尝试直接从 config 读取
         import json
         token_path = Path(__file__).parent / "config" / "snowball_token.json"
         xq, u = "", ""
@@ -300,35 +341,22 @@ def _init_snowball():
         if xq and u:
             import pysnowball as ball
             ball.set_token(f"xq_a_token={xq}; u={u}")
+            if _check_token_valid():
+                _SNOWBALL_INITED = True
+                return
+            # token 已过期(资金流接口 400016) → 刷新
+            print("[snowball] Token 已过期, 尝试自动刷新...", file=sys.stderr)
+        else:
+            # Token 文件不存在或为空 → 自动刷新
+            print("[snowball] 未找到有效 Token，尝试自动刷新...", file=sys.stderr)
+
+        xq, u = _refresh_token_file(token_path)
+        if xq and u:
+            import pysnowball as ball
+            ball.set_token(f"xq_a_token={xq}; u={u}")
             _SNOWBALL_INITED = True
+            print("[snowball] Token 自动刷新成功", file=sys.stderr)
             return
-
-        # Token 文件不存在或为空 → 尝试自动刷新
-        print("[snowball] 未找到有效 Token，尝试自动刷新...", file=sys.stderr)
-        _refresh_script = Path(__file__).resolve().parent.parent.parent / "snowball_token" / "refresh_token.py"
-        if _refresh_script.exists():
-            import subprocess
-            import sys as _sys
-            result = subprocess.run(
-                [_sys.executable, str(_refresh_script), "--force"],
-                capture_output=True, text=True, timeout=120,
-            )
-            print(result.stdout, file=sys.stderr)
-            if result.stderr:
-                print(result.stderr, file=sys.stderr)
-
-            # 刷新后再读一次
-            if token_path.exists():
-                with open(token_path) as f:
-                    cfg = json.load(f)
-                xq = cfg.get("xq_a_token", "")
-                u = cfg.get("u", "")
-                if xq and u:
-                    import pysnowball as ball
-                    ball.set_token(f"xq_a_token={xq}; u={u}")
-                    _SNOWBALL_INITED = True
-                    print("[snowball] Token 自动刷新成功", file=sys.stderr)
-                    return
 
         print("[snowball] Token 自动刷新失败，请手动运行 refresh_token.py", file=sys.stderr)
         _SNOWBALL_INITED = True
