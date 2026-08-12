@@ -1,28 +1,34 @@
 """
-盘中数据取数脚本 — 日终(15:00 收盘后,18:30 运行)数据获取
+盘中数据取数脚本 — 日终(15:00 收盘后,19:30 运行)数据获取
 
-设计(对应 office/demand/endday_report/requirements.md):
+设计(对应 office/demand/endday_report/requirements.md + 缺失数据补齐方案 20260805):
   - 今日收盘行情   → DB stg_tencent_snapshot / mid_stock_intraday(ETL 18:00 快照)
-  - 融资融券多日   → Tushare margin_detail(250日) + daily_basic(250日流通市值)
+  - 融资融券多日   → DB stg_margin(ETL 11:31 T-1 增量,读库优先) + daily_basic(250日流通市值)
                      → 杠杆方向/拥挤度分位/融资盘成本区/背离/买卖结构/融券
-  - 龙虎榜        → Tushare top_list + top_inst(T 日盘后,回退 T-1)
+  - 龙虎榜        → DB stg_top_list(ETL 19:10 当天入库,读库优先) + top_inst 席位(实时)
   - 个股资金流多日 → Tushare moneyflow(20日) + 雪球 capital_flow/capital_assort/capital_history
-  - 机构持仓      → 同花顺 F10 org_holder 四端点(rate/tab/detail/rate_price)
-  - 机构调研      → Tushare stk_surv(近180天)
+  - 机构持仓      → 同花顺 F10 org_holder(rate 8期 + tab + rate_price 8期 + detail 近3期基金 type=015003)
+  - 北向持股      → DB stg_hk_hold(季度披露, 港交所 2024-08 停发日度)
+  - 十大流通股东  → DB stg_top10_floatholder(季度披露)
+  - 机构调研      → Tushare stk_surv(730天, 显式 fields, 名单+纪要2500截断)
+  - 券商评级      → DB stg_report_rc(ETL 22:00 全市场入库,仅读库;2026-08-11 恢复完整读库解析:
+                    评级归一化新标签/行业报告保留标注/同日多券商研报合并展示)
   - 股东户数      → Tushare stk_holdernumber(最近4期)
   - 风险日历      → Tushare share_float(解禁) + pledge_stat(质押) + disclosure_date(披露计划)
   - 涨停/炸板     → Tushare kpl_list + levistock 涨停池/昨日涨停
   - 板块          → mid_sector_ths(最新快照,非收盘则回退 stg_ths_daily)
-  - 技术面        → 新浪K线(收盘后日线完整,直接用最近20日)
+  - 技术面        → 新浪K线(收盘后日线完整,直接用最近20日) + 筹码加权成本锚点(DB stg_cyq_perf)
+  - 筹码成本分布  → DB stg_cyq_perf / stg_cyq_chips(ETL 19:10 当天入库,探测回退 T-1)
   - 业绩趋势      → Tushare fina_indicator(最近4期)
   - 公告补充      → Tushare 业绩预告/快报/增减持/波动/分红/审计(T 日探测,回退 T-1)
+  - 大宗交易      → DB stg_block_trade(ETL 22:00 入库,近90天;库空→实时回退)
   - 全市场情绪    → 财联社 levistock(收盘后)
 
 输入: 个股名称列表 ['宁德时代', '比亚迪']
 输出: {'宁德时代': '内容string', '比亚迪': '内容string', "warning": {...}}
 
 约定: 任何数据块输出时附实际数据日期标签;T 日数据缺失时回退 T-1 并标注。
-适用于交易日 18:30 左右调用。
+适用于交易日 19:30 左右调用(龙虎榜+筹码 19:10 已入库;大宗/研报用昨日入库数据标注)。
 """
 
 import sys
@@ -64,6 +70,7 @@ _SECTION_NAMES = {
     4: "龙虎榜", 5: "个股资金流", 6: "机构持仓", 7: "机构调研",
     8: "股东户数", 9: "风险日历", 10: "涨停炸板", 11: "板块地位",
     12: "技术面成本地图", 13: "业绩趋势", 14: "公告补充", 15: "大宗交易",
+    16: "北向持股", 17: "十大流通股东", 18: "券商评级", 19: "筹码成本",
 }
 _CRITICAL_SECTIONS = {1, 2, 3, 5, 12, 13}
 
@@ -207,16 +214,43 @@ def _fmt_quote_section(name: str, ts_code: str, q: dict, snap_time: str) -> list
 # 3. 融资融券多日分析(杠杆章)— margin_detail 250日 + daily_basic 250日
 # ══════════════════════════════════════════════════════════════
 
+_MARGIN_COLS = ["trade_date", "ts_code", "name", "rzye", "rqye", "rzmre",
+                "rqyl", "rzche", "rqchl", "rqmcl", "rzrqye"]
+
+
 def _fetch_margin_series(ts_code: str, ndays: int = 250) -> pd.DataFrame | None:
-    """拉 margin_detail 历史序列 + daily_basic(流通市值/收盘价) 合并"""
+    """融资融券序列: 读库 stg_margin 优先(ETL 11:31 全市场 T-1 增量 + 回填), 不足则实时回退
+
+    + daily_basic(流通市值/收盘价) 实时合并(行情未入 stg_ 表)
+    """
     end = _tushare_trade_date()  # margin/daily_basic 为 T-1 数据
     start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=int(ndays * 1.8))).strftime("%Y%m%d")
-    dfm = PRO.margin_detail(ts_code=ts_code, start_date=start, end_date=end)
-    if dfm is None or dfm.empty:
-        return None
+    # 1) 读库
+    try:
+        rows = db.execute(
+            f"SELECT {','.join(_MARGIN_COLS)} FROM stg_margin "
+            "WHERE ts_code=? AND trade_date<=? ORDER BY trade_date", (ts_code, end))
+        if rows:
+            dfm = pd.DataFrame(rows, columns=_MARGIN_COLS)
+            if len(dfm) < 40:
+                # 库数据不足(如增量缺失), 实时补齐
+                dfr = PRO.margin_detail(ts_code=ts_code, start_date=start, end_date=end)
+                if dfr is not None and not dfr.empty:
+                    dfm = dfr.sort_values("trade_date")
+            dfm = dfm.sort_values("trade_date")
+        else:
+            dfm = PRO.margin_detail(ts_code=ts_code, start_date=start, end_date=end)
+            if dfm is None or dfm.empty:
+                return None
+            dfm = dfm.sort_values("trade_date")
+    except Exception:
+        # 2) 库异常 → 实时回退
+        dfm = PRO.margin_detail(ts_code=ts_code, start_date=start, end_date=end)
+        if dfm is None or dfm.empty:
+            return None
+        dfm = dfm.sort_values("trade_date")
     dfd = PRO.daily_basic(ts_code=ts_code, start_date=start, end_date=end,
                           fields="trade_date,circ_mv,close")
-    dfm = dfm.sort_values("trade_date")
     if dfd is not None and not dfd.empty:
         dfm = dfm.merge(dfd[["trade_date", "circ_mv", "close"]], on="trade_date", how="left")
     return dfm
@@ -312,21 +346,92 @@ def _fmt_margin_section(ts_code: str, name: str, m: dict) -> list[str]:
 # 4. 龙虎榜 — top_list + top_inst(T日探测)
 # ══════════════════════════════════════════════════════════════
 
+def _lhb_from_rows(rows: list, date_used: str) -> dict:
+    """stg_top_list 行 → 龙虎榜 info(同一股票同日多 reason 合并)"""
+    r0 = rows[0]
+    info = {
+        "date_used": date_used, "listed": True,
+        "reason": " | ".join(r[14] or "" for r in rows if r[14]),
+        "close": r0[3], "pct_change": r0[4], "turnover_rate": r0[5],
+        "net_amount_wan": round(float(r0[11] or 0) / 1e4, 2),
+        "l_buy_wan": round(float(r0[9] or 0) / 1e4, 2),
+        "l_sell_wan": round(float(r0[8] or 0) / 1e4, 2),
+    }
+    return info
+
+
 def fetch_lhb(ts_codes: list[str]) -> dict[str, dict]:
-    """龙虎榜: top_list(每日) + top_inst(席位明细)"""
+    """龙虎榜: DB stg_top_list 读库优先(ETL 19:10 当天入库) + top_inst 席位(实时)
+
+    库无数据(ETL 失败/未回填) → 实时回退原逻辑(T 日探测, 回退 T-1)
+    """
     td, prev = _today(), _tushare_trade_date()
     result = {tc: {"date_used": prev} for tc in ts_codes}
     try:
+        # 1) 读库: 最新 trade_date(≤今天)
+        try:
+            r = db.execute("SELECT MAX(trade_date) FROM stg_top_list WHERE trade_date<=?", (td,))
+            db_latest = r[0][0] if r and r[0][0] else None
+        except Exception:
+            db_latest = None
+        db_data = {}
+        if db_latest:
+            rows = db.execute(
+                "SELECT ts_code, trade_date, name, close, pct_change, turnover_rate, amount,"
+                " l_sell, l_buy, l_amount, net_amount, net_rate, amount_rate, float_values, reason"
+                " FROM stg_top_list WHERE trade_date=?", (db_latest,))
+            for row in rows:
+                db_data.setdefault(row[0], []).append(row)
+
+        # 2) top_inst 席位(实时, 全市场单次; 与库最新日对齐)
+        ti, ti_date = None, None
+        try:
+            ti, ti_date = _try_then_prev(lambda d: PRO.top_inst(trade_date=d), td, prev)
+            if ti is not None and not ti.empty:
+                ti = ti[ti["side"].isin([0, 1])]  # 0=买入前5 1=卖出前5
+        except Exception:
+            pass
+
+        def _attach_seats(info, tc):
+            """给 info 挂买卖席位(机构专用标记)"""
+            if ti is None or ti.empty:
+                return
+            sub = ti[ti["ts_code"] == tc]
+            if sub.empty:
+                return
+            buys, sells = sub[sub["side"] == 0], sub[sub["side"] == 1]
+            info["buy_seats"] = [
+                {"name": x["exalter"], "net_wan": round(float(x.get("net_buy", 0)) / 1e4, 2),
+                 "buy_wan": round(float(x.get("buy", 0)) / 1e4, 2),
+                 "sell_wan": round(float(x.get("sell", 0)) / 1e4, 2)}
+                for _, x in buys.head(5).iterrows()]
+            info["sell_seats"] = [
+                {"name": x["exalter"], "net_wan": round(float(x.get("net_buy", 0)) / 1e4, 2),
+                 "buy_wan": round(float(x.get("buy", 0)) / 1e4, 2),
+                 "sell_wan": round(float(x.get("sell", 0)) / 1e4, 2)}
+                for _, x in sells.head(5).iterrows()]
+            if info.get("buy_seats"):
+                top = max(info["buy_seats"], key=lambda s: s["net_wan"])
+                total = sum(s["net_wan"] for s in info["buy_seats"])
+                info["buy1_ratio"] = round(top["net_wan"] / total * 100, 1) if total else None
+                info["buy1_name"] = top["name"]
+                info["inst_buy_count"] = sum(1 for s in info["buy_seats"] if "机构专用" in s["name"])
+
+        if db_latest and db_data:
+            # 读库路径: 标注库数据日期(当天 19:10 入库 = 当天实锤)
+            for tc in ts_codes:
+                if tc not in db_data:
+                    result[tc] = {"date_used": db_latest, "listed": False}
+                    continue
+                info = _lhb_from_rows(db_data[tc], db_latest)
+                _attach_seats(info, tc)
+                result[tc] = info
+            return result
+
+        # 3) 库空 → 实时回退(原逻辑)
         tl, tl_date = _try_then_prev(lambda d: PRO.top_list(trade_date=d), td, prev)
         if tl is not None and not tl.empty:
             tl_map = tl.set_index("ts_code")
-            ti, ti_date = None, None
-            try:
-                ti, ti_date = _try_then_prev(lambda d: PRO.top_inst(trade_date=d), td, prev)
-                if ti is not None and not ti.empty:
-                    ti = ti[ti["side"].isin([0, 1])]  # 0=买入前5 1=卖出前5
-            except Exception:
-                pass
             for tc in ts_codes:
                 if tc not in tl_map.index:
                     result[tc] = {"date_used": tl_date, "listed": False}
@@ -341,26 +446,7 @@ def fetch_lhb(ts_codes: list[str]) -> dict[str, dict]:
                     "l_sell_wan": round(float(r.get("l_sell", 0)) / 1e4, 2),
                     "turnover_rate": r.get("turnover_rate"),
                 }
-                if ti is not None and not ti.empty:
-                    sub = ti[ti["ts_code"] == tc]
-                    if not sub.empty:
-                        buys, sells = sub[sub["side"] == 0], sub[sub["side"] == 1]
-                        info["buy_seats"] = [
-                            {"name": x["exalter"], "net_wan": round(float(x.get("net_buy", 0)) / 1e4, 2),
-                             "buy_wan": round(float(x.get("buy", 0)) / 1e4, 2),
-                             "sell_wan": round(float(x.get("sell", 0)) / 1e4, 2)}
-                            for _, x in buys.head(5).iterrows()]
-                        info["sell_seats"] = [
-                            {"name": x["exalter"], "net_wan": round(float(x.get("net_buy", 0)) / 1e4, 2),
-                             "buy_wan": round(float(x.get("buy", 0)) / 1e4, 2),
-                             "sell_wan": round(float(x.get("sell", 0)) / 1e4, 2)}
-                            for _, x in sells.head(5).iterrows()]
-                        if info["buy_seats"]:
-                            top = max(info["buy_seats"], key=lambda s: s["net_wan"])
-                            total = sum(s["net_wan"] for s in info["buy_seats"])
-                            info["buy1_ratio"] = round(top["net_wan"] / total * 100, 1) if total else None
-                            info["buy1_name"] = top["name"]
-                            info["inst_buy_count"] = sum(1 for s in info["buy_seats"] if "机构专用" in s["name"])
+                _attach_seats(info, tc)
                 result[tc] = info
     except Exception as e:
         log_error(function="fetch_lhb", level="WARNING", api_name="top_list", error_msg=str(e))
@@ -555,8 +641,36 @@ def _ths_fetch_json(url: str) -> dict:
     return data
 
 
+def _chg(v):
+    try:
+        return float(v or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _is_passive_fund(org_name: str) -> bool:
+    """被动基金判定: 名称含 指数/ETF/联接 等被动跟踪标识"""
+    return any(k in org_name for k in ("指数", "ETF", "联接"))
+
+
+def _fetch_ths_detail(sym: str, report: str, type_code: str = "015003") -> list:
+    """同花顺 detail 单报告期全量分页(默认基金 type=015003)"""
+    rows_all = []
+    page = 1
+    while True:
+        d = _ths_fetch_json(
+            f"{_THS_BASE}/basicapi/holder/stock/org_holder/detail?code={sym}&date={report}&page={page}&size=15&type={type_code}")["data"]
+        rows = d.get("data", [])
+        rows_all.extend(rows)
+        if len(rows) < 15:
+            break
+        page += 1
+    return rows_all
+
+
 def fetch_ths_institution(symbols: list[str]) -> dict[str, dict]:
-    """同花顺 F10 机构持仓(二次开发): rate(8期)/tab(类型)/detail(最新期)/rate_price(占比+股价)
+    """同花顺 F10 机构持仓(增强): rate(8期)/tab(类型)/rate_price(8期占比+股价)
+    + detail 近3期基金明细(type=015003): 主动/被动拆分、增减持 Top3、主动净变动、增量建仓成本
 
     Args:
         symbols: 纯数字代码列表 ['300750']
@@ -568,43 +682,53 @@ def fetch_ths_institution(symbols: list[str]) -> dict[str, dict]:
             rate = _ths_fetch_json(f"{_THS_BASE}/basicapi/holder/stock/org_holder/rate?code={sym}&limit=8&year=0")["data"]
             tab = _ths_fetch_json(f"{_THS_BASE}/basicapi/holder/stock/org_holder/tab?code={sym}&year=0&limit=5")["data"]
             rp = _ths_fetch_json(f"{_THS_BASE}/basicapi/holder/stock/org_holder/rate_price?code={sym}&cate=fund&limit=8&year=0")["data"]
-            # detail: 最新报告期分页
-            latest = next((d for d in tab if d.get("is_updating")), tab[0] if tab else None)
-            details = []
-            if latest:
-                page = 1
-                while True:
-                    d = _ths_fetch_json(
-                        f"{_THS_BASE}/basicapi/holder/stock/org_holder/detail?code={sym}&date={latest['report']}&page={page}&size=15&type=all")["data"]
-                    rows = d.get("data", [])
-                    details.extend(rows)
-                    if len(rows) < 15:
-                        break
-                    page += 1
             info["rate"] = rate          # [{date, org_num, total_rate, total_holder_change_rate}]
             info["tab"] = tab            # [{date, tab_list: [{name, rate, holder_num}]}]
             info["rate_price"] = rp      # [{date, rate, price}]
+            latest = next((d for d in tab if d.get("is_updating")), tab[0] if tab else None)
             info["report_date"] = latest["date"] if latest else None
-            # 明细统计: 新进/增持/减持
-            if details:
-                def _chg(v):
-                    try:
-                        return float(v or 0)
-                    except (TypeError, ValueError):
-                        return 0.0
-                inc = [d for d in details if d.get("is_new") or _chg(d.get("change")) > 0]
-                dec = [d for d in details if not d.get("is_new") and _chg(d.get("change")) < 0]
-                inc_amt = sum(_chg(d.get("holder_market_value")) for d in inc if d.get("is_new")) \
-                    + sum(abs(_chg(d.get("change"))) * _chg(d.get("rate")) for d in inc if not d.get("is_new"))
-                info["detail_count"] = len(details)
-                info["detail_new"] = [{"name": d["org_name"], "mkt_wan": round(_chg(d.get("holder_market_value")) / 1e4, 2)}
-                                      for d in details if d.get("is_new")][:10]
-                info["detail_inc"] = [{"name": d["org_name"], "chg_wan": round(_chg(d.get("change")) / 1e4, 2)}
-                                      for d in details if not d.get("is_new") and _chg(d.get("change")) > 0][:10]
-                info["detail_dec"] = [{"name": d["org_name"], "chg_wan": round(abs(_chg(d.get("change"))) / 1e4, 2)}
-                                      for d in details if not d.get("is_new") and _chg(d.get("change")) < 0][:10]
-                info["dec_count"] = len(dec)
-                info["new_count"] = sum(1 for d in details if d.get("is_new"))
+
+            # 近3期基金明细(仅披露过的报告期)
+            rp_price_map = {str(d.get("date")): _safe_float(d.get("price")) for d in rp}
+            detail_3q = []
+            for t in (tab[:3] if tab else []):
+                report = t.get("report")
+                if not report:
+                    continue
+                try:
+                    details = _fetch_ths_detail(sym, report, "015003")
+                except Exception:
+                    details = []
+                if not details:
+                    continue
+                active = [d for d in details if not _is_passive_fund(d.get("org_name", ""))]
+                passive = [d for d in details if _is_passive_fund(d.get("org_name", ""))]
+                inc = [d for d in active if not d.get("is_new") and _chg(d.get("change")) > 0]
+                dec = [d for d in active if not d.get("is_new") and _chg(d.get("change")) < 0]
+                newf = [d for d in active if d.get("is_new")]
+                # 增量建仓成本: Σ(增持股数×当期价)/Σ增持股数(仅主动基金)
+                price_q = rp_price_map.get(str(report))
+                inc_cost = None
+                tot_inc = sum(_chg(d.get("change")) for d in inc)
+                if tot_inc > 0 and price_q:
+                    inc_cost = round(sum(_chg(d.get("change")) * price_q for d in inc) / tot_inc, 2)
+                detail_3q.append({
+                    "date": report,
+                    "price": price_q,
+                    "total": len(details),
+                    "active_count": len(active),
+                    "passive_count": len(passive),
+                    "new_top": [{"name": d["org_name"], "mkt_wan": round(_chg(d.get("holder_market_value")) / 1e4, 2)}
+                                for d in newf][:3],
+                    "inc_top": [{"name": d["org_name"], "chg_wan": round(_chg(d.get("change")) / 1e4, 2)}
+                                for d in sorted(inc, key=lambda x: -_chg(x.get("change")))[:3]],
+                    "dec_top": [{"name": d["org_name"], "chg_wan": round(abs(_chg(d.get("change"))) / 1e4, 2)}
+                                for d in sorted(dec, key=lambda x: _chg(x.get("change")))[:3]],
+                    "active_net": round(sum(_chg(d.get("change")) for d in active) / 1e4, 2),  # 万股
+                    "inc_cost": inc_cost,
+                })
+            info["detail_3q"] = detail_3q
+            info["detail_count"] = sum(q["total"] for q in detail_3q)
             # 机构成本估算: 近4期 rate_price 按占比加权
             if rp:
                 recent = rp[:4]
@@ -630,7 +754,7 @@ def _fmt_institution_section(name: str, ts_code: str, ins: dict) -> list[str]:
         rows = [f"| 报告期 | 基金占比% | 对应股价 | 环比 |"]
         rows.append("|---|---|---|---|")
         prev = None
-        for d in rp[:6]:
+        for d in rp[:8]:  # 全 8 期
             rate = _safe_float(d.get("rate"))
             chg = f"{rate - prev:+.2f}" if prev is not None else "-"
             rows.append(f"| {d['date']} | {rate} | {_safe_float(d.get('price'))} | {chg} |")
@@ -638,12 +762,17 @@ def _fmt_institution_section(name: str, ts_code: str, ins: dict) -> list[str]:
         lines.extend(rows)
     if ins.get("inst_cost"):
         lines.append(f"机构持仓成本估算(近4期占比加权): {ins['inst_cost']}元")
-    if ins.get("detail_count"):
-        lines.append(f"最新期基金明细共 {ins['detail_count']} 条 | 新进 {ins.get('new_count', 0)} 只 | 减持 {ins.get('dec_count', 0)} 只")
-        for label, key in (("新进", "detail_new"), ("增持", "detail_inc"), ("减持", "detail_dec")):
-            items = ins.get(key) or []
+    # 近3期基金明细(主动/被动拆分)
+    for q in (ins.get("detail_3q") or []):
+        lines.append(f"  [{q['date']}] 基金明细 {q['total']} 家(主动 {q['active_count']}/被动指数ETF {q['passive_count']})"
+                     f" | 主动基金净变动 {q['active_net']}万股")
+        if q.get("inc_cost"):
+            lines.append(f"      主动增量建仓成本(增持加权): {q['inc_cost']}元 | 当期价 {q.get('price')}元")
+        for label, key in (("新进", "new_top"), ("增持", "inc_top"), ("减持", "dec_top")):
+            items = q.get(key) or []
             if items:
-                lines.append(f"{label}前5: " + " | ".join(f"{x['name']}({_fmt_amount_wan(x['mkt_wan'] if 'mkt_wan' in x else x['chg_wan'])})" for x in items[:5]))
+                lines.append(f"      {label}Top3: " + " | ".join(
+                    f"{x['name']}({_fmt_amount_wan(x['mkt_wan'] if 'mkt_wan' in x else x['chg_wan'])})" for x in items[:3]))
     lines.append("")
     return lines
 
@@ -652,29 +781,94 @@ def _fmt_institution_section(name: str, ts_code: str, ins: dict) -> list[str]:
 # 7. 机构调研 — Tushare stk_surv(近180天)
 # ══════════════════════════════════════════════════════════════
 
-def fetch_survey(ts_codes: list[str], days: int = 365) -> dict[str, dict]:
-    """机构调研: stk_surv 近365天(月度频次趋势需长窗口;180天在调研低频股上仅1-2次,无法判'骤增')"""
+_SURV_FIELDS = "ts_code,name,surv_date,fund_visitors,rece_place,rece_mode,rece_org,org_type,comp_rece,content"
+_SURV_CONTENT_CUT = 2500
+
+
+def fetch_survey(ts_codes: list[str], days: int = 730) -> dict[str, dict]:
+    """机构调研(定稿): stk_surv 730天, 显式 fields(content/rece_org 必须显式请求)
+
+    - 近 365 天用于频次趋势+概要+名单+纪要; 前 365 天只用于同比对照
+    - 单次限量 100 条, limit/offset 循环
+    - rece_org 机构级行粒度; 业绩说明会类为聚合披露(org_type='--', rece_org 如 '与会投资者约1100人')
+    """
     end = _today()
     start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=days)).strftime("%Y%m%d")
+    cutoff = (datetime.strptime(end, "%Y%m%d") - timedelta(days=365)).strftime("%Y%m%d")
+    yoy_start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=365 + 90)).strftime("%Y%m%d")
+    yoy_mid = (datetime.strptime(end, "%Y%m%d") - timedelta(days=365)).strftime("%Y%m%d")
     result = {}
     for tc in ts_codes:
         info = {}
         try:
-            df = PRO.stk_surv(ts_code=tc, start_date=start, end_date=end)
-            if df is None or df.empty:
+            all_rows = []
+            offset = 0
+            while True:
+                df = PRO.stk_surv(ts_code=tc, start_date=start, end_date=end,
+                                  fields=_SURV_FIELDS, limit=100, offset=offset)
+                if df is None or df.empty:
+                    break
+                all_rows.extend(df.to_dict("records"))
+                if len(df) < 100:
+                    break
+                offset += 100
+            if not all_rows:
                 info["count"] = 0
-            else:
-                df["month"] = df["surv_date"].str[:6]
-                info["count"] = len(df)
-                info["by_month"] = {m: int(c) for m, c in df["month"].value_counts().sort_index().items()}
-                info["org_type_dist"] = {k: int(v) for k, v in df["org_type"].value_counts().head(5).items()}
-                # 按调研日去重取最近3次调研(每次展示机构数/方式/地点)
-                last_dates = df["surv_date"].drop_duplicates().tail(3)
-                info["recent"] = [
-                    {"date": d, "org_count": int(df[df["surv_date"] == d].shape[0]),
-                     "mode": df[df["surv_date"] == d]["rece_mode"].iloc[0],
-                     "place": df[df["surv_date"] == d]["rece_place"].iloc[0]}
-                    for d in last_dates]
+                result[tc] = info
+                continue
+
+            recent = [r for r in all_rows if r["surv_date"] >= cutoff]
+            prev365 = [r for r in all_rows if r["surv_date"] < cutoff]
+            info["count"] = len(recent)
+            info["count_prev365"] = len(prev365)
+            # 月度频次(近12自然月)
+            months = {}
+            for r in recent:
+                m = r["surv_date"][:6]
+                months[m] = months.get(m, 0) + 1
+            info["by_month"] = {m: months[m] for m in sorted(months)}
+            # 同比: 近3月 vs 去年同期
+            cur3m = [r for r in recent if r["surv_date"] >= (datetime.strptime(end, "%Y%m%d") - timedelta(days=90)).strftime("%Y%m%d")]
+            prev3m = [r for r in all_rows if yoy_start <= r["surv_date"] < yoy_mid]
+            info["qoq_3m"] = len(cur3m)
+            info["qoq_3m_prev_year"] = len(prev3m)
+            # 机构类型分布(近365天)
+            od = {}
+            for r in recent:
+                t = r.get("org_type") or "--"
+                if t == "--":
+                    continue
+                od[t] = od.get(t, 0) + 1
+            info["org_type_dist"] = od
+            # 最近3次调研(按调研日去重): 概要 + 接待名单
+            seen_dates = []
+            for r in sorted(recent, key=lambda x: x["surv_date"], reverse=True):
+                d = r["surv_date"]
+                if d in seen_dates:
+                    continue
+                seen_dates.append(d)
+                day_rows = [x for x in recent if x["surv_date"] == d]
+                names = []
+                for x in day_rows:
+                    org = (x.get("rece_org") or "").strip()
+                    if org and org not in names:
+                        names.append(org)
+                info.setdefault("recent", []).append({
+                    "date": d,
+                    "org_count": len(day_rows),
+                    "mode": day_rows[0].get("rece_mode") or "",
+                    "place": day_rows[0].get("rece_place") or "",
+                    "comp_rece": day_rows[0].get("comp_rece") or "",
+                    "names": names,
+                })
+                if len(seen_dates) >= 3:
+                    break
+            # 最新1次纪要: content 前 2500 字符
+            latest_rows = [r for r in recent if r["surv_date"] == seen_dates[0]]
+            content = (latest_rows[0].get("content") or "").strip()
+            if content:
+                info["minutes"] = content[:_SURV_CONTENT_CUT]
+                info["minutes_truncated"] = len(content) > _SURV_CONTENT_CUT
         except Exception as e:
             log_error(function="fetch_survey", level="WARNING", ts_code=tc,
                       api_name="stk_surv", error_msg=str(e))
@@ -683,7 +877,14 @@ def fetch_survey(ts_codes: list[str], days: int = 365) -> dict[str, dict]:
     return result
 
 
-def _fmt_survey_section(ts_code: str, sv: dict) -> list[str]:
+def _fmt_survey_section(ts_code: str, sv: dict, with_minutes: bool = True) -> list[str]:
+    """机构调研节渲染
+
+    Args:
+        with_minutes: 是否输出最新纪要全文(前2500字符)。
+            午间报告为盘中决策场景, 纪要时效差(数月前), 只出概要+名单(2026-08-11);
+            日终报告保留纪要全文。
+    """
     if "error" in sv:
         return [f"❌ 机构调研: {sv['error']}"]
     if not sv.get("count"):
@@ -692,11 +893,30 @@ def _fmt_survey_section(ts_code: str, sv: dict) -> list[str]:
     by_month = sv.get("by_month", {})
     if by_month:
         lines.append("月度频次: " + " | ".join(f"{m[:4]}-{m[4:]}: {c}条" for m, c in by_month.items()))
+    if sv.get("qoq_3m") is not None:
+        lines.append(f"近3月调研 {sv['qoq_3m']} 次 | 去年同期 {sv['qoq_3m_prev_year']} 次"
+                     f"({'同比骤增' if sv['qoq_3m'] > sv['qoq_3m_prev_year'] * 2 else '同比减少' if sv['qoq_3m'] < sv['qoq_3m_prev_year'] else '同比持平'})")
     od = sv.get("org_type_dist", {})
     if od:
-        lines.append("机构类型: " + " | ".join(f"{k}:{v}" for k, v in od.items() if k not in ("--",)))
+        lines.append("机构类型: " + " | ".join(f"{k}:{v}" for k, v in od.items()))
     for r in (sv.get("recent") or [])[-3:]:
-        lines.append(f"  [{r['date']}] 接待机构 {r.get('org_count')}家 ({r.get('mode')}, {r.get('place')})")
+        lines.append(f"  [{r['date']}] {r.get('mode')} 接待机构 {r.get('org_count')}家 | {r.get('place')}"
+                     f"{(' | 接待人: ' + r['comp_rece']) if r.get('comp_rece') else ''}")
+    # 最近3次接待名单(org_type 分组在数据层已完成按机构名去重)
+    for r in (sv.get("recent") or [])[-3:]:
+        names = r.get("names") or []
+        if not names:
+            continue
+        if any(("与会" in n or "投资者" in n or "社会公众" in n) for n in names):
+            lines.append(f"    [{r['date']}] 名单: 聚合披露无逐机构名单({len(names)}条)")
+        else:
+            lines.append(f"    [{r['date']}] 名单: " + " | ".join(names[:15]))
+    # 最新1次纪要(2500字符截断; 午间场景不输出, 2026-08-11)
+    if with_minutes and sv.get("minutes"):
+        lines.append(f"最新调研纪要({sv['recent'][0]['date']}, 前2500字符):")
+        lines.append(sv["minutes"].replace("\n", " "))
+        if sv.get("minutes_truncated"):
+            lines.append("…(纪要后续省略)")
     lines.append("")
     return lines
 
@@ -712,12 +932,21 @@ def fetch_holdernumber(ts_codes: list[str]) -> dict[str, dict]:
         try:
             df = PRO.stk_holdernumber(ts_code=tc)
             if df is not None and not df.empty:
-                df = df.sort_values("end_date").tail(4)
+                # 过滤缺失记录: end_date 为空 或 holder_num 为 NaN 的期不得进入序列
+                df = df[df["end_date"].notna() & df["holder_num"].notna()]
+                df = df.sort_values("end_date").drop_duplicates("end_date", keep="last").tail(4)
                 info["periods"] = [{"end_date": r["end_date"], "holder_num": r["holder_num"]}
                                    for _, r in df.iterrows()]
                 if len(df) >= 2:
                     cur, prev = float(df["holder_num"].iloc[-1]), float(df["holder_num"].iloc[-2])
                     info["chg_pct"] = round((cur - prev) / prev * 100, 2)
+                if len(df) >= 1:
+                    last_end = str(df["end_date"].iloc[-1])
+                    days = (datetime.strptime(_today(), "%Y%m%d")
+                            - datetime.strptime(last_end, "%Y%m%d")).days
+                    quarter_end = last_end[4:6] + last_end[6:8] in ("0331", "0630", "0930", "1231")
+                    info["staleness_days"] = max(days, 0)
+                    info["disclosure_type"] = "季度披露" if quarter_end else "月度披露"
         except Exception as e:
             log_error(function="fetch_holdernumber", level="WARNING", ts_code=tc,
                       api_name="stk_holdernumber", error_msg=str(e))
@@ -733,10 +962,20 @@ def _fmt_holdernumber_section(hn: dict) -> list[str]:
         return ["## 【股东户数】\n暂无数据。"]
     lines = [f"## 【股东户数】"]
     for p in hn["periods"]:
-        lines.append(f"  {p['end_date']}: {p['holder_num']:,} 户")
+        lines.append(f"  {p['end_date']}: {p['holder_num']:,.0f} 户")
     if hn.get("chg_pct") is not None:
         trend = "筹码集中(户数减少)" if hn["chg_pct"] < 0 else "筹码分散(户数增加)"
         lines.append(f"最新期变化: {hn['chg_pct']:+.2f}% → {trend}")
+    if hn.get("staleness_days") is not None:
+        d = hn["staleness_days"]
+        if d <= 30:
+            flag = "数据较新,可作为近期筹码信号"
+        elif d <= 90:
+            flag = "数据一般,作参考并与期内股价走势结合判断"
+        else:
+            flag = "数据滞后,仅作趋势背景,不作近期判断依据"
+        lines.append(f"⚠️ 数据时效: 最新期 {hn['periods'][-1]['end_date']},"
+                     f"距今 {d} 天({hn.get('disclosure_type', '')}),{flag}")
     lines.append("")
     return lines
 
@@ -889,12 +1128,12 @@ def _fmt_limit_board_section(name: str, lb: dict) -> list[str]:
 # 10b. 大宗交易 — Tushare block_trade(席位实名, 实锤级证据)
 # ══════════════════════════════════════════════════════════════
 
-def fetch_blocktrade(ts_codes: list[str], lookback_days: int = 5) -> dict[str, dict]:
-    """大宗交易: block_trade 全市场单次拉取 → 按股过滤
+def fetch_blocktrade(ts_codes: list[str], lookback_days: int = 90) -> dict[str, dict]:
+    """大宗交易: DB stg_block_trade 读库优先(ETL 22:00 全市场入库, 近90天, 最多10条)
 
-    策略: 大宗为低频事件, 从 T 日起向前探测 lookback_days 个自然日,
-    取最近有记录的一天(单日无记录是常态, 不视为缺失)。
+    库空(ETL 未跑) → 实时回退(全市场近 lookback_days 天单次拉取, 按股过滤)。
     折溢价率需与收盘价对比, 在此用 daily_basic(T-1) 收盘价近似计算。
+    注意: 当天大宗 22:00 才入库, 19:30 报告用 T-1 数据(标题标注 date_used)。
 
     Returns:
         {ts_code: {date_used, count, items: [{date, price, amount_wan, premium_pct,
@@ -903,14 +1142,7 @@ def fetch_blocktrade(ts_codes: list[str], lookback_days: int = 5) -> dict[str, d
     """
     result = {tc: {"date_used": None, "count": 0, "items": []} for tc in ts_codes}
     try:
-        # 最近 lookback_days 个自然日全市场大宗(单次调用覆盖, 避免逐日多次)
-        end = _today()
-        start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=lookback_days)).strftime("%Y%m%d")
-        df = PRO.block_trade(start_date=start, end_date=end)
-        if df is None or df.empty:
-            return result
-        df = df.sort_values("trade_date", ascending=False)
-        # 收盘价基准(最近交易日 daily_basic, 用于折溢价)
+        # 收盘价基准(最近交易日 daily_basic, 用于折溢价; 全市场单次, 各股共享)
         ref_prices = {}
         try:
             pbd = PRO.daily_basic(trade_date=_tushare_trade_date(),
@@ -919,35 +1151,74 @@ def fetch_blocktrade(ts_codes: list[str], lookback_days: int = 5) -> dict[str, d
                 ref_prices = dict(zip(pbd["ts_code"], pbd["close"]))
         except Exception:
             pass
-        for tc in ts_codes:
-            sub = df[df["ts_code"] == tc]
-            if sub.empty:
-                continue
+
+        def _to_items(rows_iter, code, limit=10) -> list:
             items = []
-            for _, r in sub.head(5).iterrows():  # 最多5条
-                price = _safe_float(r.get("price"))
-                ref = ref_prices.get(tc)
+            for r in rows_iter:
+                price = _safe_float(r["price"])
+                ref = ref_prices.get(code)
                 premium = None
                 if price and ref:
                     premium = round((price - ref) / ref * 100, 2)
-                buyer = r.get("buyer") or ""
-                seller = r.get("seller") or ""
+                buyer = r["buyer"] or ""
+                seller = r["seller"] or ""
                 items.append({
-                    "date": str(r.get("trade_date")),
+                    "date": str(r["trade_date"]),
                     "price": price,
-                    "amount_wan": round(_safe_float(r.get("amount")), 2),  # block_trade.amount 单位=万元
+                    "amount_wan": round(_safe_float(r["amount"]), 2),  # block_trade.amount 单位=万元
                     "premium_pct": premium,
                     "buyer": buyer,
                     "seller": seller,
                     "is_inst_buy": "机构专用" in buyer,
                     "is_inst_sell": "机构专用" in seller,
                 })
-            result[tc] = {
-                "date_used": str(sub.iloc[0]["trade_date"]),
-                "count": len(sub),
-                "items": items,
-                "total_wan": round(float(sub["amount"].sum()), 2),
-            }
+                if len(items) >= limit:
+                    break
+            return items
+
+        start_db = (datetime.strptime(_today(), "%Y%m%d") - timedelta(days=lookback_days)).strftime("%Y%m%d")
+        for tc in ts_codes:
+            # 1) 读库: 近 lookback_days 天, 最多 10 条
+            try:
+                db_rows = db.execute(
+                    "SELECT trade_date, price, vol, amount, buyer, seller FROM stg_block_trade "
+                    "WHERE ts_code=? AND trade_date>=? ORDER BY trade_date DESC LIMIT 10", (tc, start_db))
+                if db_rows:
+                    items = _to_items(
+                        [dict(zip(["trade_date", "price", "vol", "amount", "buyer", "seller"], r))
+                         for r in db_rows], tc, limit=10)
+                    if items:
+                        result[tc] = {
+                            "date_used": items[0]["date"],
+                            "count": len(db_rows),
+                            "items": items,
+                            "total_wan": round(float(sum(r[3] or 0 for r in db_rows)), 2),
+                        }
+                        continue
+            except Exception:
+                pass
+            # 2) 库空/异常 → 实时回退(全市场近 lookback_days 天单次拉取)
+            try:
+                end = _today()
+                start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=lookback_days)).strftime("%Y%m%d")
+                df = PRO.block_trade(start_date=start, end_date=end)
+                if df is None or df.empty:
+                    continue
+                df = df.sort_values("trade_date", ascending=False)
+                sub = df[df["ts_code"] == tc]
+                if sub.empty:
+                    continue
+                items = _to_items(
+                    ({k: r.get(k) for k in ("trade_date", "price", "vol", "amount", "buyer", "seller")}
+                     for _, r in sub.iterrows()), tc, limit=10)
+                result[tc] = {
+                    "date_used": str(sub.iloc[0]["trade_date"]),
+                    "count": len(sub),
+                    "items": items,
+                    "total_wan": round(float(sub["amount"].sum()), 2),
+                }
+            except Exception:
+                continue
     except Exception as e:
         log_error(function="fetch_blocktrade", level="WARNING",
                   api_name="block_trade", error_msg=str(e))
@@ -961,7 +1232,7 @@ def _fmt_blocktrade_section(name: str, bt: dict) -> list[str]:
     if "error" in bt:
         return [f"❌ 大宗交易: {bt['error']}"]
     if not bt.get("count"):
-        return [f"## 【大宗交易】\n近5个交易日无大宗交易记录。"]
+        return [f"## 【大宗交易】\n近90天无大宗交易记录。"]
     lines = [f"## 【大宗交易】(数据日期 {bt.get('date_used')}, 盘后实锤数据)"]
     lines.append(f"近期大宗: {bt.get('count')} 笔, 合计 {_fmt_amount_wan(bt.get('total_wan', 0))}")
     for it in bt.get("items", []):
@@ -1027,9 +1298,10 @@ def _fmt_sector_section(name: str, sec: dict) -> list[str]:
 # ══════════════════════════════════════════════════════════════
 
 def fetch_technical_endday(names_codes: list[tuple], margin_costs: dict[str, dict],
-                           inst_costs: dict[str, dict]) -> dict[str, dict]:
-    """MA5/10/20/BOLL(收盘完整日线) + 成本地图锚点(机构成本/融资盘成本)"""
+                           inst_costs: dict[str, dict], cyq_costs: dict[str, dict] | None = None) -> dict[str, dict]:
+    """MA5/10/20/BOLL(收盘完整日线) + 成本地图三锚(机构成本/融资盘成本/筹码加权成本)"""
     import numpy as np
+    cyq_costs = cyq_costs or {}
     result = {}
     for name, ts_code in names_codes:
         symbol = ts_code.split(".")[0]
@@ -1055,11 +1327,14 @@ def fetch_technical_endday(names_codes: list[tuple], margin_costs: dict[str, dic
                 "price": price, "ma5": ma5, "ma10": ma10, "ma20": ma20,
                 "boll_upper": boll_upper, "boll_lower": boll_lower,
                 "deviation": deviation,
-                # 成本地图锚点
+                # 成本地图三锚
                 "inst_cost": inst_costs.get(ts_code, {}).get("inst_cost"),
                 "margin_cost_low": margin_costs.get(ts_code, {}).get("cost_low"),
                 "margin_cost_high": margin_costs.get(ts_code, {}).get("cost_high"),
                 "margin_cost_mid": margin_costs.get(ts_code, {}).get("cost_mid"),
+                "cyq_cost": cyq_costs.get(ts_code, {}).get("weight_avg"),
+                "cyq_cost_mid": cyq_costs.get(ts_code, {}).get("cost_50pct"),
+                "cyq_date": cyq_costs.get(ts_code, {}).get("trade_date"),
             }
         except Exception as e:
             result[name] = {"error": str(e)[:150]}
@@ -1081,7 +1356,409 @@ def _fmt_technical_section(name: str, ta: dict) -> list[str]:
     lines.append(f"    机构持仓成本(估算): {ta.get('inst_cost') or 'N/A'} 元")
     if ta.get("margin_cost_mid"):
         lines.append(f"    融资盘成本区: {ta.get('margin_cost_low')}-{ta.get('margin_cost_high')}元(加权 {ta.get('margin_cost_mid')}元)")
+    if ta.get("cyq_cost"):
+        cyq_tag = f"(筹码数据日期 {ta['cyq_date']})"
+        lines.append(f"    筹码加权成本: {ta['cyq_cost']}元 | 中位成本 {ta.get('cyq_cost_mid')}元 {cyq_tag}")
     lines.append(f"    MA20: {ta.get('ma20')} 元")
+    lines.append("")
+    return lines
+
+
+# ══════════════════════════════════════════════════════════════
+# 19. 筹码成本分布 — DB stg_cyq_perf / stg_cyq_chips(ETL 19:10 当天入库, 探测回退 T-1)
+# ══════════════════════════════════════════════════════════════
+
+def fetch_cyq_db(ts_codes: list[str]) -> dict[str, dict]:
+    """读库: 筹码加权成本/中位成本/90%成本带/获利比例/当日密集价位 top"""
+    result = {}
+    for tc in ts_codes:
+        info = {}
+        try:
+            r = db.execute("SELECT MAX(trade_date) FROM stg_cyq_perf WHERE ts_code=?", (tc,))
+            td = r[0][0] if r and r[0][0] else None
+            if not td:
+                info["error"] = "库中无筹码数据"
+                result[tc] = info
+                continue
+            rows = db.execute(
+                "SELECT trade_date, cost_5pct, cost_50pct, cost_95pct, weight_avg, winner_rate "
+                "FROM stg_cyq_perf WHERE ts_code=? AND trade_date=?", (tc, td))
+            if not rows:
+                info["error"] = "库中无筹码数据"
+                result[tc] = info
+                continue
+            r0 = rows[0]
+            info = {
+                "trade_date": r0[0],
+                "cost_5pct": r0[1], "cost_50pct": r0[2], "cost_95pct": r0[3],
+                "weight_avg": r0[4], "winner_rate": r0[5],
+            }
+            chips = db.execute(
+                "SELECT price, percent FROM stg_cyq_chips WHERE ts_code=? AND trade_date=? "
+                "ORDER BY percent DESC LIMIT 3", (tc, td))
+            info["dense"] = [{"price": c[0], "percent": c[1]} for c in chips]
+        except Exception as e:
+            info["error"] = str(e)[:200]
+        result[tc] = info
+    return result
+
+
+def _fmt_cyq_section(ts_code: str, cyq: dict) -> list[str]:
+    if "error" in cyq:
+        return [f"❌ 筹码成本: {cyq['error']}"]
+    lines = [f"## 【筹码成本分布】(数据日期 {cyq.get('trade_date')}, Tushare cyq; 当天18~19点更新)"]
+    lines.append(f"筹码加权平均成本: {cyq.get('weight_avg')}元 | 中位成本(50分位): {cyq.get('cost_50pct')}元")
+    lines.append(f"90%成本带: {cyq.get('cost_5pct')} ~ {cyq.get('cost_95pct')}元 | 获利比例: {cyq.get('winner_rate')}%")
+    dense = cyq.get("dense") or []
+    if dense:
+        lines.append("筹码密集价位 top: " + " | ".join(f"{d['price']}元({d['percent']}%)" for d in dense))
+    lines.append("")
+    return lines
+
+
+# ══════════════════════════════════════════════════════════════
+# 16. 北向持股 — DB stg_hk_hold(季度披露, 港交所 2024-08 停发日度)
+# ══════════════════════════════════════════════════════════════
+
+def fetch_northbound_db(ts_codes: list[str]) -> dict[str, dict]:
+    """读库: 北向持股近 8 期序列(vol/ratio + 逐期变化 + 趋势)"""
+    result = {}
+    for tc in ts_codes:
+        info = {}
+        try:
+            rows = db.execute(
+                "SELECT trade_date, vol, ratio FROM stg_hk_hold WHERE ts_code=? "
+                "ORDER BY trade_date DESC LIMIT 8", (tc,))
+            if not rows:
+                info["error"] = "库中无北向数据"
+                result[tc] = info
+                continue
+            seq = [{"trade_date": r[0], "vol": r[1], "ratio": r[2]} for r in rows]
+            seq.reverse()
+            info["seq"] = seq
+            info["latest"] = seq[-1]["trade_date"]
+            # 逐期变化 + 趋势(近3期方向)
+            if len(seq) >= 2:
+                info["ratio_chg"] = [
+                    round(float(seq[i]["ratio"] or 0) - float(seq[i - 1]["ratio"] or 0), 3)
+                    for i in range(1, len(seq))]
+            if len(seq) >= 3:
+                d1 = float(seq[-1]["ratio"] or 0) - float(seq[-2]["ratio"] or 0)
+                d2 = float(seq[-2]["ratio"] or 0) - float(seq[-3]["ratio"] or 0)
+                info["trend"] = ("连续增持" if d1 > 0 and d2 > 0 else
+                                 "连续减持" if d1 < 0 and d2 < 0 else
+                                 "增持放缓" if d1 > 0 and d2 <= 0 else
+                                 "减持收窄" if d1 < 0 and d2 >= 0 else "波动")
+        except Exception as e:
+            info["error"] = str(e)[:200]
+        result[tc] = info
+    return result
+
+
+def _fmt_northbound_section(ts_code: str, nb: dict) -> list[str]:
+    if "error" in nb:
+        return [f"❌ 北向持股: {nb['error']}"]
+    lines = [f"## 【北向持股】(季度披露, 港交所 2024-08 起停发日度; 数据截至 {nb.get('latest')})"]
+    seq = nb.get("seq") or []
+    if seq:
+        rows = [f"| 披露日 | 持股(亿股) | 占比% | 环比 |"]
+        rows.append("|---|---|---|---|")
+        chgs = nb.get("ratio_chg") or [None] * len(seq)
+        for i, s in enumerate(seq):
+            chg = f"{chgs[i - 1]:+.3f}" if i > 0 and chgs[i - 1] is not None else "-"
+            rows.append(f"| {s['trade_date']} | {float(s['vol'] or 0) / 1e8:.2f} | {s['ratio']} | {chg} |")
+        lines.extend(rows)
+        if nb.get("trend"):
+            lines.append(f"趋势: {nb['trend']}")
+    lines.append("")
+    return lines
+
+
+# ══════════════════════════════════════════════════════════════
+# 17. 十大流通股东 — DB stg_top10_floatholder(季度披露)
+# ══════════════════════════════════════════════════════════════
+
+_HOLDER_TYPE_CN = {"Fund": "公募", "HKSCC": "外资HKSCC", "Private": "私募",
+                   "Industry": "产业资本", "Individual": "自然人"}
+
+
+def fetch_top10_db(ts_codes: list[str]) -> dict[str, dict]:
+    """读库: 十大流通股东近 4 期(每期前5 + 类型分布 + 变动 Top3)"""
+    result = {}
+    for tc in ts_codes:
+        info = {}
+        try:
+            rows = db.execute(
+                "SELECT end_date, holder_name, hold_amount, hold_ratio, hold_change, holder_type "
+                "FROM stg_top10_floatholder WHERE ts_code=? "
+                "ORDER BY end_date DESC, hold_amount DESC LIMIT 40", (tc,))
+            if not rows:
+                info["error"] = "库中无十大股东数据"
+                result[tc] = info
+                continue
+            periods = []
+            for r in rows:
+                p = r[0]
+                if not periods or periods[-1]["period"] != p:
+                    periods.append({"period": p, "holders": []})
+                periods[-1]["holders"].append({
+                    "name": r[1], "amount": r[2], "ratio": r[3], "change": r[4], "htype": r[5],
+                })
+            periods = periods[:4]
+            info["periods"] = periods
+            # 类型分布(最新期)
+            latest = periods[0]
+            dist = {}
+            for h in latest["holders"]:
+                t = _HOLDER_TYPE_CN.get(h["htype"], h["htype"] or "其他")
+                dist[t] = dist.get(t, 0) + 1
+            info["type_dist"] = dist
+            # 变动 Top3(最新期, 变动绝对值)
+            chg = [h for h in latest["holders"] if h["change"] is not None]
+            chg.sort(key=lambda x: abs(float(x["change"])), reverse=True)
+            info["change_top3"] = chg[:3]
+        except Exception as e:
+            info["error"] = str(e)[:200]
+        result[tc] = info
+    return result
+
+
+def _fmt_top10_section(ts_code: str, tp: dict) -> list[str]:
+    if "error" in tp:
+        return [f"❌ 十大流通股东: {tp['error']}"]
+    lines = [f"## 【十大流通股东】(近4期, 季度披露)"]
+    periods = tp.get("periods") or []
+    for p in periods:
+        lines.append(f"  [{p['period']}] 前5:")
+        for h in p["holders"][:5]:
+            chg_s = ""
+            if h.get("change") is not None:
+                v = float(h["change"])
+                chg_s = f" 变动 {v/1e4:.0f}万股" if abs(v) >= 1e4 else f" 变动 {v:.0f}股"
+            lines.append(f"    - {h['name']}({_HOLDER_TYPE_CN.get(h['htype'], h['htype'] or '其他')}, "
+                         f"占比 {h['ratio']}%){chg_s}")
+    if tp.get("type_dist"):
+        lines.append("类型分布(最新期): " + " | ".join(f"{k} {v}席" for k, v in tp["type_dist"].items()))
+    for h in (tp.get("change_top3") or []):
+        if h.get("change") is not None:
+            v = float(h["change"])
+            tag = "增持" if v > 0 else "减持"
+            lines.append(f"  {tag}Top: {h['name']} {abs(v)/1e4:.0f}万股")
+    lines.append("")
+    return lines
+
+
+# ══════════════════════════════════════════════════════════════
+# 18. 券商评级与盈利预测 — DB stg_report_rc 读库(ETL 22:00 全市场入库)
+#     2026-08-11 逐条展示版(用户指示: 不聚合, 以每一条调研报告为粒度直接展示):
+#       - 采集口径: 最近 6 个月(180天), 头部标注真实覆盖区间
+#       - 不过滤报告类型: 行业/策略报告(report_type='非个股')保留并标注 [行业], 可作语料
+#       - 每份报告一条: (报告日期, 机构, 标题) 去重, 多预测期(quarter)行并列展示
+#       - 每条预测行仅展示有值的指标(用户原则: 字段为空指标不输出); 过期预测保留不过滤
+#       - 评级/报告类型/分类(非默认值)/作者/目标价等报告属性原样展示, 不做任何统计聚合
+#       - 评级归一化 rating_norm 保留为解析层数据标签(31种→6档), 文本输出不展示(用户指示)
+#     report_rc 接口不调用(2026-08-06 起用户要求报告侧纯读库), 库空提示等待 ETL。
+_REPORT_RC_DISABLED_MSG = "库中无该股研报数据(报告侧不实时拉取): 等待 ETL 22:00 增量入库"
+
+# 评级归一化映射(覆盖库内全部 31 种原始值 → 6 档): 仅作解析层数据标签, 库表字段不动
+_RATING_NORM_MAP = {
+    "买入": "买入", "强烈推荐": "买入", "强推": "买入", "推荐": "买入", "买进": "买入",
+    "Buy": "买入", "BUY": "买入",
+    "增持": "增持", "谨慎增持": "增持", "谨慎推荐": "增持",
+    "中性": "中性", "Neutral": "中性", "持有": "中性", "Hold": "中性", "HOLD": "中性",
+    "Equal weight": "中性", "Market-Perform": "中性", "区间操作": "中性",
+    "卖出": "回避", "Sell": "回避", "SELL": "回避", "减持": "回避",
+    "Underperform": "回避", "Underweight": "回避",
+    "跑赢行业": "行业相对", "优于大市": "行业相对", "强于大市": "行业相对",
+    "Outperform": "行业相对", "Overweight": "行业相对",
+    "无": "无评级", "未知": "无评级",
+}
+
+
+def _norm_rating(rating: str) -> str:
+    """评级归一化(数据标签, 不改原值)"""
+    return _RATING_NORM_MAP.get((rating or "").strip(), "其他")
+
+
+def fetch_report_rc(ts_codes: list[str], lookback_days: int = 180) -> dict[str, dict]:
+    """券商评级与盈利预测: 读库 stg_report_rc(ETL 22:00 全市场入库), 逐条报告粒度
+
+    2026-08-11 逐条展示版(取代聚合共识版, 用户指示: 不聚合, 以每一条调研报告为粒度):
+      - 采集口径: 最近 6 个月(lookback_days=180), 头部标注真实覆盖区间
+      - 每份报告一条: (报告日期, 机构, 标题) 去重, 多预测期(quarter)行并列;
+        过期预测保留不过滤; 不做任何均值/分布/计数聚合
+      - 报告级属性(rating/classify/author/目标价)取组内非空值 — 稀疏字段仅部分行有值
+      - 字段口径(官方): op_rt=预测营业收入(万元), op_pr=预测营业利润(万元,
+        实测≈毛利额, 名实不符, 格式化时标注), tp=利润总额, np=净利润,
+        eps=每股收益(元), pe=市盈率, rd=股息率, roe=净资产收益率,
+        ev_ebitda=EV/EBITDA, max_price/min_price=最高/最低目标价(元)
+    """
+    end = _today()
+    start = (datetime.strptime(end, "%Y%m%d") - timedelta(days=lookback_days)).strftime("%Y%m%d")
+    result = {}
+    for tc in ts_codes:
+        info = {}
+        try:
+            rows = db.execute(
+                "SELECT ts_code, name, report_date, report_title, org_name, quarter,"
+                " np, eps, rating, max_price, min_price, report_type,"
+                " classify, author_name, op_rt, op_pr, tp, pe, rd, roe, ev_ebitda "
+                "FROM stg_report_rc WHERE ts_code=? AND report_date>=? "
+                "ORDER BY report_date DESC, create_time DESC", (tc, start))
+            if not rows:
+                info["error"] = _REPORT_RC_DISABLED_MSG
+                result[tc] = info
+                continue
+            # 报告粒度分组: 同一份报告多预测期行合并(标题/机构/日期相同);
+            # 报告级属性取组内非空值, 目标价等稀疏字段可能仅部分预测期行有值
+            groups = {}
+            for r in rows:
+                key = (r[2], r[4], r[3] or "")
+                g = groups.get(key)
+                if g is None:
+                    g = groups[key] = {
+                        "date": r[2], "org": r[4], "title": r[3] or "",
+                        "rtype": r[11] or "", "classify": r[12] or "",
+                        "rating": r[8] or "", "author": r[13] or "",
+                        "max_price": None, "min_price": None, "quarters": {}}
+                if r[8]:
+                    g["rating"] = r[8]
+                if r[12]:
+                    g["classify"] = r[12]
+                if r[13]:
+                    g["author"] = r[13]
+                if r[9] is not None and g["max_price"] is None:
+                    g["max_price"] = r[9]
+                if r[10] is not None and g["min_price"] is None:
+                    g["min_price"] = r[10]
+                if r[5]:
+                    g["quarters"][r[5]] = {
+                        "op_rt": r[14], "op_pr": r[15], "tp": r[16], "np": r[6],
+                        "eps": r[7], "pe": r[17], "rd": r[18], "roe": r[19],
+                        "ev_ebitda": r[20]}
+            reports = sorted(groups.values(), key=lambda g: g["date"], reverse=True)
+            for g in reports:
+                g["rating_norm"] = _norm_rating(g["rating"])  # 归一化数据标签(输出不展示)
+            info = {
+                "earliest_report_date": min(g["date"] for g in reports),
+                "latest_report_date": max(g["date"] for g in reports),
+                "n_reports": len(reports),
+                "reports": reports,
+            }
+        except Exception as e:
+            log_error(function="fetch_report_rc", level="WARNING", ts_code=tc,
+                      api_name="report_rc", error_msg=str(e))
+            info["error"] = str(e)[:200]
+        result[tc] = info
+    return result
+
+
+_RC_DETAIL_DAYS = 90      # 逐条展示窗口: 近90天(2026-08-11 双轨制)
+_RC_DETAIL_MAX = 25       # 逐条封顶份数(防长尾稀释; 超出仅入统计)
+
+
+def _fmt_report_rc_section(ts_code: str, rc: dict) -> list[str]:
+    """券商评级与盈利预测节(2026-08-11 双轨制, 日终/午间同源)
+
+    统计区(6个月全量): 评级分布 + 目标价区间 — 回答"机构整体什么态度", 成本几百字符
+    逐条区(近90天, 封顶25份): 每份报告评级/目标价/盈利预测 — 回答"当下态度 vs 现价";
+      近90天无研报时回退最近25份, 保证 LLM 永远能看到逐条数据
+    更早研报仅入统计不逐条(目标价/预测锚定发布时点, 对现价判断已失效)
+    """
+    if "error" in rc:
+        return [f"❌ 券商评级: {rc['error']}"]
+    n = rc.get("n_reports", 0)
+    reports = rc.get("reports") or []
+    lines = [f"## 【券商评级与盈利预测】(研报 {n} 份, 覆盖 {rc.get('earliest_report_date')}~"
+             f"{rc.get('latest_report_date')}; 采集口径近6个月, 22点增量次日生效)"]
+    lines.append("⚠️ 字段口径: op_pr(tushare 字段名)实测为毛利额, 非营业利润")
+
+    # ── 统计区(6个月全量) ──
+    dist = {}
+    for g in reports:
+        norm = g.get("rating_norm") or "其他"
+        dist[norm] = dist.get(norm, 0) + 1
+    order = ["买入", "增持", "中性", "回避", "行业相对", "无评级", "其他"]
+    dist_str = " | ".join(f"{k}:{dist[k]}" for k in order if dist.get(k))
+    prices_lo = [g["min_price"] for g in reports if g.get("min_price") is not None]
+    prices_hi = [g["max_price"] for g in reports if g.get("max_price") is not None]
+    stat_parts = []
+    if dist_str:
+        stat_parts.append(f"评级分布: {dist_str}")
+    # 库中目标价仅 min_price 有值(单边门槛), max_price 恒空; 用 min/min + max/min 表达区间
+    if prices_lo and prices_hi:
+        stat_parts.append(f"目标价区间 {min(prices_lo):.2f}~{max(prices_hi):.2f}元")
+    elif prices_lo:
+        s = f"目标价 ≥{min(prices_lo):.2f}元"
+        if max(prices_lo) > min(prices_lo):
+            s += f"(最高 {max(prices_lo):.2f}元)"
+        stat_parts.append(s)
+    elif prices_hi:
+        stat_parts.append(f"目标价 ≤{max(prices_hi):.2f}元")
+    if stat_parts:
+        lines.append("📊 统计(6个月): " + " | ".join(stat_parts))
+
+    # ── 逐条区(近90天, 封顶25份; 空则回退最近25份) ──
+    cutoff = (datetime.strptime(_today(), "%Y%m%d") - timedelta(days=_RC_DETAIL_DAYS)).strftime("%Y%m%d")
+    detail = [g for g in reports if g["date"] >= cutoff]
+    fallback = not detail
+    if fallback:
+        detail = reports  # 近90天无研报 → 回退最近(已按日期倒序)
+    truncated = len(detail) > _RC_DETAIL_MAX
+    detail = detail[:_RC_DETAIL_MAX]
+    lines.append(f"【近{_RC_DETAIL_DAYS}天逐条研报】({len(detail)}份"
+                 + (f", 近90天无研报回退最近{_RC_DETAIL_MAX}份" if fallback else "")
+                 + "):")
+    for i, g in enumerate(detail, 1):
+        tag = "[行业]" if g.get("rtype") == "非个股" else "[个股]"
+        head = f"{i}. {tag} {g['date']} {g['org']}《{g['title']}》"
+        attrs = []
+        if g.get("rating"):
+            attrs.append(f"卖方评级：{g['rating']}")
+        if g.get("rtype") and g["rtype"] != "非个股":
+            attrs.append(f"报告类型：{g['rtype']}")
+        if g.get("classify") and g["classify"] not in ("一般报告", "无"):
+            attrs.append(f"分类：{g['classify']}")
+        if g.get("author") and g["author"] != "无":
+            attrs.append(f"作者：{g['author']}")
+        if attrs:
+            head += " | " + " | ".join(attrs)
+        lines.append(head)
+        # 目标价(报告级, 有值才输出; 稀疏字段可能只有一端)
+        tp = []
+        if g.get("min_price") is not None and g.get("max_price") is not None:
+            tp.append(f"目标价 {g['min_price']:.2f}~{g['max_price']:.2f}元")
+        elif g.get("min_price") is not None:
+            tp.append(f"目标价 ≥{g['min_price']:.2f}元")
+        elif g.get("max_price") is not None:
+            tp.append(f"目标价 ≤{g['max_price']:.2f}元")
+        if tp:
+            lines.append("  " + " | ".join(tp))
+        # 各预测期行(升序: 近→远), 仅展示有值的指标(字段为空指标不输出)
+        for q in sorted(g.get("quarters", {})):
+            v = g["quarters"][q]
+            parts = [f"{q}:"]
+            if v["op_rt"] is not None:
+                parts.append(f"营收 {v['op_rt'] / 1e4:.2f}亿")
+            if v["op_pr"] is not None:
+                parts.append(f"毛利 {v['op_pr'] / 1e4:.2f}亿")
+            if v["tp"] is not None:
+                parts.append(f"利润总额 {v['tp'] / 1e4:.2f}亿")
+            if v["np"] is not None:
+                parts.append(f"净利润 {v['np'] / 1e4:.2f}亿")
+            if v["eps"] is not None:
+                parts.append(f"EPS {v['eps']:.2f}元")
+            if v["pe"] is not None:
+                parts.append(f"PE {v['pe']:.2f}")
+            if v["roe"] is not None:
+                parts.append(f"ROE {v['roe']:.2f}%")
+            if v["rd"] is not None:
+                parts.append(f"股息率 {v['rd']:.2f}%")
+            if v["ev_ebitda"] is not None:
+                parts.append(f"EV/EBITDA {v['ev_ebitda']:.2f}")
+            lines.append("  " + " | ".join(parts))
+    if truncated:
+        lines.append(f"…(其余 {n - len(detail)} 份为更早研报, 仅入统计, 不逐条展示)")
     lines.append("")
     return lines
 
@@ -1284,6 +1961,10 @@ def fetch_all(stock_names: list[str]) -> dict:
     # SQLite 相关任务(主线程执行,避免跨线程连接问题)
     quotes, snap_time = fetch_quotes_endday(names)
     data["sector"] = fetch_sector_endday(names)
+    data["cyq"] = fetch_cyq_db(ts_codes)              # 筹码读库
+    data["northbound"] = fetch_northbound_db(ts_codes)  # 北向读库
+    data["top10"] = fetch_top10_db(ts_codes)          # 十大流通股东读库
+    data["report_rc"] = fetch_report_rc(ts_codes)     # 券商评级仅读库(接口停用中)
     margin_data = data.get("margin") or {}
     lhb_data = data.get("lhb") or {}
     mf_data = data.get("moneyflow") or {}
@@ -1296,10 +1977,14 @@ def fetch_all(stock_names: list[str]) -> dict:
     sec_data = data.get("sector") or {}
     fin_data = data.get("finance") or {}
     bt_data = data.get("blocktrade") or {}
+    cyq_data = data.get("cyq") or {}
+    nb_data = data.get("northbound") or {}
+    top10_data = data.get("top10") or {}
+    rc_data = data.get("report_rc") or {}
 
-    # 技术面(依赖 margin 成本 + 机构成本;机构数据按 symbol 键,转为 ts_code 键)
+    # 技术面(依赖 margin 成本 + 机构成本 + 筹码成本;机构数据按 symbol 键,转为 ts_code 键)
     inst_by_ts = {tc: inst_data.get(sym, {}) for tc, sym in zip(ts_codes, symbols)}
-    tech_data = fetch_technical_endday(list(zip(names, ts_codes)), margin_data, inst_by_ts)
+    tech_data = fetch_technical_endday(list(zip(names, ts_codes)), margin_data, inst_by_ts, cyq_data)
     # 公告补充
     supp_data = fetch_supplementary_endday(names, ts_codes)
     # 全市场情绪(收盘后, 重试3次)
@@ -1352,10 +2037,28 @@ def fetch_all(stock_names: list[str]) -> dict:
         sec_ok[6] = bool(inst_data.get(symbols[infos.index(info)], {}).get("rate"))
         lines.append("")
 
+        # 16. 北向持股(读库, 季度披露)
+        nsec = _fmt_northbound_section(ts_code, nb_data.get(ts_code, {}))
+        lines.extend(nsec)
+        sec_ok[16] = bool(nb_data.get(ts_code, {}).get("seq"))
+        lines.append("")
+
+        # 17. 十大流通股东(读库, 季度披露)
+        psec = _fmt_top10_section(ts_code, top10_data.get(ts_code, {}))
+        lines.extend(psec)
+        sec_ok[17] = bool(top10_data.get(ts_code, {}).get("periods"))
+        lines.append("")
+
         # 7. 机构调研
         ssec = _fmt_survey_section(ts_code, sv_data.get(ts_code, {}))
         lines.extend(ssec)
         sec_ok[7] = bool(sv_data.get(ts_code, {}).get("count"))
+        lines.append("")
+
+        # 18. 券商评级与盈利预测(读库, 22点增量次日生效)
+        rsec = _fmt_report_rc_section(ts_code, rc_data.get(ts_code, {}))
+        lines.extend(rsec)
+        sec_ok[18] = bool(rc_data.get(ts_code, {}).get("n"))
         lines.append("")
 
         # 8. 股东户数
@@ -1386,6 +2089,12 @@ def fetch_all(stock_names: list[str]) -> dict:
         tsec = _fmt_technical_section(name, tech_data.get(name, {}))
         lines.extend(tsec)
         sec_ok[12] = not tsec[0].startswith("❌")
+        lines.append("")
+
+        # 19. 筹码成本分布(读库, 当天19:10入库)
+        csec = _fmt_cyq_section(ts_code, cyq_data.get(ts_code, {}))
+        lines.extend(csec)
+        sec_ok[19] = bool(cyq_data.get(ts_code, {}).get("weight_avg"))
         lines.append("")
 
         # 13. 业绩趋势

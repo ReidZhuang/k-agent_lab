@@ -59,13 +59,18 @@ class DatabaseManager:
         with self.get_conn() as conn:
             conn.executemany(sql, params_list)
 
-    def insert_batch(self, table, columns, rows):
-        """批量插入（带事务）"""
+    def insert_batch(self, table, columns, rows, ignore=False):
+        """批量插入（带事务）
+
+        Args:
+            ignore: True 时用 INSERT OR IGNORE（依赖表 UNIQUE 约束幂等）
+        """
         if not rows:
             return 0
         cols = ",".join(columns)
         placeholders = ",".join(["?"] * len(columns))
-        sql = f"INSERT INTO {table} ({cols}) VALUES ({placeholders})"
+        verb = "INSERT OR IGNORE" if ignore else "INSERT"
+        sql = f"{verb} INTO {table} ({cols}) VALUES ({placeholders})"
         with self.get_conn() as conn:
             conn.executemany(sql, rows)
         return len(rows)

@@ -28,6 +28,10 @@ from neo4j import GraphDatabase  # 知识图谱
 ETL_DIR = Path(__file__).resolve().parent.parent.parent / "etl"
 if str(ETL_DIR) not in sys.path:
     sys.path.insert(0, str(ETL_DIR))
+# 日终脚本目录(机构调研/筹码函数与日终同源, fetch_all 内延迟导入避免循环依赖)
+ENDDAY_DIR = Path(__file__).resolve().parent.parent / "endday"
+if str(ENDDAY_DIR) not in sys.path:
+    sys.path.insert(0, str(ENDDAY_DIR))
 from db_manager import DatabaseManager
 from config import DB_PATH
 
@@ -214,30 +218,45 @@ def fetch_yesterday_turnover(ts_codes: list[str]) -> dict[str, dict]:
 # ──────────────────────────────────────────────────────────────
 
 def fetch_margin(ts_codes: list[str]) -> dict[str, dict]:
-    """融资融券（T-1 日 + 较 T-2 变化率）"""
+    """融资融券（T-1 日 + 较 T-2 变化率）: 读库 stg_margin 优先(ETL 11:31 增量), 失败回退实时"""
     td = _tushare_trade_date()
     cal = get_calendar()
     t2 = cal.prev_trading_day(td, n=1)
 
     result = {}
     for ts_code in ts_codes:
+        info = {"trade_date_t1": td, "trade_date_t2": t2}
         try:
-            df1 = PRO.margin_detail(ts_code=ts_code, trade_date=td)
-            df2 = PRO.margin_detail(ts_code=ts_code, trade_date=t2)
-            info = {"trade_date_t1": td, "trade_date_t2": t2}
+            # 1) 读库(11:31 增量后 T-1 已入库; T-2 由回填/前日增量覆盖)
+            db_rows = {}
+            try:
+                rows = db.execute(
+                    "SELECT trade_date, rzye, rqye, rzmre FROM stg_margin "
+                    "WHERE ts_code=? AND trade_date IN (?, ?)", (ts_code, td, t2))
+                db_rows = {r[0]: r for r in rows}
+            except Exception:
+                db_rows = {}
+            r1 = db_rows.get(td)
+            r2 = db_rows.get(t2)
+            if r1 is None or r2 is None:
+                # 2) 库缺任一 → 实时回退(与原逻辑一致, 逐股两日)
+                df1 = PRO.margin_detail(ts_code=ts_code, trade_date=td)
+                df2 = PRO.margin_detail(ts_code=ts_code, trade_date=t2)
+                r1 = r1 or (None if df1 is None or df1.empty else
+                            tuple(df1.iloc[0][["trade_date", "rzye", "rqye", "rzmre"]]))
+                r2 = r2 or (None if df2 is None or df2.empty else
+                            tuple(df2.iloc[0][["trade_date", "rzye", "rqye", "rzmre"]]))
 
-            if not df1.empty:
-                r1 = df1.iloc[0]
-                info["rzye"] = float(r1["rzye"])
-                info["rqye"] = float(r1["rqye"])
-                info["rzmre"] = float(r1.get("rzmre", 0))
+            if r1 is not None:
+                info["rzye"] = float(r1[1])
+                info["rqye"] = float(r1[2])
+                info["rzmre"] = float(r1[3] or 0)
             else:
                 info.update({"rzye": None, "rqye": None, "rzmre": None})
 
-            if not df2.empty:
-                r2 = df2.iloc[0]
-                rzye_t2 = float(r2["rzye"])
-                rqye_t2 = float(r2["rqye"])
+            if r2 is not None:
+                rzye_t2 = float(r2[1])
+                rqye_t2 = float(r2[2])
                 info["rzye_chg_pct"] = round(
                     (info["rzye"] - rzye_t2) / rzye_t2 * 100, 2
                 ) if info.get("rzye") and rzye_t2 else None
@@ -263,12 +282,53 @@ def fetch_margin(ts_codes: list[str]) -> dict[str, dict]:
 _SNOWBALL_INITED = False
 
 
+def _refresh_token_file(token_path: Path) -> tuple[str, str]:
+    """调用 snowball_token/refresh_token.py --force 刷新, 返回 (xq, u); 失败返回 ("", "")"""
+    import subprocess
+    import sys as _sys
+    _refresh_script = Path(__file__).resolve().parent.parent.parent / "snowball_token" / "refresh_token.py"
+    if not _refresh_script.exists():
+        return "", ""
+    try:
+        result = subprocess.run(
+            [_sys.executable, str(_refresh_script), "--force"],
+            capture_output=True, text=True, timeout=180,
+        )
+        print(result.stdout, file=sys.stderr)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+    except Exception as e:
+        print(f"[snowball] 刷新进程异常: {e}", file=sys.stderr)
+        return "", ""
+    if token_path.exists():
+        import json
+        with open(token_path) as f:
+            cfg = json.load(f)
+        return cfg.get("xq_a_token", ""), cfg.get("u", "")
+    return "", ""
+
+
+def _check_token_valid() -> bool:
+    """用敏感接口 capital_flow 实测 token 有效性
+
+    注意: 行情接口(quotec)对 token 校验宽松, 失效 token 也能通过;
+    资金流接口 capital_flow 校验严格(失效返回 error_code 400016), 用它验证。
+    """
+    import pysnowball as ball
+    try:
+        from pysnowball.capital import capital_flow
+        d = capital_flow("SZ000001")  # 平安银行, 稳定存在
+        return bool(d and d.get("error_code") == 0)
+    except Exception:
+        return False
+
+
 def _init_snowball():
+    """取数前初始化雪球 token: 文件缺失或 token 失效(400016)时自动刷新"""
     global _SNOWBALL_INITED
     if _SNOWBALL_INITED:
         return
     try:
-        # 先尝试直接从 config 读取
         import json
         token_path = Path(__file__).parent / "config" / "snowball_token.json"
         xq, u = "", ""
@@ -281,35 +341,22 @@ def _init_snowball():
         if xq and u:
             import pysnowball as ball
             ball.set_token(f"xq_a_token={xq}; u={u}")
+            if _check_token_valid():
+                _SNOWBALL_INITED = True
+                return
+            # token 已过期(资金流接口 400016) → 刷新
+            print("[snowball] Token 已过期, 尝试自动刷新...", file=sys.stderr)
+        else:
+            # Token 文件不存在或为空 → 自动刷新
+            print("[snowball] 未找到有效 Token，尝试自动刷新...", file=sys.stderr)
+
+        xq, u = _refresh_token_file(token_path)
+        if xq and u:
+            import pysnowball as ball
+            ball.set_token(f"xq_a_token={xq}; u={u}")
             _SNOWBALL_INITED = True
+            print("[snowball] Token 自动刷新成功", file=sys.stderr)
             return
-
-        # Token 文件不存在或为空 → 尝试自动刷新
-        print("[snowball] 未找到有效 Token，尝试自动刷新...", file=sys.stderr)
-        _refresh_script = Path(__file__).resolve().parent.parent.parent / "snowball_token" / "refresh_token.py"
-        if _refresh_script.exists():
-            import subprocess
-            import sys as _sys
-            result = subprocess.run(
-                [_sys.executable, str(_refresh_script), "--force"],
-                capture_output=True, text=True, timeout=120,
-            )
-            print(result.stdout, file=sys.stderr)
-            if result.stderr:
-                print(result.stderr, file=sys.stderr)
-
-            # 刷新后再读一次
-            if token_path.exists():
-                with open(token_path) as f:
-                    cfg = json.load(f)
-                xq = cfg.get("xq_a_token", "")
-                u = cfg.get("u", "")
-                if xq and u:
-                    import pysnowball as ball
-                    ball.set_token(f"xq_a_token={xq}; u={u}")
-                    _SNOWBALL_INITED = True
-                    print("[snowball] Token 自动刷新成功", file=sys.stderr)
-                    return
 
         print("[snowball] Token 自动刷新失败，请手动运行 refresh_token.py", file=sys.stderr)
         _SNOWBALL_INITED = True
@@ -1730,6 +1777,18 @@ def fetch_all(stock_names: list[str]) -> dict:
     benchmark_data = fetch_ths_daily_benchmark(names)
     tech_data = fetch_technical_analysis(list(zip(names, ts_codes)))
 
+    # 8. 机构调研 + 筹码(与日终同源实现, 延迟导入避免循环依赖)
+    try:
+        from fetch_endday_data import fetch_survey as _fd_survey, _fmt_survey_section as _fd_fmt_survey
+        survey_data = _fd_survey(ts_codes)
+    except Exception:
+        survey_data = {}
+    try:
+        from fetch_endday_data import fetch_cyq_db as _fd_cyq, _fmt_cyq_section as _fd_fmt_cyq
+        cyq_data = _fd_cyq(ts_codes)
+    except Exception:
+        cyq_data = {}
+
     # 7b. 补充信息 — 日期范围（上一交易日 ~ 今日）
     from datetime import datetime as _dt
     _today_str = _dt.now().strftime("%Y%m%d")
@@ -1883,6 +1942,13 @@ def fetch_all(stock_names: list[str]) -> dict:
                     lines.append(f"          融券余额: {rqye_s}")
         lines.append("")
 
+        # ── 机构调研(与日终同格式; 午间不输出纪要全文, 2026-08-11) ──
+        sv = survey_data.get(ts_code, {})
+        if sv:
+            sv_sec = _fd_fmt_survey(ts_code, sv, with_minutes=False)
+            lines.extend(sv_sec)
+            lines.append("")
+
         # ── 资金流向（今日午间） ──
         if "error" in cf:
             lines.append(f"❌（今日午间收盘）资金流向: {cf.get('error', '获取失败')}")
@@ -1987,6 +2053,13 @@ def fetch_all(stock_names: list[str]) -> dict:
             lines.append(f"❌ 技术面: {ta['error']}")
         lines.append("")
 
+        # ── 筹码成本(午间用 T-1 数据, 与日终同格式) ──
+        cq = cyq_data.get(ts_code, {})
+        if cq:
+            cq_sec = _fd_fmt_cyq(ts_code, cq)
+            lines.extend(cq_sec)
+            lines.append("")
+
         # ── 补充信息（仅在有数据时展示） ──
         supp = supp_data.get(name, [])
         if supp:
@@ -2068,6 +2141,7 @@ def main():
         sys.exit(1)
 
     result = fetch_all(stock_names)
+    result.pop("warning", {})
 
     if fmt == "json":
         output = json.dumps(result, ensure_ascii=False, indent=2)

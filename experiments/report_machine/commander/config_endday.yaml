@@ -37,7 +37,7 @@ services:
     name: "mail_tower"
     port: 8300
     cwd: /home/stockagent/project_space/research/experiments/mail_tower
-    cmd: "conda run -n stock_agent uvicorn api:app --host 0.0.0.0 --port 8300 --workers 12"
+    cmd: "/home/stockagent/miniforge3/bin/conda run -n stock_agent uvicorn api:app --host 0.0.0.0 --port 8300 --workers 12"
     health_url: "http://localhost:8300/"
     health_field: "service"
     health_expected: "bot_search API"
@@ -47,7 +47,7 @@ services:
     name: "middleman"
     port: 8311
     cwd: /home/stockagent/project_space/research/experiments/report_machine/office/middleman
-    cmd: "conda run -n stock_agent uvicorn server:app --host 0.0.0.0 --port 8311 --workers 4"
+    cmd: "/home/stockagent/miniforge3/bin/conda run -n stock_agent uvicorn server:app --host 0.0.0.0 --port 8311 --workers 4"
     health_url: "http://localhost:8311/health"
     health_field: "status"
     health_expected: "ok"
@@ -57,7 +57,7 @@ services:
     name: "reporter"
     port: 8312
     cwd: /home/stockagent/project_space/research/experiments/report_machine/office/reporter
-    cmd: "conda run -n stock_agent python3 server.py"
+    cmd: "/home/stockagent/miniforge3/bin/conda run -n stock_agent python3 server.py"
     health_url: "http://localhost:8312/health"
     health_field: "status"
     health_expected: "ok"
@@ -67,7 +67,7 @@ services:
     name: "writer"
     port: 8310
     cwd: /home/stockagent/project_space/research/experiments/report_machine/office/writer
-    cmd: "conda run -n stock_agent python3 server.py"
+    cmd: "/home/stockagent/miniforge3/bin/conda run -n stock_agent python3 server.py"
     health_url: "http://localhost:8310/health"
     health_field: "status"
     health_expected: "ok"

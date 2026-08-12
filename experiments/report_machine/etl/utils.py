@@ -71,6 +71,33 @@ class RateLimiter(TokenBucket):
     pass
 
 
+def safe_api_call(api_fn, logger=None, retry_wait=30, max_retries=3, **kwargs):
+    """Tushare 接口调用 + 频率超限重试(不限制普通调用速率, 仅在超限时等待)
+
+    Args:
+        api_fn: PRO.xxx 方法
+        retry_wait: 频率超限后的基础等待秒数(每次失败递增 ×attempt)
+        max_retries: 频率超限重试次数
+    """
+    for attempt in range(max_retries):
+        try:
+            return api_fn(**kwargs)
+        except Exception as e:
+            msg = str(e)
+            if "频率超限" in msg:
+                wait = retry_wait * (attempt + 1)
+                if logger:
+                    logger.warning(f"  频率超限, 等待{wait}s后重试 ({attempt+1}/{max_retries})")
+                time.sleep(wait)
+            else:
+                if logger:
+                    logger.error(f"  {api_fn.__name__} 调用失败: {msg}")
+                return None
+    if logger:
+        logger.error(f"  {api_fn.__name__} 重试{max_retries}次仍频率超限, 跳过")
+    return None
+
+
 def chunk_list(lst, size):
     for i in range(0, len(lst), size):
         yield lst[i:i + size]

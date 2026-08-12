@@ -69,9 +69,11 @@ from fetch_endday_data import (
     fetch_margin_analysis, fetch_lhb, fetch_moneyflow_multi, fetch_snowball_flow,
     fetch_ths_institution, fetch_survey, fetch_holdernumber,
     fetch_risk_calendar, fetch_finance_trend, fetch_blocktrade,
+    fetch_report_rc,
     _fmt_margin_section, _fmt_lhb_section, _fmt_moneyflow_section,
     _fmt_institution_section, _fmt_survey_section, _fmt_holdernumber_section,
     _fmt_risk_section, _fmt_finance_section, _fmt_blocktrade_section,
+    _fmt_report_rc_section,
 )
 
 _SECTION_NAMES = {
@@ -80,6 +82,7 @@ _SECTION_NAMES = {
     7: "机构持仓", 8: "机构调研", 9: "股东户数",
     10: "风险日历", 11: "板块地位",
     12: "技术面成本地图", 13: "业绩趋势", 14: "公告补充", 15: "大宗交易",
+    16: "券商评级",
 }
 _CRITICAL_SECTIONS = {1, 3, 4, 6, 12}
 
@@ -298,6 +301,7 @@ def fetch_all(stock_names: list[str]) -> dict:
             pool.submit(_task, "risk", fetch_risk_calendar, ts_codes),
             pool.submit(_task, "finance", fetch_finance_trend, ts_codes),
             pool.submit(_task, "blocktrade", fetch_blocktrade, ts_codes),
+            pool.submit(_task, "report_rc", fetch_report_rc, ts_codes),
         ]
         data = {}
         for fut in as_completed(futures):
@@ -422,8 +426,9 @@ def fetch_all(stock_names: list[str]) -> dict:
         sec_ok[7] = bool(inst_data.get(symbols[infos.index(info)], {}).get("rate"))
         lines.append("")
 
-        # 8. 机构调研
-        ssec = _fmt_survey_section(ts_code, data.get("survey", {}).get(ts_code, {}))
+        # 8. 机构调研(午间不输出纪要全文, 只出概要+名单; 2026-08-11)
+        ssec = _fmt_survey_section(ts_code, data.get("survey", {}).get(ts_code, {}),
+                                   with_minutes=False)
         lines.extend(ssec)
         sec_ok[8] = bool(data.get("survey", {}).get(ts_code, {}).get("count"))
         lines.append("")
@@ -467,6 +472,12 @@ def fetch_all(stock_names: list[str]) -> dict:
         bsec = _fmt_blocktrade_section(name, data.get("blocktrade", {}).get(ts_code, {"count": 0}))
         lines.extend(bsec)
         sec_ok[15] = bool(data.get("blocktrade", {}).get(ts_code, {}).get("count"))
+        lines.append("")
+
+        # 16. 券商评级与盈利预测(逐条研报, 与日终同源; 无数据不阻塞)
+        rcsec = _fmt_report_rc_section(ts_code, data.get("report_rc", {}).get(ts_code, {}))
+        lines.extend(rcsec)
+        sec_ok[16] = bool(data.get("report_rc", {}).get(ts_code, {}).get("n_reports"))
         lines.append("")
 
         result[name] = "\n".join(lines)

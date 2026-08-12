@@ -13,6 +13,8 @@ experiments/mail_tower/sessions/
 experiments/report_machine/office/output/
 experiments/report_machine/office/log/
 experiments/report_machine/office/test_drive/results/debug_logs/
+# 端到端测试运行产物（context/报告/完整输入文档）
+experiments/report_machine/office/test_drive/new_e2e/run_*/
 
 # ETL 日志
 experiments/report_machine/etl/logs/

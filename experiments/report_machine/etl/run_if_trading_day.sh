@@ -1,7 +1,9 @@
 #!/bin/bash
 # 交易日判断包装脚本：只在交易日执行 ETL 任务
 # 内置失败重试：失败后等待 60s 重试一次
-# 用法: ./run_if_trading_day.sh <etl_args...>
+# 用法:
+#   ./run_if_trading_day.sh <etl_args...>           # 运行 etl_runner.py(向后兼容)
+#   ./run_if_trading_day.sh etl_margin.py <args...> # 运行指定 ETL 脚本(首个参数以 .py 结尾)
 
 ETL_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONDA_PYTHON="/home/stockagent/miniforge3/envs/stock_agent/bin/python"
@@ -68,23 +70,31 @@ fi
 mkdir -p "$ETL_DIR/logs"
 cd "$ETL_DIR"
 
+# 目标脚本: 首个参数以 .py 结尾则为指定脚本, 否则默认 etl_runner.py
+if [[ "$1" == *.py ]]; then
+    TARGET_SCRIPT="$1"
+    shift
+else
+    TARGET_SCRIPT="etl_runner.py"
+fi
+
 # 第一次运行
-_log "[RUN] etl_runner.py $@"
-$CONDA_PYTHON etl_runner.py "$@" >> logs/etl_runner.log 2>&1
+_log "[RUN] $TARGET_SCRIPT $@"
+$CONDA_PYTHON "$TARGET_SCRIPT" "$@" >> "logs/${TARGET_SCRIPT%.py}.log" 2>&1
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
     _log "[RETRY] 失败 (exit=$EXIT_CODE)，等待 60s 后重试..."
-    _log_error "WARNING" "ETL 首次失败 (args=$@, exit=$EXIT_CODE)，即将重试"
+    _log_error "WARNING" "ETL 首次失败 (script=$TARGET_SCRIPT, args=$@, exit=$EXIT_CODE)，即将重试"
     sleep 60
-    _log "[RUN] 重试 etl_runner.py $@"
-    $CONDA_PYTHON etl_runner.py "$@" >> logs/etl_runner.log 2>&1
+    _log "[RUN] 重试 $TARGET_SCRIPT $@"
+    $CONDA_PYTHON "$TARGET_SCRIPT" "$@" >> "logs/${TARGET_SCRIPT%.py}.log" 2>&1
     EXIT_CODE=$?
 fi
 
 if [ $EXIT_CODE -ne 0 ]; then
     _log "[FAIL] ETL 重试后仍失败 (exit=$EXIT_CODE)"
-    _log_error "ERROR" "ETL 重试后仍失败 (args=$@, exit=$EXIT_CODE)"
+    _log_error "ERROR" "ETL 重试后仍失败 (script=$TARGET_SCRIPT, args=$@, exit=$EXIT_CODE)"
 else
     _log "[DONE] ETL 成功"
 fi
