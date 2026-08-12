@@ -25,9 +25,6 @@ import requests
 
 logger = logging.getLogger("commander.service_manager")
 
-# ── 常量 ────────────────────────────────────────────
-CONDA_CMD = "/home/stockagent/miniforge3/bin/conda"
-
 # 服务启动依赖顺序（正向 = 先启动的先列出）
 SERVICE_START_ORDER = ["mail_tower", "middleman", "reporter", "writer"]
 # 服务停止顺序 = 反向依赖
@@ -236,7 +233,9 @@ def start_service(svc: ServiceConfig) -> bool:
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     # 3. 启动
-    full_cmd = f"cd {svc.cwd} && nohup {CONDA_CMD} {svc.cmd} > {log_path} 2>&1 &"
+    # 注意: cmd 本身已含完整 conda 路径(如 /home/stockagent/miniforge3/bin/conda run -n stock_agent ...),
+    # 直接执行,不再拼接前缀(历史 bug: 曾与 CONDA_CMD 前缀拼成 `conda conda run` 导致启动必失败)
+    full_cmd = f"cd {svc.cwd} && nohup {svc.cmd} > {log_path} 2>&1 &"
     logger.info(f"启动 {svc.name}: {full_cmd[:120]}...")
 
     try:
