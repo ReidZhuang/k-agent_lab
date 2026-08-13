@@ -376,8 +376,17 @@ def log_error_to_db(
 # 分发报告
 # ======================================================================
 
-def find_report_file(output_dir: str, stock_name: str, today: str) -> Optional[str]:
+# 报告类型 → 文件名关键词
+TYPE_LABELS = {"noon": "午间", "endday": "日终"}
+
+
+def find_report_file(
+    output_dir: str, stock_name: str, today: str, report_type: str = "noon"
+) -> Optional[str]:
     """在 output 目录中查找指定股票当天的报告文件
+
+    同一天可能同时存在午间/日终两份报告，必须按 report_type 精确匹配，
+    避免 os.listdir 目录项顺序导致拿错文件；同类型多份时取 mtime 最新。
 
     Returns:
         文件绝对路径，未找到返回 None
@@ -387,11 +396,27 @@ def find_report_file(output_dir: str, stock_name: str, today: str) -> Optional[s
         return None
 
     # 匹配今天日期的文件
-    for fname in os.listdir(stock_dir):
-        if fname.startswith(today) and fname.endswith(".md"):
-            return os.path.join(stock_dir, fname)
+    candidates = [
+        f for f in os.listdir(stock_dir)
+        if f.startswith(today) and f.endswith(".md")
+    ]
+    if not candidates:
+        return None
 
-    return None
+    def newest(files: list[str]) -> str:
+        return max(files, key=lambda f: os.path.getmtime(os.path.join(stock_dir, f)))
+
+    label = TYPE_LABELS.get(report_type, "")
+    if label:
+        # 文件名形如 {date}_{name}_{label}收盘报告.md,匹配 _{label} 前缀
+        exact = [f for f in candidates if f"_{label}" in f]
+        if exact:
+            return os.path.join(stock_dir, newest(exact))
+
+    # 回退：今天的任意报告（历史兼容），取最新并告警
+    fallback = newest(candidates)
+    logger.warning(f"  {stock_name}: 未找到 {report_type}({label}) 报告，回退到 {fallback}")
+    return os.path.join(stock_dir, fallback)
 
 
 def distribute_reports(
@@ -402,6 +427,7 @@ def distribute_reports(
     today: str,
     deduped_items: list[dict],
     db_path: str = "",
+    report_type: str = "noon",
 ) -> dict:
     """将生成的报告从 output 复制到对应用户目录
 
@@ -429,7 +455,7 @@ def distribute_reports(
             continue
 
         # 找报告文件
-        report_path = find_report_file(output_dir, name, today)
+        report_path = find_report_file(output_dir, name, today, report_type)
         if not report_path:
             logger.warning(f"  报告文件未找到: {name}")
             for u in users:
@@ -706,6 +732,7 @@ def main():
                 today=today,
                 deduped_items=deduped_items,
                 db_path=db_path,
+                report_type=report_type,
             )
             summary["distribution"] = dist_results
 
