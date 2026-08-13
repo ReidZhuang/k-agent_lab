@@ -6,11 +6,15 @@
     CHOICE_MCP_API_KEY   已保存的 API Key(可选,仅用于对比提示)
 
 用法:
-    python choice_get_api_key.py          # 登录并打印 API Key
-    python choice_get_api_key.py --save   # 登录,打印并把 Key 写入 ~/.config/choice_mcp_api_key(不落 git)
+    python choice_get_api_key.py               # 登录并打印 API Key
+    python choice_get_api_key.py --save        # 登录,打印并把 Key 写入 ~/.config/choice_mcp_api_key(不落 git)
+    python choice_get_api_key.py --update-openclaw  # 登录,并把 Key 更新到 openclaw.json 的 mx-ds-mcp em_api_key(自动备份)
 
 返回: 成功打印 Key 后 exit 0; 失败 exit 1。
 """
+import json
+import pathlib
+import shutil
 import os
 import re
 import sys
@@ -108,8 +112,41 @@ def login_and_get_key(page) -> str:
     return m.group(0)
 
 
+OPENCLAW_JSON = pathlib.Path.home() / ".openclaw" / "openclaw.json"
+
+
+def update_openclaw(key: str) -> bool:
+    """把 Key 更新到 openclaw.json 的 mcp.servers.mx-ds-mcp.headers.em_api_key
+
+    修改前备份为 openclaw.json.bak.<时间戳>。返回是否发生了修改。
+    """
+    if not OPENCLAW_JSON.exists():
+        print(f"[ERROR] 未找到 {OPENCLAW_JSON}", file=sys.stderr)
+        return False
+    with open(OPENCLAW_JSON) as f:
+        cfg = json.load(f)
+    try:
+        headers = cfg["mcp"]["servers"]["mx-ds-mcp"]["headers"]
+    except KeyError:
+        print("[ERROR] openclaw.json 缺少 mcp.servers.mx-ds-mcp.headers 路径", file=sys.stderr)
+        return False
+    old = headers.get("em_api_key", "")
+    if old == key:
+        print("[INFO] openclaw.json em_api_key 已是最新, 无需更新", file=sys.stderr)
+        return True
+    backup = OPENCLAW_JSON.with_name(f"openclaw.json.bak.{old[:8] or 'empty'}")
+    shutil.copy2(OPENCLAW_JSON, backup)
+    print(f"[INFO] 已备份旧配置 -> {backup}", file=sys.stderr)
+    headers["em_api_key"] = key
+    with open(OPENCLAW_JSON, "w") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+    print("[INFO] openclaw.json em_api_key 已更新 (mx-ds-mcp)", file=sys.stderr)
+    return True
+
+
 def main() -> int:
     save = "--save" in sys.argv
+    update = "--update-openclaw" in sys.argv
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -139,10 +176,13 @@ def main() -> int:
         print(f"[WARN] 新 Key 与 CHOICE_MCP_API_KEY 不一致, 请更新 ~/.bashrc", file=sys.stderr)
 
     if save:
-        import pathlib
         path = pathlib.Path.home() / ".config" / "choice_mcp_api_key"
         path.write_text(key + "\n")
         print(f"[INFO] Key 已写入 {path}", file=sys.stderr)
+
+    if update:
+        if not update_openclaw(key):
+            return 1
     return 0
 
 
