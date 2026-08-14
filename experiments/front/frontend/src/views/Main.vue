@@ -14,7 +14,7 @@
 
     <div class="app-layout">
       <!-- 侧栏 -->
-      <aside class="sidebar" :class="{ 'mobile-open': sidebarVisible }">
+      <aside class="sidebar" :class="{ 'mobile-open': sidebarVisible }" :style="{ width: sidebarWidth + '%' }">
         <!-- 搜索 -->
         <div class="sidebar-search">
           <div class="search-wrap">
@@ -80,6 +80,9 @@
         </div>
       </aside>
 
+      <!-- 拖拽分割条（调整 explorer 宽度） -->
+      <div class="resize-handle" @pointerdown="startResize"></div>
+
       <!-- 主区域 -->
       <main class="main-area">
         <div class="tabs-bar">
@@ -110,6 +113,9 @@
           <el-tooltip content="打印文档" placement="left">
             <button class="doc-toolbar-btn" @click="printDocument" title="打印文档">🖨️</button>
           </el-tooltip>
+          <el-tooltip content="复制全部内容" placement="left">
+            <button class="doc-toolbar-btn" @click="copyDocument" title="复制全部内容">📋</button>
+          </el-tooltip>
           <div class="doc-toolbar-sep"></div>
           <!-- 预留按钮位（暂空） -->
           <div class="doc-btn-placeholder"></div>
@@ -121,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Marked } from 'marked'
@@ -135,6 +141,8 @@ import { useDownloadStore } from '../api/downloadStore.js'
 const router = useRouter()
 const userName = ref('')
 const sidebarVisible = ref(false)
+// explorer 宽度（百分比，20%–50%），记住上次拖拽位置
+const sidebarWidth = ref(parseInt(localStorage.getItem('sidebar_width') || '') || 30)
 const activeTab = ref('pool')
 const searchKeyword = ref('')
 const favCollapsed = ref(false)
@@ -154,6 +162,7 @@ onMounted(async () => {
     return
   }
   userName.value = user.name || user.username
+  sidebarWidth.value = Math.min(50, Math.max(20, sidebarWidth.value))
   try {
     await me()
     loadFiles()
@@ -373,6 +382,82 @@ function onTabChange() {
   sidebarVisible.value = false
 }
 
+// ── 拖拽分割条调整 explorer 宽度 ──
+function startResize(e) {
+  // 仅响应鼠标左键 / 触摸 / 笔
+  if (e.pointerType === 'mouse' && e.button !== 0) return
+  e.preventDefault()
+  const handle = e.currentTarget
+  // 指针捕获：即使鼠标在窗口外松开也能收到 pointerup，
+  // 避免「mouseup 落在窗口外收不到」导致拖拽状态永远卡死
+  handle.setPointerCapture(e.pointerId)
+  const startX = e.clientX
+  const startWidth = sidebarWidth.value
+
+  function onMove(ev) {
+    const delta = ev.clientX - startX
+    sidebarWidth.value = Math.min(50, Math.max(20, startWidth + delta / window.innerWidth * 100))
+  }
+  function onUp() {
+    handle.removeEventListener('pointermove', onMove)
+    handle.removeEventListener('pointerup', onUp)
+    handle.removeEventListener('pointercancel', onUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    localStorage.setItem('sidebar_width', String(sidebarWidth.value))
+  }
+  handle.addEventListener('pointermove', onMove)
+  handle.addEventListener('pointerup', onUp)
+  handle.addEventListener('pointercancel', onUp)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+}
+
+// 组件卸载时兜底恢复 body 样式，防止拖拽中途切走导致样式残留
+onBeforeUnmount(() => {
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+})
+
+// ── 复制文档全部内容 ──
+function copyDocument() {
+  if (!currentFileContent.value) return
+  const el = document.querySelector('.md-preview')
+  if (!el) {
+    ElMessage.warning('当前没有可复制的文档内容')
+    return
+  }
+  const done = () => ElMessage.success('已复制全部内容')
+  const fail = () => ElMessage.error('复制失败')
+  // Clipboard API 仅在安全上下文可用（localhost/https）；
+  // 通过 Tailscale IP 访问时是非安全上下文，降级为「选中内容 + execCommand」
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html': new Blob([el.innerHTML], { type: 'text/html' }),
+        'text/plain': new Blob([currentFileContent.value], { type: 'text/plain' }),
+      }),
+    ]).then(done).catch(() => fallbackCopy(el, done, fail))
+  } else {
+    fallbackCopy(el, done, fail)
+  }
+}
+
+function fallbackCopy(el, done, fail) {
+  const range = document.createRange()
+  range.selectNodeContents(el)
+  const sel = window.getSelection()
+  sel.removeAllRanges()
+  sel.addRange(range)
+  try {
+    if (document.execCommand('copy')) done()
+    else fail()
+  } catch {
+    fail()
+  }
+  sel.removeAllRanges()
+}
+
 // ── 打印当前文档 ──
 const printMarked = new Marked({ gfm: true, breaks: true })
 
@@ -453,13 +538,25 @@ function printDocument() {
 
 .app-layout { display: flex; flex: 1; height: calc(100vh - 56px); }
 
+/* 拖拽分割条 */
+.resize-handle {
+  width: 6px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 5;
+  transition: background 0.15s;
+}
+.resize-handle:hover { background: var(--wood-200); }
+
 .sidebar {
-  width: 30%; max-width: 340px; min-width: 260px;
   background: #fff;
   border-right: 1px solid var(--wood-200);
   display: flex; flex-direction: column;
   min-height: 0;
-  /* 不设 overflow:hidden，让 sticky footer 能固定在底部 */
+  min-width: 220px;
+  /* 宽度由拖拽控制（inline style，20%–50%）；不设 overflow:hidden，让 sticky footer 能固定在底部 */
 }
 
 .sidebar-search { padding: 12px 16px; border-bottom: 1px solid var(--wood-100); }
@@ -543,6 +640,7 @@ function printDocument() {
   .sidebar.mobile-open { display: flex; position: fixed; inset: 0; z-index: 100; width: 100%; max-width: 100%; }
   .content-area { padding: 16px; }
   .doc-float-bar { display: none; }
+  .resize-handle { display: none; }
 }
 
 /* ════════════════════════════════════════════════════════════════
