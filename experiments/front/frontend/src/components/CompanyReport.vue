@@ -31,7 +31,8 @@
       </div>
 
       <div v-if="running" class="progress-bar-wrap">
-        <div class="progress-bar-fill" :style="{ width: percent + '%' }"></div>
+        <div class="progress-bar-fill" :style="{ width: Math.round(percent) + '%' }"></div>
+        <span class="progress-percent">{{ Math.round(percent) }}%</span>
       </div>
 
       <div class="event-list">
@@ -109,63 +110,129 @@ async function handleGenerate() {
     running.value = true
     total.value = names.length
     completed.value = 0
+    percent.value = 0
+    stageTarget.value = 0
+    stageText.value = ''
+    stopTicker()
     subscribe(data.task_id)
   } catch {
     ElMessage.error(`无法连接报告服务(${REPORT_BASE})，请确认服务已启动`)
   }
 }
 
-function subscribe(id) {
-  es = new EventSource(`${REPORT_BASE}/api/reports/${id}/events`)
-  es.addEventListener('task_done', (e) => {
-    const data = JSON.parse(e.data)
-    events.value.push({ seq: data.seq, ts: data.ts, type: data.type, ...data })
+// ── 经验进度: 按事件阶段推进(占比依据实测: 登录态复用 12s / 完整登录 70s / 生成 220s 级) ──
+// 阶段分布: 排队 0-3%, 登录 3-12%, 生成 12-90%(多只均分), 收尾 90-100%
+const percent = ref(0)
+const stageTarget = ref(0)
+const stageText = ref('')
+let ticker = null
+
+// 设定当前阶段的经验百分比上限; 进度条缓慢爬升, 到上限即停, 事件到达后跳到下一段
+function setStage(target, label) {
+  stageTarget.value = Math.max(stageTarget.value, target)
+  if (label) stageText.value = label
+  if (!ticker) {
+    ticker = setInterval(() => {
+      const diff = stageTarget.value - percent.value
+      if (diff > 0.5) {
+        percent.value = Math.min(stageTarget.value, percent.value + diff / 8 + 0.3)
+      }
+    }, 800)
+  }
+}
+function stopTicker() {
+  if (ticker) { clearInterval(ticker); ticker = null }
+}
+
+// 每只股票的生成区间(在 12%-90% 之间均分)
+const genStart = (i, n) => 12 + 78 * (i / n)
+const genEnd = (i, n) => 12 + 78 * ((i + 1) / n)
+
+function handleSseEvent(data) {
+  switch (data.type) {
+    case 'task_queued':
+      setStage(3, `任务已入队，队列位置 ${data.position}…`)
+      break
+    case 'login_started':
+      setStage(6, data.reason === 'quota_switch' ? '积分不足，正在登录备用账号…' : '正在登录妙想账号…')
+      break
+    case 'login_ok':
+      setStage(12, `账号登录成功（Key ${data.key_prefix}…）`)
+      break
+    case 'login_failed':
+      stopTicker()
+      break
+    case 'generating':
+      // 进入该股生成区间: 进度条缓慢爬向该股区间末端(经验上限), 到达即停
+      setStage(genEnd(data.index, data.total), `正在生成「${data.stock}」分析报告（${data.index + 1}/${data.total}）…`)
+      break
+    case 'stock_done':
+      setStage(genEnd(data.index, data.total), `「${data.stock}」报告生成完成`)
+      break
+    case 'stock_failed':
+      setStage(genEnd(data.index, data.total), `「${data.stock}」生成失败`)
+      break
+    case 'quota_switching':
+      setStage(stageTarget.value, '检测到积分不足，正在切换备用账号…')
+      break
+    case 'retrying':
+      setStage(stageTarget.value, `正在使用备用账号重试「${data.stock}」…`)
+      break
+    case 'all_quota_exhausted':
+      setStage(92, '今日全部账号积分已用尽')
+      break
+    case 'task_done':
+      setStage(100, `全部完成：${data.files?.length ?? 0} 份成功`)
+      stopTicker()
+      break
+    case 'task_failed':
+      stopTicker()
+      break
+  }
+}
+
+// 服务端 SSE 所有事件都带 event: 字段, 必须逐类型注册
+// (onmessage 只收无 event 字段的消息, 收不到任何服务端事件)
+const SSE_EVENT_TYPES = [
+  'task_queued', 'login_started', 'login_ok', 'login_failed',
+  'generating', 'stock_done', 'stock_failed',
+  'quota_switching', 'retrying', 'all_quota_exhausted',
+  'task_done', 'task_failed',
+]
+
+function onSseEvent(type, e) {
+  const data = JSON.parse(e.data)
+  events.value.push({ seq: data.seq, ts: data.ts, type: data.type, ...data })
+  if (events.value.length > 50) events.value.splice(0, events.value.length - 50)
+  if (type === 'stock_done') completed.value = data.index + 1
+  if (type === 'task_done') {
     running.value = false
     doneInfo.value = { ok: true }
-    es.close()
-  })
-  es.addEventListener('task_failed', (e) => {
-    const data = JSON.parse(e.data)
-    events.value.push({ seq: data.seq, ts: data.ts, type: data.type, ...data })
+  }
+  if (type === 'task_failed') {
     running.value = false
     doneInfo.value = { ok: false, error: data.error }
-    es.close()
-  })
-  es.addEventListener('stock_done', (e) => {
-    const data = JSON.parse(e.data)
-    completed.value = data.index + 1
-    events.value.push({ seq: data.seq, ts: data.ts, type: data.type, ...data })
-  })
-  es.addEventListener('stock_failed', (e) => {
-    const data = JSON.parse(e.data)
-    events.value.push({ seq: data.seq, ts: data.ts, type: data.type, ...data })
-  })
-  es.onmessage = (e) => {
-    if (!e.data || e.data.startsWith(':')) return
-    try {
-      const data = JSON.parse(e.data)
-      if (!['task_done', 'task_failed', 'stock_done', 'stock_failed'].includes(data.type)) {
-        events.value.push({ seq: data.seq, ts: data.ts, type: data.type, ...data })
-      }
-      if (events.value.length > 50) events.value.splice(0, events.value.length - 50)
-    } catch { /* 非 JSON 心跳忽略 */ }
+  }
+  handleSseEvent(data)
+  if (type === 'task_done' || type === 'task_failed') es.close()
+}
+
+function subscribe(id) {
+  es = new EventSource(`${REPORT_BASE}/api/reports/${id}/events`)
+  for (const t of SSE_EVENT_TYPES) {
+    es.addEventListener(t, (e) => onSseEvent(t, e))
   }
   es.onerror = () => {
     // 连接断开: EventSource 自动重连(服务端会重放事件)
   }
 }
 
-const percent = ref(0)
-watch([completed, total], () => {
-  percent.value = total.value ? Math.round((completed.value / total.value) * 100) : 0
-})
-
 const progressText = ref('')
-watch([running, doneInfo, total, completed], () => {
+watch([running, doneInfo, stageText, completed, total], () => {
   if (doneInfo.value) {
     progressText.value = `完成 ${completed.value}/${total.value}`
   } else if (running.value) {
-    progressText.value = `进行中 ${completed.value}/${total.value}`
+    progressText.value = stageText.value || `进行中 ${completed.value}/${total.value}`
   } else {
     progressText.value = ''
   }
@@ -204,6 +271,7 @@ function evText(ev) {
 
 onBeforeUnmount(() => {
   if (es) es.close()
+  stopTicker()
 })
 </script>
 
@@ -246,12 +314,18 @@ onBeforeUnmount(() => {
   margin: 16px 20px 0;
   background: var(--wood-100);
   border-radius: 6px; height: 10px; overflow: hidden;
+  position: relative;
 }
 .progress-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--wood-400), var(--wood-500));
   border-radius: 6px;
   transition: width 0.3s ease;
+}
+.progress-percent {
+  position: absolute; right: 6px; top: -14px;
+  font-size: 0.75rem; color: var(--wood-500);
+  font-variant-numeric: tabular-nums;
 }
 .event-list { padding: 12px 20px 8px; max-height: 320px; overflow-y: auto; }
 .event-item {

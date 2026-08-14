@@ -9,7 +9,7 @@
   4. 查所有用户股票池 → 合并去重
   5. 第一批: POST Writer API（全部股票）
   6. 失败记录(不再重投: 重试由 sub writer 总闸内完成)
-  7. 分发报告: office/output/ → user/{username}/{stock_name}/
+  7. 分发报告: office/output/ → user/{username}/股票分析/{stock_name}/
   8. 写任务日志到 office/log/
   （2026-07-31 起不再清理 office/output/，历史报告保留）
 
@@ -468,9 +468,9 @@ def distribute_reports(
                 results.setdefault(u, {})[name] = "not_found"
             continue
 
-        # 复制到每个用户目录
+        # 复制到每个用户目录(user/{username}/股票分析/{stock_name}/)
         for username in users:
-            dst_dir = os.path.join(user_base_dir, username, name)
+            dst_dir = os.path.join(user_base_dir, username, "股票分析", name)
             os.makedirs(dst_dir, exist_ok=True)
 
             fname = os.path.basename(report_path)

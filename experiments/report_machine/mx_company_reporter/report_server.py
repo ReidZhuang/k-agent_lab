@@ -98,13 +98,13 @@ def _emit(task: TaskState, etype: str, **extra):
 # ---------- 报告复制到用户目录 ----------
 
 def _copy_to_user(stock: str, md_path: str, username: str | None) -> str | None:
-    """复制报告到 user/{username}/{股票名}/, 返回目标路径; 失败不阻塞任务。
+    """复制报告到 user/{username}/上市公司分析/{股票名}/, 返回目标路径; 失败不阻塞任务。
 
     username 为空(前端未传)时直接跳过。
     """
     if not username:
         return None
-    target = USER_BASE / username / stock
+    target = USER_BASE / username / "上市公司分析" / stock
     try:
         target.mkdir(parents=True, exist_ok=True)
         dest = target / os.path.basename(md_path)
