@@ -39,8 +39,17 @@ systemd 服务须在运行(`systemctl --user status openclaw-gateway`)。
 POST /api/reports
 Content-Type: application/json
 
-{"stocks": ["宁德时代", "淮北矿业"]}
+{"stocks": ["宁德时代", "淮北矿业"], "username": "zgx"}
 ```
+
+参数说明:
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `stocks` | 是 | 股票名称列表, 1~5 只, 串行生成 |
+| `username` | 否 | 前端登录用户名。传入后每份报告生成成功会**自动复制**到
+  `experiments/report_machine/user/{username}/{股票名}/`, 前端文件区直接可见;
+  不传则只保存到服务端 `reports/` 目录 |
 
 **成功(202)**:
 
@@ -79,7 +88,9 @@ Accept: text/event-stream
 | `login_ok` | `credential, key_prefix` | 登录成功, 已取得新 API Key |
 | `login_failed` | `credential, reason` | 登录失败(每日首次失败 → 任务整体失败) |
 | `generating` | `stock, index, total` | 开始生成第 index+1 只股票 |
-| `stock_done` | `stock, index, total, file, path` | 该股报告生成成功, 已保存 |
+| `stock_done` | `stock, index, total, file, path, user_path` | 该股报告生成成功, 已保存;
+  `user_path` 为复制到 `user/{username}/{股票名}/` 的路径(POST 传了 username 且复制成功时才有,
+  用于前端文件区定位; 复制失败不阻塞任务, 报告仍在 `reports/`) |
 | `stock_failed` | `stock, index, total, error` | 该股生成失败(超时/其他错误/积分用尽) |
 | `quota_switching` | `from_credential, to_credential` | 检测到积分耗尽, 开始换备用凭据 |
 | `retrying` | `stock, credential, attempt` | gateway 已恢复, 重试该股生成 |
@@ -147,8 +158,13 @@ GET /api/reports/{task_id}/status
 - 命名规则(与 office/output 一致, 日期在前):
   `20260814_宁德时代_公司分析报告.md`
 - **同日重复生成直接覆盖同名文件**(不加 _v2/_v3; 单 worker 串行写入无并发竞争)
-- 报告文件头含生成时间与生成方式; 由前端负责复制到用户目录
-  (`experiments/report_machine/user/{username}/{股票名}/`)。
+- 报告文件头含生成时间与生成方式。
+- POST 传了 `username` 时, 服务端在每只股票生成成功后**自动复制**到
+  `experiments/report_machine/user/{username}/{股票名}/`(事件 `stock_done` 的
+  `user_path` 字段), 前端文件区按该用户名即可浏览; 复制失败只记 WARN 日志,
+  不阻塞任务, 报告仍在 `reports/` 下。
+- 文件区 md 文件可经前端 explorer 下载, 转换用 `md2docx.py`
+  (微软雅黑正文、无封面, 与 demand/cases/md2docx.py 同源)。
 
 ## 7. 配置备用用户名密码(重要)
 
@@ -232,18 +248,28 @@ GET /api/reports/{task_id}/status
   "今日用户积分已用尽,报告无法生成,请明日再试", 次日自动恢复(每日首次登录重置)。
 - 前端无需处理换 key 逻辑, 只需按事件更新文案(如"检测到积分不足,正在切换备用账号…")。
 
-## 9. 登录方式与登录态复用(storage)
+## 9. 登录方式: CDP 连接真实 Chrome(自动启动, 免人工)
 
 - **每日第一次调用**会自动先登录主账号(事件 `login_started`), 这是正常流程。
-- 登录优先**复用浏览器登录态**(免滑块):
-  - 登录态文件: `~/.config/choice_storage.json`(playwright `storage_state` JSON, 由
-    choice 页面真实浏览器登录后导出, chmod 600, 不进 git)。
-  - 服务调用 `choice_get_api_key.py --storage <路径> --json`: 登录态有效 → 直接打开页面
-    "查询 API Key"拿 Key(约 10~15 秒, 无滑块); 失效 → 自动回退完整登录(账号密码 + 滑块)。
-  - **登录态失效时需要人工刷新**: 用真实浏览器登录
-    https://choice.eastmoney.com/mcp/ → 退出时(或会话有效期内)用 playwright 导出
-    storage_state 覆盖 `~/.config/choice_storage.json`。
-- 备用凭据没有 storage(它是主账号的登录态), 走完整登录流程。
+- 登录走 **CDP 模式**(默认, 无需任何人工操作):
+  - 脚本通过 `--cdp` 连接 `127.0.0.1:9222` 的 Chrome **远程调试端口**;
+    端口不可达时**自动后台启动** Chrome(数据目录 `/tmp/chrome-cdp-test`,
+    `CDP_CHROME_CMD` 环境变量可覆盖启动命令)并轮询等待就绪 —— 服务运行期间
+    无需手动开浏览器。
+  - 由于连接的是**真实 Chrome(指纹=真实用户)**, 点"开始验证"后滑块验证
+    **自动放行**(0.5~2s), 不再需要人工拼图。
+  - 登录态**跨次复用**: 数据目录保留了登录 cookies, 脚本用登录标记文件
+    (`/tmp/chrome-cdp-test/mx_login_state.json`)确认当前登录态属于目标账号 →
+    直接"查询 API Key"拿 Key(约 10~15 秒, 免账号密码)。标记与目标账号
+    不匹配时先清 cookies 退出, 再完整登录目标账号, **保证不串号**。
+  - 完整登录全程人类化(逐字符输入账号密码 + 随机停顿), 日志在 stderr。
+- 手动触发登录可验证/排查(见第 7 节):
+  ```bash
+  python choice_get_api_key.py --index 0 --json   # 主账号(CDP, 自动起 Chrome)
+  python choice_get_api_key.py --index 1 --json   # 备用1
+  ```
+- 旧方案 `--storage <storage_state>` 仍保留(仅兼容), 服务端默认不再使用。
+  人工拼图方案(`--challenge-dir`)为实验性, 不再维护。
 
 ## 10. 注意事项
 
