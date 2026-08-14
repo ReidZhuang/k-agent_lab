@@ -66,6 +66,28 @@ def list_dir(rel_path: str = "", username: str = "", user_id: int = 0) -> list[d
     return items
 
 
+def search_files(q: str, username: str) -> list[dict]:
+    """按文件名(子串, 不区分大小写)递归搜索用户空间, 返回 [{name, path, type, mtime}]。
+
+    目录名匹配同样返回(便于定位到报告目录如 宁德时代/), 全部限定在
+    用户根目录内, 无路径穿越风险。
+    """
+    base = _user_base(username)
+    q_lower = (q or "").strip().lower()
+    if not q_lower or not base.exists():
+        return []
+    results = []
+    for entry in sorted(base.rglob("*"), key=lambda e: e.name.lower()):
+        if q_lower in entry.name.lower():
+            results.append({
+                "name": entry.name,
+                "path": str(entry.relative_to(base)),
+                "type": "dir" if entry.is_dir() else "file",
+                "mtime": entry.stat().st_mtime,
+            })
+    return results
+
+
 def delete_item(rel_path: str, username: str) -> bool:
     """删除文件或空目录"""
     full_path = _resolve_path(rel_path, username)

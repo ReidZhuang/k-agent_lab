@@ -28,7 +28,7 @@ from stock_api import (
 )
 from explorer import (
     list_dir, get_file_content, convert_single_to_docx, convert_batch_to_docx,
-    delete_item,
+    delete_item, search_files,
 )
 from models import (
     LoginRequest, AddStockRequest, FavoriteItem, DownloadRequest,
@@ -161,6 +161,13 @@ def remove_from_pool(ts_code: str, user: dict = Depends(_get_user)):
 def explorer_list(path: str = Query(""), user: dict = Depends(_get_user)):
     items = list_dir(path, user["username"], user["user_id"])
     return {"items": items, "path": path}
+
+
+@app.get("/api/explorer/search")
+def explorer_search(q: str = Query(""), user: dict = Depends(_get_user)):
+    """按文件名递归搜索用户空间中的文档"""
+    results = search_files(q, user["username"])
+    return {"results": results}
 
 
 @app.get("/api/explorer/content")
