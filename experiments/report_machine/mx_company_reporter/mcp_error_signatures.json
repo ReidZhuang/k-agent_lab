@@ -1,0 +1,32 @@
+{
+  "version": 3,
+  "updated_at": "2026-08-14",
+  "note": "妙想 MCP (mx-ds-mcp) 错误特征库 v3。v2 及之前的 QUOTA_EXHAUSTED / ##MCP_ERROR## 契约未经实测（编造），已于 2026-08-14 全面废弃；现以实测官方积分耗尽错误为准，错误码 MX_QUOTA_EXHAUSTED，检测规则与字段契约见 MX_MCP_QUOTA_EXHAUSTED_HANDLER.md。分级：FATAL=积分耗尽（终止报告、等待充值）、TRANSIENT=可恢复（退避重试）、UNKNOWN=未知（保守处理）。实测：HTTP 状态永远 200，错误内嵌在返回文本，isError=false，不可依赖错误标志。",
+  "known_signatures": [
+    {
+      "pattern": "积分已用完|积分用尽|积分不足|补充积分|购买套餐|ai.eastmoney.com/skills",
+      "severity": "FATAL",
+      "code": "MX_QUOTA_EXHAUSTED",
+      "observed": "2026-08-14",
+      "raw_sample": "你的积分已用完~请前往 https://ai.eastmoney.com/skills 购买套餐补充积分，即可继续使用",
+      "note": "已实测（官方原文，用户反馈）。命中后立即终止报告：不重试、不编造、不切换数据源；充值后可用 error.request 字段回放重试"
+    },
+    {
+      "pattern": "操作过于频繁",
+      "severity": "TRANSIENT",
+      "action": "等待3~5秒后重试，最多3次；避免并发轰炸",
+      "observed": "2026-08-07 / 2026-08-13",
+      "raw_sample": "{\"message\":\"操作过于频繁\"}",
+      "note": "已实测：限流约2秒内自动恢复；此错误绝不终止报告"
+    },
+    {
+      "pattern": "其他未知错误码/文案",
+      "severity": "UNKNOWN",
+      "code": "MCP_ERROR",
+      "observed": null,
+      "raw_sample": null,
+      "note": "未知错误保守处理：重试1次后仍失败才按 MCP_ERROR 终止；禁止直接判定为积分耗尽"
+    }
+  ],
+  "update_workflow": "首次遭遇新错误时：1) 从 agent 输出或工具返回抄录原始文案；2) 在本表新增/更新一行（pattern=原始文案, severity, observed=日期, raw_sample）；3) 同步更新 MX_MCP_QUOTA_EXHAUSTED_HANDLER.md 的检测规则（如新增关键词）"
+}
