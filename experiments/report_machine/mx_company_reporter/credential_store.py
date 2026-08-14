@@ -110,8 +110,10 @@ def state_is_today(state: dict, today: str) -> bool:
 def run_login(index: int, timeout: int = LOGIN_TIMEOUT, storage: str | None = None) -> dict:
     """子进程调用 choice_get_api_key.py --index N --json。
 
-    传 storage(playwright storage_state JSON 路径, 通常 STORAGE_FILE)时优先复用
-    浏览器登录态免滑块取 Key; 登录态失效由脚本自动回退完整登录流程。
+    默认走 CDP 模式(--cdp): 连接/自动启动真实 Chrome(指纹=真实用户, 滑块
+    验证自动放行), 登录态用账号标记复用(免账号密码, 且不串号), 无需手动
+    开浏览器。显式传 storage(playwright storage_state JSON 路径)时改用
+    storage 复用(旧方案, 仅兼容)。
 
     返回 {"ok": true, "key": "em_...", "index", "elapsed_s"}
     或    {"ok": false, "reason": "...", "index", "elapsed_s"}
@@ -119,6 +121,8 @@ def run_login(index: int, timeout: int = LOGIN_TIMEOUT, storage: str | None = No
     cmd = [sys.executable, str(LOGIN_SCRIPT), "--index", str(index), "--json"]
     if storage and pathlib.Path(storage).exists():
         cmd += ["--storage", storage]
+    else:
+        cmd += ["--cdp"]
     try:
         r = subprocess.run(
             cmd,

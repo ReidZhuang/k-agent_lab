@@ -10,14 +10,8 @@ from pathlib import Path
 from config import USER_SPACE_BASE, OFFICE_DIR
 from database import db
 
-# 确保可导入 md_to_docx
-_OUTPUT_DIR = OFFICE_DIR / "output"
-if str(_OUTPUT_DIR) not in sys.path:
-    sys.path.insert(0, str(_OUTPUT_DIR))
-if str(OFFICE_DIR) not in sys.path:
-    sys.path.insert(0, str(OFFICE_DIR))
-
-from md_to_docx import convert_file as md_to_docx_convert
+# md→docx 转换: 使用同目录 md2docx.py(源: demand/cases/md2docx.py)
+from md2docx import convert_md_to_docx as md_to_docx_convert
 
 
 def _user_base(username: str) -> Path:
@@ -106,7 +100,7 @@ def convert_single_to_docx(rel_path: str, username: str,
         return None
 
     if output_dir is None:
-        output_dir = tempfile.mkdtemp(prefix="docx_")
+        output_dir = Path(tempfile.mkdtemp(prefix="docx_"))
     else:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)

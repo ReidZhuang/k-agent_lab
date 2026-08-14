@@ -25,7 +25,9 @@
 """
 import json
 import os
+import pathlib
 import queue
+import shutil
 import socket
 import sys
 import threading
@@ -50,6 +52,9 @@ GEN_TIMEOUT = 600       # 单股生成超时(agent 调用上限)
 MAX_STOCKS = 5          # 单次任务最多股票数(串行, 每只约数分钟)
 QUOTA_ALL_EXHAUSTED_MSG = "今日用户积分已用尽,报告无法生成,请明日再试"
 
+# 报告复制到用户目录(user/{username}/{股票名}/)的根路径
+USER_BASE = pathlib.Path(__file__).resolve().parents[1] / "user"
+
 FAKE_EXHAUST = os.environ.get("MX_REPORT_FAKE_EXHAUST") == "1"
 
 
@@ -63,6 +68,7 @@ def _log(msg: str):
 class TaskState:
     task_id: str
     stocks: list[str]
+    username: str | None = None      # 前端登录用户名(报告复制目标 user/{username}/)
     status: str = "queued"           # queued | running | done | failed
     created_at: float = 0.0
     started_at: float | None = None
@@ -87,6 +93,27 @@ def _emit(task: TaskState, etype: str, **extra):
         if len(task.events) > 1000:
             del task.events[: len(task.events) - 1000]
         task.cond.notify_all()
+
+
+# ---------- 报告复制到用户目录 ----------
+
+def _copy_to_user(stock: str, md_path: str, username: str | None) -> str | None:
+    """复制报告到 user/{username}/{股票名}/, 返回目标路径; 失败不阻塞任务。
+
+    username 为空(前端未传)时直接跳过。
+    """
+    if not username:
+        return None
+    target = USER_BASE / username / stock
+    try:
+        target.mkdir(parents=True, exist_ok=True)
+        dest = target / os.path.basename(md_path)
+        shutil.copy2(md_path, dest)
+        _log(f"报告已复制到用户目录: {dest}")
+        return str(dest)
+    except OSError as e:
+        _log(f"[WARN] 复制到用户目录失败({username}/{stock}): {e}")
+        return None
 
 
 # ---------- 生成调用(唯一调用点) ----------
@@ -125,7 +152,7 @@ def _daily_login(task: TaskState) -> tuple[bool, str]:
     if cs.state_is_today(state, today):
         return True, ""
     _emit(task, "login_started", credential=0, reason="daily_first")
-    res = cs.run_login(0, storage=cs.STORAGE_FILE)
+    res = cs.run_login(0)  # 默认 CDP 模式(自动启动真实 Chrome)
     if not res.get("ok"):
         reason = res.get("reason", "未知原因")
         _emit(task, "login_failed", credential=0, reason=reason)
@@ -160,7 +187,7 @@ def _switch_credential(task: TaskState, from_idx: int) -> tuple[int | None, str]
             nxt += 1
             continue
         _emit(task, "login_started", credential=nxt, reason="quota_switch")
-        res = cs.run_login(nxt, storage=cs.STORAGE_FILE)
+        res = cs.run_login(nxt)  # 默认 CDP 模式
         if not res.get("ok"):
             reason = res.get("reason", "未知原因")
             last_err = f"备用{nxt}登录失败: {reason}"
@@ -265,9 +292,11 @@ def _run_task(task_id: str):
             if outcome.get("ok"):
                 path = outcome["path"]
                 task.files.append(path)
+                user_path = _copy_to_user(stock, path, task.username)
                 _emit(task, "stock_done", stock=stock, index=i, total=total,
-                      file=os.path.basename(path), path=path)
-                _log(f"{stock}: 完成 -> {path}")
+                      file=os.path.basename(path), path=path,
+                      user_path=user_path)
+                _log(f"{stock}: 完成 -> {path}" + (f" (user: {user_path})" if user_path else ""))
             else:
                 err = outcome["error"]
                 task.failed.append({"stock": stock, "error": err})
@@ -333,6 +362,7 @@ app.add_middleware(
 
 class ReportRequest(BaseModel):
     stocks: list[str]
+    username: str | None = None   # 前端登录用户名, 报告复制到 user/{username}/{股票名}/
 
 
 @app.post("/api/reports", status_code=202)
@@ -348,7 +378,9 @@ def create_report(req: ReportRequest):
         raise HTTPException(400, "股票列表为空")
     if len(names) > MAX_STOCKS:
         raise HTTPException(400, f"单次最多 {MAX_STOCKS} 只(串行生成)")
-    task = TaskState(task_id=uuid.uuid4().hex[:12], stocks=names, created_at=time.time())
+    username = (req.username or "").strip() or None
+    task = TaskState(task_id=uuid.uuid4().hex[:12], stocks=names,
+                     username=username, created_at=time.time())
     TASKS[task.task_id] = task
     _emit(task, "task_queued", task_id=task.task_id, stocks=names,
           position=_QUEUE.qsize() + 1)

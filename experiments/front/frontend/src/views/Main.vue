@@ -86,6 +86,7 @@
           <el-tabs v-model="activeTab" @tab-change="onTabChange">
             <el-tab-pane label="📈 股票池" name="pool" />
             <el-tab-pane label="📄 文档" name="doc" />
+            <el-tab-pane label="📝 公司分析" name="report" />
           </el-tabs>
         </div>
 
@@ -99,6 +100,9 @@
             :file-path="currentFilePath"
             :file-content="currentFileContent"
           />
+
+          <!-- 公司分析标签(v-show 保持挂载: 切换标签页进度不中断) -->
+          <CompanyReport v-show="activeTab === 'report'" />
         </div>
 
         <!-- 文档页右侧浮动工具栏 -->
@@ -125,6 +129,7 @@ import { me, listFiles, getFileContent, getFavorites, addFavorite, removeFavorit
 import FileTree from '../components/FileTree.vue'
 import StockPool from '../components/StockPool.vue'
 import DocPreview from '../components/DocPreview.vue'
+import CompanyReport from '../components/CompanyReport.vue'
 import { useDownloadStore } from '../api/downloadStore.js'
 
 const router = useRouter()

@@ -17,6 +17,10 @@ export default defineConfig({
         target: 'http://localhost:8320',
         changeOrigin: true,
       },
+      '/login-exp': {
+        target: 'http://localhost:8325',
+        changeOrigin: true,
+      },
     },
   },
   build: {
