@@ -264,7 +264,7 @@ function stopGenerate(silent = false) {
 function autoGrow(e) {
   const el = e.target
   el.style.height = 'auto'
-  el.style.height = Math.min(el.scrollHeight, 200) + 'px'
+  el.style.height = Math.min(el.scrollHeight, 240) + 'px' // 240px ≈ 8.5 行, 保证输入后可看 ≥5 行
 }
 
 // ── 滚动到底部 ──
@@ -424,8 +424,9 @@ watch([messages, streamingText], () => scrollToBottom())
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* 空态整体上提(不再垂直居中) */
   padding: 20px 24px;
+  padding-top: 7vh;
   gap: 12px;
 }
 .hero-title {
@@ -440,7 +441,7 @@ watch([messages, streamingText], () => scrollToBottom())
   align-items: flex-end;
   gap: 8px;
   width: 100%;
-  max-width: 720px;
+  max-width: 960px; /* 空态更宽 */
   margin-top: 12px;
 }
 .hero-hints {
