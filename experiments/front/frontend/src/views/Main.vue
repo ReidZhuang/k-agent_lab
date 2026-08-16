@@ -90,6 +90,7 @@
             <el-tab-pane label="📈 股票池" name="pool" />
             <el-tab-pane label="📄 文档" name="doc" />
             <el-tab-pane label="📝 公司分析" name="report" />
+            <el-tab-pane label="📊 板块分析" name="sector" />
           </el-tabs>
         </div>
 
@@ -106,6 +107,9 @@
 
           <!-- 公司分析标签(v-show 保持挂载: 切换标签页进度不中断) -->
           <CompanyReport v-show="activeTab === 'report'" />
+
+          <!-- 板块分析标签(v-show 保持挂载: 切换标签页进度不中断) -->
+          <SectorAnalysis v-show="activeTab === 'sector'" />
         </div>
 
         <!-- 文档页右侧浮动工具栏 -->
@@ -136,6 +140,7 @@ import FileTree from '../components/FileTree.vue'
 import StockPool from '../components/StockPool.vue'
 import DocPreview from '../components/DocPreview.vue'
 import CompanyReport from '../components/CompanyReport.vue'
+import SectorAnalysis from '../components/SectorAnalysis.vue'
 import { useDownloadStore } from '../api/downloadStore.js'
 
 const router = useRouter()
