@@ -164,10 +164,11 @@ async function switchSession(convId) {
 
 // ── 文档页「询问股小神」：开新会话并把选中文本作为引用预填进输入框 ──
 // 不自动发送：引用内容 + 分隔线后另起一行，等用户输入问题再发送
-function newChatWithReference(text) {
+function newChatWithReference(text, docName = '') {
   newChat() // 复位到首页态(新会话, 不触碰已有会话记录)
   if (!text) return
-  input.value = `📎 文档引用：\n${text}\n━━━━━━━━━━━━━━━━━━━━\n`
+  const head = docName ? `📎 文档引用：${docName}\n` : '📎 文档引用：\n'
+  input.value = `${head}${text}\n━━━━━━━━━━━━━━━━━━━━\n`
   nextTick(() => {
     const el = heroInputRef.value || chatInputRef.value
     if (!el) return

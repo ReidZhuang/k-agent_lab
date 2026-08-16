@@ -226,9 +226,10 @@ function askXiaoShen() {
     ElMessage.warning('请先在文档中选中一些文字')
     return
   }
-  // 跳转股小神标签并开新会话, 选中内容作为引用预填进输入框(不自动发送)
+  // 跳转股小神标签并开新会话, 选中内容作为引用预填进输入框(不自动发送), 头部标注来源文档名
+  const docName = currentFilePath.value.split('/').pop() || '文档'
   activeTab.value = 'chat'
-  nextTick(() => chatPanelRef.value?.newChatWithReference(text))
+  nextTick(() => chatPanelRef.value?.newChatWithReference(text, docName))
 }
 
 // ── 初始化 ──
