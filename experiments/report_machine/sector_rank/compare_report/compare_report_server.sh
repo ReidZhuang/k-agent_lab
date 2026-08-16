@@ -1,45 +1,29 @@
 #!/usr/bin/env bash
 # 板块对比分析报告生成服务 启停脚本
 # 用法: ./compare_report_server.sh {start|stop|restart|status}
+# 统一由 systemd 管理 (mx-compare-report-server.service, 开机自启 + 崩溃 5s 自动重启),
+# 本脚本只是便利入口, 委托 systemctl --user。
 set -euo pipefail
 
-PY=/home/stockagent/miniforge3/envs/stock_agent/bin/python
-DIR="$(cd "$(dirname "$0")" && pwd)"
-LOG="$DIR/log/compare_report_server.log"
-PID_FILE="$DIR/log/compare_report_server.pid"
+UNIT=mx-compare-report-server.service
 
 case "${1:-}" in
   start)
-    mkdir -p "$DIR/log"
-    if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-      echo "已在运行 (pid $(cat "$PID_FILE"))"; exit 0
-    fi
-    nohup "$PY" -u "$DIR/compare_report_server.py" >> "$LOG" 2>&1 &
-    echo $! > "$PID_FILE"
-    sleep 2
-    echo "已启动 (pid $(cat "$PID_FILE"))"
-    echo "日志: $LOG"
+    systemctl --user start "$UNIT"
+    echo "已通过 systemd 启动 ($UNIT)"
     ;;
   stop)
-    if [ -f "$PID_FILE" ]; then
-      kill "$(cat "$PID_FILE")" 2>/dev/null || true
-      rm -f "$PID_FILE"
-      echo "已发送停止信号"
-    fi
-    pkill -f "$DIR/compare_report_server.py" 2>/dev/null || true
-    sleep 1
+    systemctl --user stop "$UNIT"
+    echo "已通过 systemd 停止 ($UNIT)"
     ;;
   restart)
-    "$0" stop; sleep 1; "$0" start
+    systemctl --user restart "$UNIT"
+    echo "已通过 systemd 重启 ($UNIT)"
     ;;
   status)
-    if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-      echo "运行中 (pid $(cat "$PID_FILE"))"
-      curl -s -m 3 http://127.0.0.1:8326/health || echo "(health 接口无响应)"
-    else
-      echo "未运行"
-      exit 1
-    fi
+    systemctl --user status "$UNIT" --no-pager
+    echo "---"
+    curl -s -m 3 http://127.0.0.1:8326/health || echo "(health 接口无响应)"
     ;;
   *)
     echo "用法: $0 {start|stop|restart|status}"; exit 1
