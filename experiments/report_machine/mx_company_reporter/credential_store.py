@@ -11,26 +11,84 @@
        openclaw-gateway, 轮询 /v1/models 验证恢复
 
 凭据索引约定(全服务统一): 0 = primary, 1..4 = backups[0..3]。
+
+并发安全: 8323(公司分析)与 8326(板块对比)是两个独立进程, 共用同一
+gateway / openclaw.json / 状态文件。登录与换 key 是互斥临界区, 必须用
+mutex() 文件锁包住整个流程, 否则两服务同时写 openclaw.json / 重启
+gateway 会互相打断(实测曾因此损坏配置)。
 """
+import fcntl
 import json
 import os
 import pathlib
 import subprocess
 import sys
+import threading
 import time
 import urllib.request
+from contextlib import contextmanager
 
 CREDENTIALS_FILE = pathlib.Path.home() / ".config" / "choice_mcp_credentials.json"
 STATE_FILE = pathlib.Path.home() / ".config" / "mx_report_server_state.json"
 OPENCLAW_JSON = pathlib.Path.home() / ".openclaw" / "openclaw.json"
 LOGIN_SCRIPT = pathlib.Path(__file__).parent / "choice_get_api_key.py"
 STORAGE_FILE = pathlib.Path.home() / ".config" / "choice_storage.json"  # 浏览器登录态(storage_state), 免滑块
+MUTEX_FILE = pathlib.Path.home() / ".config" / "mx_report_server.lock"  # 跨进程互斥锁(登录/换key共用)
 
 GATEWAY_BASE = "http://127.0.0.1:18789"
 LOGIN_TIMEOUT = 240          # 单次登录(playwright 启动+登录+取 key)上限
 GATEWAY_RESTART_TIMEOUT = 90  # 重启 gateway 后 /v1/models 恢复等待上限
 
 MAX_CREDENTIALS = 5          # 主 + 备用1~4
+
+
+# ---------- 跨进程互斥 ----------
+
+_local = threading.local()
+
+
+@contextmanager
+def mutex(desc: str = "登录/换key"):
+    """跨进程互斥锁(flock, 8323/8326 共用 gateway 与配置文件)。
+
+    登录(最长 LOGIN_TIMEOUT)与换 key(重启 gateway)期间互斥持有, 防止
+    两服务同时写 openclaw.json / 重启 gateway 互相打断。阻塞等待无超时
+    (对方最长持锁约 LOGIN_TIMEOUT + GATEWAY_RESTART_TIMEOUT, 换 key 方
+    本就要等配额耗尽后的重试, 可接受)。进程退出自动释放。
+
+    同进程内可重入(flock 对同文件不同 fd 互斥, 嵌套会自我死锁):
+    外层流程(如 _switch_credential 整段)持锁后, 内部 run_login /
+    switch_gateway_key / save_state 的 mutex 直接放行——它们本就属于
+    同一临界区。跨进程的互斥不受影响。
+    """
+    if getattr(_local, "held", False):
+        yield
+        return
+    MUTEX_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(MUTEX_FILE, "a+") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        _local.held = True
+        try:
+            yield
+        finally:
+            _local.held = False
+            fcntl.flock(fh, fcntl.LOCK_UN)
+
+
+def locked(desc: str):
+    """装饰器: 整个函数体在跨进程互斥锁内执行(8323/8326 并发安全)。
+
+    用于 _daily_login / _switch_credential 等「读状态→登录/换key→写状态」
+    的完整流程; 内部 run_login/switch_gateway_key/save_state 的 mutex
+    可重入。长耗时的 agent 调用本身不加锁(会阻塞对方), 由调用方把
+    agent 调用放在锁外。
+    """
+    def deco(fn):
+        def wrapper(*args, **kwargs):
+            with mutex(desc):
+                return fn(*args, **kwargs)
+        return wrapper
+    return deco
 
 
 # ---------- 凭据文件 ----------
@@ -94,11 +152,13 @@ def load_state() -> dict:
 
 
 def save_state(state: dict) -> None:
-    """原子写状态文件(tmp + os.replace), 单 worker 无并发写。"""
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = STATE_FILE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(tmp, STATE_FILE)
+    """原子写状态文件(tmp + os.replace)。8323/8326 双服务并发写时互斥,
+    防同一 tmp 文件互相覆盖(调用方流程已持锁时可重入)。"""
+    with mutex("写状态"):
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        tmp = STATE_FILE.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        os.replace(tmp, STATE_FILE)
 
 
 def state_is_today(state: dict, today: str) -> bool:
@@ -124,11 +184,13 @@ def run_login(index: int, timeout: int = LOGIN_TIMEOUT, storage: str | None = No
     else:
         cmd += ["--cdp"]
     try:
-        r = subprocess.run(
-            cmd,
-            capture_output=True, text=True, timeout=timeout,
-            cwd=str(LOGIN_SCRIPT.parent),
-        )
+        # 登录全程持锁: 防止与另一服务(8323/8326)的登录/换key并发
+        with mutex(f"登录(index={index})"):
+            r = subprocess.run(
+                cmd,
+                capture_output=True, text=True, timeout=timeout,
+                cwd=str(LOGIN_SCRIPT.parent),
+            )
     except subprocess.TimeoutExpired:
         return {"ok": False, "reason": f"登录超时(>{timeout}s)", "index": index, "elapsed_s": timeout}
     # stdout 最后一行 JSON 是结构化结果(成功/失败都有; 人类日志在 stderr)
@@ -191,23 +253,25 @@ def switch_gateway_key(new_key: str) -> tuple[bool, str]:
     """
     from choice_get_api_key import update_openclaw  # 同目录, 复用备份+写入逻辑
 
-    old = get_current_em_api_key()
-    if not update_openclaw(new_key):
-        return False, "更新 openclaw.json 失败(路径缺失或配置错误)"
-    if old == new_key:
-        return True, "key 未变化, 无需重启 gateway"
-    try:
-        r = subprocess.run(
-            ["systemctl", "--user", "restart", "openclaw-gateway"],
-            capture_output=True, text=True, timeout=60,
-        )
-        if r.returncode != 0:
-            return False, f"重启 openclaw-gateway 失败: {r.stderr.strip()[:200]}"
-    except Exception as e:
-        return False, f"重启 openclaw-gateway 异常: {e}"
-    if not wait_gateway_ready():
-        return False, f"gateway 重启后 {GATEWAY_RESTART_TIMEOUT}s 内未恢复"
-    return True, "gateway 已重启并恢复"
+    # 写 openclaw.json + 重启 gateway 全程互斥: 防止与另一服务的登录/换key并发
+    with mutex("换key"):
+        old = get_current_em_api_key()
+        if not update_openclaw(new_key):
+            return False, "更新 openclaw.json 失败(路径缺失或配置错误)"
+        if old == new_key:
+            return True, "key 未变化, 无需重启 gateway"
+        try:
+            r = subprocess.run(
+                ["systemctl", "--user", "restart", "openclaw-gateway"],
+                capture_output=True, text=True, timeout=60,
+            )
+            if r.returncode != 0:
+                return False, f"重启 openclaw-gateway 失败: {r.stderr.strip()[:200]}"
+        except Exception as e:
+            return False, f"重启 openclaw-gateway 异常: {e}"
+        if not wait_gateway_ready():
+            return False, f"gateway 重启后 {GATEWAY_RESTART_TIMEOUT}s 内未恢复"
+        return True, "gateway 已重启并恢复"
 
 
 if __name__ == "__main__":

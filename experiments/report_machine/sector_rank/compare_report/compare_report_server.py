@@ -26,6 +26,7 @@
 
 启动: ./compare_report_server.sh start   (nohup + log/compare_report_server.log)
 """
+import asyncio
 import json
 import os
 import pathlib
@@ -190,6 +191,7 @@ def _call_agent(sector_name: str, stocks: list[str], attempt: int) -> dict:
 
 # ---------- 每日登录 / 换 key(照搬 report_server.py, 与公司分析共用状态文件) ----------
 
+@cs.locked("每日登录")
 def _daily_login(task: TaskState) -> tuple[bool, str]:
     """每日第一个任务开始前: 登录主凭据并更新 gateway key。
 
@@ -217,6 +219,7 @@ def _daily_login(task: TaskState) -> tuple[bool, str]:
     return True, ""
 
 
+@cs.locked("换key")
 def _switch_credential(task: TaskState, from_idx: int) -> tuple[int | None, str]:
     """从 from_idx+1 起按序尝试可用备用凭据(跳过当日已 exhausted 的)。
 
@@ -442,13 +445,12 @@ async def report_events(task_id: str, request: Request):
             if await request.is_disconnected():
                 break
             with task.cond:
-                task.cond.wait_for(
-                    lambda: len(task.events) > sent or task.status in ("done", "failed"),
-                    timeout=15)
                 new_events = list(task.events[sent:])
                 sent = len(task.events)
                 terminal = task.status in ("done", "failed")
             if not new_events:
+                # 非阻塞等待（不能用 threading.Condition.wait_for：会阻塞事件循环）
+                await asyncio.sleep(2)
                 yield ": ping\n\n"
                 if terminal:
                     break
