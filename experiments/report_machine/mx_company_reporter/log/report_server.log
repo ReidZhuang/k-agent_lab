@@ -1,0 +1,97 @@
+INFO:     Started server process [290388]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8323 (Press CTRL+C to quit)
+INFO:     127.0.0.1:35874 - "GET /health HTTP/1.1" 200 OK
+[11:41:12] 新任务 245ebc75ea76: ['淮北矿业'] (队列位置 1)[11:41:12] 任务 245ebc75ea76 开始: ['淮北矿业']
+
+INFO:     127.0.0.1:44660 - "POST /api/reports HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:38410 - "GET /api/reports/245ebc75ea76/events HTTP/1.1" 200 OK
+[INFO] openclaw.json em_api_key 已是最新, 无需更新
+[11:41:36] 每日登录完成(主凭据), key 前缀 em_fV7o3
+[11:41:36] 淮北矿业: 开始生成 (1/1)
+[11:46:11] 淮北矿业: 失败 - 今日用户积分已用尽,报告无法生成,请明日再试
+[11:46:11] 当日全部凭据已耗尽
+[11:46:11] 任务 245ebc75ea76 完成: 0 成功 / 1 失败
+INFO:     127.0.0.1:42310 - "POST /api/reports HTTP/1.1" 409 Conflict
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [290388]
+INFO:     Started server process [296967]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8323 (Press CTRL+C to quit)
+INFO:     127.0.0.1:38784 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38794 - "POST /api/reports HTTP/1.1" 409 Conflict
+[11:48:46] 新任务 939147e20be2: ['淮北矿业'] (队列位置 1)[11:48:46] 任务 939147e20be2 开始: ['淮北矿业']
+
+INFO:     127.0.0.1:45164 - "POST /api/reports HTTP/1.1" 202 Accepted
+[11:49:32] 任务 939147e20be2 失败: 主凭据登录失败: 登录超时, 登录按钮未消失
+INFO:     127.0.0.1:56812 - "GET /api/reports/939147e20be2/events HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [296967]
+INFO:     Started server process [299183]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8323 (Press CTRL+C to quit)
+[11:54:25] 新任务 25aa27b28adb: ['淮北矿业'] (队列位置 1)[11:54:25] 任务 25aa27b28adb 开始: ['淮北矿业']
+
+INFO:     127.0.0.1:38526 - "POST /api/reports HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:37064 - "GET /api/reports/25aa27b28adb/events HTTP/1.1" 200 OK
+[11:55:10] 任务 25aa27b28adb 失败: 主凭据登录失败: 登录超时, 登录按钮未消失
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [299183]
+INFO:     Started server process [325917]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8323 (Press CTRL+C to quit)
+INFO:     127.0.0.1:60898 - "GET /health HTTP/1.1" 200 OK
+[13:04:13] 新任务 57bc42698633: ['淮北矿业'] (队列位置 1)[13:04:13] 任务 57bc42698633 开始: ['淮北矿业']
+
+INFO:     127.0.0.1:49298 - "POST /api/reports HTTP/1.1" 202 Accepted
+[INFO] openclaw.json em_api_key 已是最新, 无需更新
+[13:04:26] 每日登录完成(主凭据), key 前缀 em_fV7o3
+[13:04:26] 淮北矿业: 开始生成 (1/1)
+INFO:     127.0.0.1:56956 - "GET /api/reports/57bc42698633/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50944 - "GET /api/reports/57bc42698633/status HTTP/1.1" 200 OK
+[13:08:03] 淮北矿业: 完成 -> /home/stockagent/project_space/research/.claude/worktrees/analysis-framework/experiments/report_machine/mx_company_reporter/reports/20260814_淮北矿业_公司分析报告.md
+[13:08:03] 任务 57bc42698633 完成: 1 成功 / 0 失败
+INFO:     127.0.0.1:35572 - "GET /api/reports/57bc42698633/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45728 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57192 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46816 - "GET /health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [325917]
+INFO:     Started server process [394328]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8323 (Press CTRL+C to quit)
+INFO:     127.0.0.1:46074 - "GET /health HTTP/1.1" 200 OK
+[22:38:52] 新任务 1d6f4ab1db91: ['宁德时代'] (队列位置 1)[22:38:52] 任务 1d6f4ab1db91 开始: ['宁德时代']
+
+INFO:     127.0.0.1:52900 - "POST /api/reports HTTP/1.1" 202 Accepted
+[22:38:52] 宁德时代: 开始生成 (1/1)
+INFO:     127.0.0.1:45330 - "GET /api/reports/1d6f4ab1db91/events HTTP/1.1" 200 OK
+[22:42:14] 报告已复制到用户目录: /home/stockagent/project_space/research/.claude/worktrees/analysis-framework/experiments/report_machine/user/e2e_test/宁德时代/20260814_宁德时代_公司分析报告.md
+[22:42:14] 宁德时代: 完成 -> /home/stockagent/project_space/research/.claude/worktrees/analysis-framework/experiments/report_machine/mx_company_reporter/reports/20260814_宁德时代_公司分析报告.md (user: /home/stockagent/project_space/research/.claude/worktrees/analysis-framework/experiments/report_machine/user/e2e_test/宁德时代/20260814_宁德时代_公司分析报告.md)
+[22:42:14] 任务 1d6f4ab1db91 完成: 1 成功 / 0 失败
+INFO:     127.0.0.1:35046 - "OPTIONS /api/reports HTTP/1.1" 200 OK
+[22:55:06] 新任务 9fb438949807: ['宁德时代'] (队列位置 1)[22:55:06] 任务 9fb438949807 开始: ['宁德时代']
+
+[22:55:06] 宁德时代: 开始生成 (1/1)
+INFO:     127.0.0.1:35058 - "POST /api/reports HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:35058 - "GET /api/reports/9fb438949807/events HTTP/1.1" 200 OK
+[22:58:45] 报告已复制到用户目录: /home/stockagent/project_space/research/.claude/worktrees/analysis-framework/experiments/report_machine/user/zgx/宁德时代/20260814_宁德时代_公司分析报告.md
+[22:58:45] 宁德时代: 完成 -> /home/stockagent/project_space/research/.claude/worktrees/analysis-framework/experiments/report_machine/mx_company_reporter/reports/20260814_宁德时代_公司分析报告.md (user: /home/stockagent/project_space/research/.claude/worktrees/analysis-framework/experiments/report_machine/user/zgx/宁德时代/20260814_宁德时代_公司分析报告.md)
+[22:58:45] 任务 9fb438949807 完成: 1 成功 / 0 失败
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [394328]
