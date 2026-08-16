@@ -34,23 +34,33 @@ GATEWAY_BASE = "http://127.0.0.1:18789"
 AGENT_MODEL = "openclaw/mx-agent"          # 路由到 mx-agent（带金融数据工具+分析技能）
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
 
-# 注意: HTTP 端点创建的会话行落在默认 agent(main) 的 store，
-# 存储 key 形如 agent:main:<header中的key>，删除时按此前缀处理。
-SESSION_AGENT_PREFIX = "agent:main:"
+# 关键: session key 必须带 agent:mx-agent: 前缀。
+# Gateway 按 session key 归属解析加载哪个 agent 的 workspace/skills：
+# 裸 key（如 report-xxx）会 fallback 到默认 agent(main)，
+# 而 main 的 skills 是旧框架（investment-assistant-core 等），
+# 不会加载 company-analysis / mx-mcp-quota-exhausted-handler。
+# 2026-08-16 实测: 带前缀的 key 正确加载 mx-agent workspace 与 company-analysis 技能。
+SESSION_AGENT_PREFIX = "agent:mx-agent:"
 
 PROMPT_TEMPLATE = """请对【{stock}】进行上市公司深度分析。
 
 要求：
-1. 先读取并使用你的 company-analysis 技能框架（SKILL.md）。
-2. 调用 mx-ds-mcp 系列东方财富数据工具，获取以下数据：
+1. 先读取并使用你的 company-analysis 技能框架（SKILL.md，v3.3），严格按其"固定报告骨架"输出，不得自行增减章节：
+   ## 〇、一句话定位
+   ## 〇、总体结论（2-4 段，每段=总结句+知识点 bullets）
+   ## 一、公司今日盘面分析（六章：当前表现/资金动向/融资融券与筹码博弈/机构成本参考/涨跌归因/行情总结与策略思考）
+   ## 二、公司基本面分析（五章：业务与发展/行业面/盈利模式/财务面含近3年趋势表/人力资源面含研发领军人物展示分析）
+   ## 三、综合前瞻判断
+   ## 附：数据缺口说明
+   末尾附免责声明。
+2. 输出铁律：每章先写"综合总结"散文段（含 1-2 句前瞻），再用加粗子项 bullets 展开；结论导向不堆数据（每子项 1-3 个关键数据，用语言描述）；禁止黑话压缩过程，展开"谁做了什么→结果→接下来怎样"；基础股市术语直接用不翻译；加粗=核心结论/关键数据、斜体=前瞻/外部引用/缺失、⚠️=风险、✅=积极信号。
+3. 调用 mx-ds-mcp 系列东方财富数据工具，获取以下数据：
    - 盘面：近10个交易日行情、技术指标、主力资金流向、融资融券、股东户数与筹码
    - 基本面：最新财报（营收/净利/毛利率/现金流/资产负债率/ROE）、估值（PE/PB/股息率）、股本与股东结构
    - 事件：最近公告（分红/增减持/重大项目）、新闻研报（券商评级/目标价/盈利预测）
    - 行业：所属行业景气度、产品价格趋势（如煤炭/化工品价格）
-3. 按技能框架输出完整 Markdown 报告：总结先行、要点化、关键内容加粗、
-   每部分末尾附【风险与后市观察点】和【数据支撑】，最后给综合前瞻判断。
-   数据不足的项明确标注缺失，不做无依据推测。
-4. 取数守卫（最高优先级，先读取 mx-mcp-quota-exhausted-handler 技能并严格遵守）：
+4. 数据不足的项明确标注缺失（斜体），不做无依据推测；研发领军人物语料不足时按 skill 衔接协议处理。
+5. 取数守卫（最高优先级，先读取 mx-mcp-quota-exhausted-handler 技能并严格遵守）：
    若任一 mx-ds-mcp 工具返回积分耗尽类错误（如“你的积分已用完~请前往
    https://ai.eastmoney.com/skills 购买套餐补充积分，即可继续使用”），
    立即停止所有后续查询，不重试、不编造数据、不切换数据源、不产出报告，
@@ -194,7 +204,9 @@ def _chat_once(session_key: str, user_message: str, timeout: int = 600) -> str:
 
 def _delete_session_safe(session_key: str) -> bool:
     """删除临时会话（幂等）。返回是否删除成功。"""
-    candidates = [f"{SESSION_AGENT_PREFIX}{session_key}", session_key]
+    # session_key 已带 agent: 前缀时直接用它；兜底再加一次前缀尝试（兼容旧格式）
+    candidates = ([session_key] if session_key.startswith("agent:")
+                  else [f"{SESSION_AGENT_PREFIX}{session_key}", session_key])
     last_err = None
     for key in candidates:
         try:
@@ -247,7 +259,7 @@ def generate_company_report(stock_name: str, save_md: bool = True,
        "error": {"code": "MX_QUOTA_EXHAUSTED", "stage", "detail", "type", "tool", "request"},
        "session_key", "session_deleted"}
     """
-    session_key = f"report-{int(time.time())}-{uuid.uuid4().hex[:6]}"
+    session_key = f"{SESSION_AGENT_PREFIX}report-{int(time.time())}-{uuid.uuid4().hex[:6]}"
     result = {
         "ok": True,
         "stock": stock_name,

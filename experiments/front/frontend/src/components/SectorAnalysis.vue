@@ -156,8 +156,6 @@ const taskId = ref('')
 const running = ref(false)
 const events = ref([])
 const doneInfo = ref(null)
-const total = ref(0)
-const completed = ref(0)
 
 let es = null
 
@@ -273,8 +271,6 @@ async function handleGenerate() {
     events.value = []
     doneInfo.value = null
     running.value = true
-    total.value = names.length
-    completed.value = 0
     percent.value = 0
     stageTarget.value = 0
     stageText.value = ''
@@ -285,7 +281,8 @@ async function handleGenerate() {
   }
 }
 
-// ── 经验进度(仿公司分析: 排队 0-3%, 生成 3-90% 多只均分, 收尾 90-100%) ──
+// ── 经验进度(仿公司分析: 排队 0-3%, 登录 3-12%, 生成 12-90%, 收尾 90-100%) ──
+// 板块报告整份一次生成(无逐股区间): generating 直接进 90%
 const percent = ref(0)
 const stageTarget = ref(0)
 const stageText = ref('')
@@ -307,22 +304,32 @@ function stopTicker() {
   if (ticker) { clearInterval(ticker); ticker = null }
 }
 
-// 每只股票的生成区间(在 3%-90% 之间均分)
-const genEnd = (i, n) => 3 + 87 * ((i + 1) / n)
-
 function handleSseEvent(data) {
   switch (data.type) {
     case 'task_queued':
       setStage(3, `任务已入队，队列位置 ${data.position}…`)
       break
+    case 'login_started':
+      setStage(6, data.reason === 'quota_switch' ? '积分不足，正在登录备用账号…' : '正在登录妙想账号…')
+      break
+    case 'login_ok':
+      setStage(12, `账号登录成功（Key ${data.key_prefix}…）`)
+      break
+    case 'login_failed':
+      stopTicker()
+      break
     case 'generating':
-      setStage(genEnd(data.index, data.total), `正在生成「${data.stock}」简要分析（${data.index + 1}/${data.total}）…`)
+      // 整份报告一次生成: 进度条缓慢爬向 90%(经验上限), 到达即停
+      setStage(90, `正在生成「${data.sector_name}」${data.count} 只股票的合并分析报告…`)
       break
-    case 'stock_done':
-      setStage(genEnd(data.index, data.total), `「${data.stock}」简要分析生成完成`)
+    case 'quota_switching':
+      setStage(stageTarget.value, '检测到积分不足，正在切换备用账号…')
       break
-    case 'stock_failed':
-      setStage(genEnd(data.index, data.total), `「${data.stock}」生成失败`)
+    case 'retrying':
+      setStage(stageTarget.value, `正在使用备用账号重试「${data.stock}」…`)
+      break
+    case 'all_quota_exhausted':
+      setStage(92, '今日全部账号积分已用尽')
       break
     case 'task_done':
       setStage(100, `全部完成：${data.files?.length ?? 0} 份报告`)
@@ -336,7 +343,8 @@ function handleSseEvent(data) {
 
 // 服务端 SSE 事件都带 event: 字段, 必须逐类型注册
 const SSE_EVENT_TYPES = [
-  'task_queued', 'generating', 'stock_done', 'stock_failed',
+  'task_queued', 'login_started', 'login_ok', 'login_failed',
+  'generating', 'quota_switching', 'retrying', 'all_quota_exhausted',
   'task_done', 'task_failed',
 ]
 
@@ -344,7 +352,6 @@ function onSseEvent(type, e) {
   const data = JSON.parse(e.data)
   events.value.push({ seq: data.seq, ts: data.ts, type: data.type, ...data })
   if (events.value.length > 50) events.value.splice(0, events.value.length - 50)
-  if (type === 'stock_done') completed.value = data.index + 1
   if (type === 'task_done') {
     running.value = false
     doneInfo.value = { ok: true }
@@ -368,11 +375,9 @@ function subscribe(id) {
 }
 
 const progressText = ref('')
-watch([running, doneInfo, stageText, completed, total], () => {
-  if (doneInfo.value) {
-    progressText.value = `完成 ${completed.value}/${total.value}`
-  } else if (running.value) {
-    progressText.value = stageText.value || `进行中 ${completed.value}/${total.value}`
+watch([running, doneInfo, stageText], () => {
+  if (running.value) {
+    progressText.value = stageText.value || '生成中…'
   } else {
     progressText.value = ''
   }
@@ -407,18 +412,22 @@ function fmtTime(ts) {
 }
 
 function evClass(ev) {
-  if (['task_done', 'stock_done'].includes(ev.type)) return 'ok'
-  if (['task_failed', 'stock_failed'].includes(ev.type)) return 'err'
-  if (ev.type === 'generating') return 'busy'
+  if (ev.type === 'task_done') return 'ok'
+  if (['task_failed', 'login_failed'].includes(ev.type)) return 'err'
+  if (['generating', 'login_started', 'quota_switching', 'retrying'].includes(ev.type)) return 'busy'
   return ''
 }
 
 function evText(ev) {
   switch (ev.type) {
     case 'task_queued': return `任务已入队，队列位置 ${ev.position}`
-    case 'generating': return `正在生成「${ev.stock}」简要分析（${ev.index + 1}/${ev.total}）…`
-    case 'stock_done': return `「${ev.stock}」简要分析生成完成`
-    case 'stock_failed': return `「${ev.stock}」生成失败：${ev.error}`
+    case 'login_started': return ev.reason === 'quota_switch' ? '积分不足，正在登录备用账号…' : '正在登录妙想账号…'
+    case 'login_ok': return `账号登录成功（Key ${ev.key_prefix}…）`
+    case 'login_failed': return `账号登录失败：${ev.reason}`
+    case 'generating': return `正在生成「${ev.sector_name}」${ev.count} 只股票的合并分析报告…`
+    case 'quota_switching': return '检测到积分不足，正在切换备用账号…'
+    case 'retrying': return `正在使用备用账号重试「${ev.stock}」…`
+    case 'all_quota_exhausted': return '今日全部账号积分已用尽'
     case 'task_done': return `全部完成：${ev.files?.length ?? 0} 份报告`
     case 'task_failed': return `任务失败：${ev.error}`
     default: return ev.type

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""板块对比分析报告生成服务(FastAPI + SSE, 端口 8326) —— 占位实现
+"""板块对比分析报告生成服务(FastAPI + SSE, 端口 8326)
 
 接口:
     POST /api/compare/reports                  创建生成任务(板块名 + 选中股票列表)
@@ -8,14 +8,21 @@
     GET  /api/compare/reports/{task_id}/status 兜底状态查询(事件缓冲最近 20 条)
     GET  /health                               健康检查
 
-任务流程(单 worker 串行):
-    1. 逐股发 generating → _call_agent() 模拟生成(占位, sleep 模拟耗时)
-    2. 全部股票处理完 → 合并为一份板块对比分析报告(markdown)
-    3. 报告写 reports/ → 复制到 user/{username}/板块分析/{板块名}/ → task_done
+核心流程(登录/换 key 逻辑与公司分析 8323 report_server.py 一致):
+    1. 任务开始前检查"今日是否已登录"(状态文件 ~/.config/mx_report_server_state.json,
+       与公司分析共用: 同一 gateway 同一 em_api_key):
+       未登录 → 用主凭据登录并更新 openclaw.json 的 em_api_key(必要时重启 gateway)
+    2. 整份报告一次 agent 调用生成(不是逐股):
+       query = f"{sector_name}板块涨幅排名前列的{','.join(stocks)}，合并分析这些上市公司"
+       → 触发 mx-agent 的 sector-multi-stock-analysis 技能(形态 B 名单型:
+       板块名 + 股票名单逗号隔开 + "合并分析这些上市公司"意图词)
+    3. 检测到 MX_QUOTA_EXHAUSTED → 按序切换备用凭据(0主 → 1..4备用):
+       新凭据登录拿 key → 更新 openclaw.json → 重启 gateway → 验证 /v1/models → 重试
+    4. 全部凭据耗尽 → 任务判失败, 返回"今日用户积分已用尽,报告无法生成,请明日再试"
 
-⚠️ 占位说明: _call_agent() 目前是占位实现, 不真实调用 openclaw agent。
-   agent 生成功能开发完成后, 替换 _call_agent() 函数体为真实 gateway 调用即可
-   (参照 mx_company_reporter/company_report_api.py 的 _chat_once 模式)。
+环境变量:
+    MX_COMPARE_FAKE_EXHAUST=1  测试模式: 首次生成伪造配额耗尽,
+                              用于演练换 key 全流程而不消耗真实积分(勿在生产开启)
 
 启动: ./compare_report_server.sh start   (nohup + log/compare_report_server.log)
 """
@@ -40,8 +47,9 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 PORT = 8326
-GEN_SIM_SEC = 1.5        # 占位阶段每只股票的模拟生成耗时(agent 真实生成后将远大于此)
-MAX_STOCKS = 20          # 单次任务最多股票数(前端排名表最多 20 行)
+GEN_TIMEOUT = 1800      # 整份板块报告生成超时(至多 20 只股票合并分析, agent 逐只取数)
+MAX_STOCKS = 20         # 单次任务最多股票数(前端排名表最多 20 行)
+QUOTA_ALL_EXHAUSTED_MSG = "今日用户积分已用尽,报告无法生成,请明日再试"
 
 # 本文件位于 sector_rank/compare_report/, report_machine 根 = 上级的上级
 _HERE = pathlib.Path(__file__).resolve().parent
@@ -49,6 +57,18 @@ _RM_DIR = _HERE.parents[1]
 REPORTS_DIR = _HERE / "reports"          # 服务端暂存
 USER_BASE = _RM_DIR / "user"             # 用户空间(user/{username}/板块分析/{板块名}/)
 USER_SUBDIR = "板块分析"                  # explorer 中独立总文件夹(与"上市公司分析"平行)
+
+# 复用 mx_company_reporter 的登录/凭据/会话管线(与公司分析 8323 同一套):
+#   credential_store: 凭据文件/游标状态/run_login/switch_gateway_key
+#   company_report_api: SESSION_AGENT_PREFIX / _chat_once / _extract_mcp_error / _delete_session_safe
+_MX_DIR = _RM_DIR / "mx_company_reporter"
+sys.path.insert(0, str(_MX_DIR))
+
+import credential_store as cs
+from company_report_api import (SESSION_AGENT_PREFIX, _chat_once,
+                                _delete_session_safe, _extract_mcp_error)
+
+FAKE_EXHAUST = os.environ.get("MX_COMPARE_FAKE_EXHAUST") == "1"
 
 
 def _log(msg: str):
@@ -68,7 +88,7 @@ class TaskState:
     started_at: float | None = None
     finished_at: float | None = None
     files: list[str] = field(default_factory=list)      # 成功报告绝对路径
-    failed: list[dict] = field(default_factory=list)    # [{"stock", "error"}]
+    failed: list[dict] = field(default_factory=list)    # [{"sector", "error"}]
     events: list[dict] = field(default_factory=list)    # SSE 事件缓冲(上限 1000)
     seq: int = 0
     cond: threading.Condition = field(default_factory=threading.Condition)
@@ -89,49 +109,12 @@ def _emit(task: TaskState, etype: str, **extra):
         task.cond.notify_all()
 
 
-# ---------- 占位 agent 调用(★ 后续替换点) ----------
+# ---------- 报告写入与复制 ----------
 
 def _safe_filename(name: str) -> str:
     """过滤文件名非法字符(照搬 company_report_api.py 的规则)。"""
     return re.sub(r'[\\/:*?"<>|\s]+', '_', name).strip("_")
 
-
-def _call_agent(sector_name: str, stock: str) -> dict:
-    """调用 openclaw agent 生成"个股简要分析"段落 —— 占位实现, 不真实调用。
-
-    TODO(替换点): agent 生成功能开发完成后, 替换本函数体为真实 gateway 调用
-    (对接契约已按 mx_company_reporter 2026-08-16 更新版对齐):
-
-      POST http://127.0.0.1:18789/v1/chat/completions   (model: openclaw/mx-agent)
-      headers: Authorization: Bearer <token>
-               x-openclaw-session-key: f"agent:mx-agent:report-{time.time()}-{uuid hex}"
-        ★ session key 必须带 agent:mx-agent: 前缀(2026-08-16 踩坑):
-          裸 key 会 fallback 到默认 agent(main), 加载旧框架 skills,
-          company-analysis / mx-mcp-quota-exhausted-handler 技能不在场。
-          即 company_report_api.py 的 SESSION_AGENT_PREFIX = "agent:mx-agent:"
-      query(整份报告一次生成, 含全部股票简要分析+对比分析):
-        f"生成{','.join(stocks)}的公司简要分析报告和对比分析报告"
-        (prompt 内应要求 agent 先读 company-analysis 技能框架按固定骨架输出,
-         并遵守 mx-mcp-quota-exhausted-handler 取数守卫)
-      检测积分耗尽: 复用 company_report_api.py 的 _extract_mcp_error()
-        (MX_QUOTA_EXHAUSTED: JSON 错误块→错误码字段行→官方文案→纯错误码,
-         均排除否定语境); 命中 → 返回 ok:false + error{code,stage,detail,type,tool,request}
-      会话清理: finally 中 _delete_session_safe(session_key)(幂等, 成功失败都删)
-      参照 mx_company_reporter/company_report_api.py:
-        _load_token() / _chat_once() / _extract_mcp_error() / _delete_session_safe()
-      成功返回 {"ok": True, "markdown": "<整份报告>"},
-      失败返回 {"ok": False, "error": "<原因>"}
-    替换后任务流程相应改为: 整份报告一次生成(不需要逐股段落拼接)。
-    """
-    time.sleep(GEN_SIM_SEC)  # 模拟 agent 耗时, 让前端进度有真实感
-    return {"ok": True, "markdown": (
-        f"### {stock}\n\n"
-        f"- **简要分析**：占位内容 —— agent 生成功能开发中，本段落将在接入 "
-        f"OpenClaw mx-agent 后自动生成。\n"
-    )}
-
-
-# ---------- 报告写入与复制 ----------
 
 def _save_report(task: TaskState, markdown: str) -> str:
     """整份报告写 reports/, 返回绝对路径。"""
@@ -162,25 +145,175 @@ def _copy_to_user(task: TaskState, md_path: str) -> str | None:
         return None
 
 
-def _build_report(task: TaskState, parts: list[str]) -> str:
-    """汇总占位报告(板块信息 + 逐股简要分析段落 + 对比分析待生成章节)。"""
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    return (
-        f"# {task.sector_name} 板块对比分析报告\n\n"
-        f"- 生成日期：{now}\n"
-        f"- 板块：{task.sector_name}\n"
-        f"- 涉及股票（{len(task.stocks)} 只）：{'、'.join(task.stocks)}\n"
-        f"- 生成方式：OpenClaw mx-agent（**占位实现**，待 agent 生成功能开发完成后启用）\n\n"
-        f"> ⚠️ 本报告为**占位文件**：agent 生成功能尚未开发完成，"
-        f"以下内容将在开发完成后自动替换为真实分析。\n\n"
-        f"## 一、个股简要分析\n\n"
-        + "\n".join(parts)
-        + "\n## 二、对比分析\n\n"
-        + "（待生成：涨幅、主力资金、估值、成长性等维度的横向对比。）\n"
-    )
+# ---------- agent 调用(真实 gateway, 整份报告一次生成) ----------
+
+def _build_query(sector_name: str, stocks: list[str]) -> str:
+    """组装 agent query, 触发 sector-multi-stock-analysis 技能(形态 B 名单型)。
+
+    格式(与技能文档典型表述逐字同构):
+        THS 板块名称 + "板块涨幅排名前列的" + 股票名单(逗号隔开) + "，合并分析这些上市公司"
+    前三段来自前端(板块名 + 勾选股票), 最后一句写死。
+    """
+    return f"{sector_name}板块涨幅排名前列的{','.join(stocks)}，合并分析这些上市公司"
 
 
-# ---------- 任务主循环(无积分/登录逻辑的精简版) ----------
+def _call_agent(sector_name: str, stocks: list[str], attempt: int) -> dict:
+    """调用 mx-agent 生成整份板块合并分析报告(单次 agent 调用, 非逐股)。
+
+    复用 company_report_api 的会话管线: 唯一 session key(带 agent:mx-agent: 前缀)
+    + finally 删会话; 积分耗尽守卫 _extract_mcp_error 命中 → ok:false + 结构化 error。
+
+    FAKE_EXHAUST 测试模式: attempt==1 时伪造 MX_QUOTA_EXHAUSTED,
+    用于演练换 key 全流程(不消耗真实积分)。
+    """
+    if FAKE_EXHAUST and attempt == 1:
+        _log(f"[FAKE] 伪造 MX_QUOTA_EXHAUSTED (MX_COMPARE_FAKE_EXHAUST=1, sector={sector_name})")
+        return {"ok": False, "error": {"code": "MX_QUOTA_EXHAUSTED", "stage": "fake",
+                                       "detail": "测试模式伪造积分耗尽"}}
+    session_key = f"{SESSION_AGENT_PREFIX}compare-{int(time.time())}-{uuid.uuid4().hex[:6]}"
+    try:
+        text = _chat_once(session_key, _build_query(sector_name, stocks), timeout=GEN_TIMEOUT)
+        # 积分耗尽守卫: 命中 → 直接进入兜底(换 key 重试), 不落盘
+        err = _extract_mcp_error(text)
+        if err:
+            return {"ok": False, "error": err, "report": text}
+        return {"ok": True, "report": text}
+    except socket.timeout:
+        return {"ok": False, "error": {"code": "CALL_TIMEOUT", "stage": "server",
+                                       "detail": f"生成超时({GEN_TIMEOUT}s)"}}
+    except Exception as e:
+        return {"ok": False, "error": {"code": "CALL_ERROR", "stage": "server", "detail": str(e)}}
+    finally:
+        # 关键: 无论成功失败, 用完即删临时会话
+        _delete_session_safe(session_key)
+
+
+# ---------- 每日登录 / 换 key(照搬 report_server.py, 与公司分析共用状态文件) ----------
+
+def _daily_login(task: TaskState) -> tuple[bool, str]:
+    """每日第一个任务开始前: 登录主凭据并更新 gateway key。
+
+    返回 (ok, err_msg)。成功时游标状态已重置(今日首次)。
+    """
+    state = cs.load_state()
+    today = date.today().isoformat()
+    if cs.state_is_today(state, today):
+        return True, ""
+    _emit(task, "login_started", credential=0, reason="daily_first")
+    res = cs.run_login(0)  # 默认 CDP 模式(自动启动真实 Chrome)
+    if not res.get("ok"):
+        reason = res.get("reason", "未知原因")
+        _emit(task, "login_failed", credential=0, reason=reason)
+        return False, f"主凭据登录失败: {reason}"
+    key = res["key"]
+    _emit(task, "login_ok", credential=0, key_prefix=key[:8])
+    ok, reason = cs.switch_gateway_key(key)
+    if not ok:
+        _emit(task, "login_failed", credential=0, reason=f"gateway 切换失败: {reason}")
+        return False, f"gateway 切换失败: {reason}"
+    cs.save_state({"last_login_date": today, "cursor": 0, "exhausted": [],
+                   "current_key_prefix": key[:8]})
+    _log(f"每日登录完成(主凭据), key 前缀 {key[:8]}")
+    return True, ""
+
+
+def _switch_credential(task: TaskState, from_idx: int) -> tuple[int | None, str]:
+    """从 from_idx+1 起按序尝试可用备用凭据(跳过当日已 exhausted 的)。
+
+    成功: 返回 (新凭据 index, "")。
+    失败: 返回 (None, 原因)。原因为空表示"没有更多可用凭据"(配额耗尽语义);
+          非空表示最后一个失败的登录/切换原因。
+    """
+    state = cs.load_state()
+    total = cs.total_credentials()
+    nxt = from_idx + 1
+    last_err = ""
+    while nxt < total:
+        if nxt in state.get("exhausted", []):
+            nxt += 1
+            continue
+        _emit(task, "login_started", credential=nxt, reason="quota_switch")
+        res = cs.run_login(nxt)  # 默认 CDP 模式
+        if not res.get("ok"):
+            reason = res.get("reason", "未知原因")
+            last_err = f"备用{nxt}登录失败: {reason}"
+            _emit(task, "login_failed", credential=nxt, reason=reason)
+            state["exhausted"].append(nxt)
+            cs.save_state(state)
+            nxt += 1
+            continue
+        key = res["key"]
+        _emit(task, "login_ok", credential=nxt, key_prefix=key[:8])
+        ok, reason = cs.switch_gateway_key(key)
+        if not ok:
+            last_err = f"备用{nxt}切换失败: {reason}"
+            _emit(task, "login_failed", credential=nxt, reason=f"gateway 切换失败: {reason}")
+            state["exhausted"].append(nxt)
+            cs.save_state(state)
+            nxt += 1
+            continue
+        _log(f"已切换到备用{nxt}, key 前缀 {key[:8]}")
+        return nxt, ""
+    if last_err:
+        return None, last_err
+    return None, QUOTA_ALL_EXHAUSTED_MSG
+
+
+def _generate_with_retry(task: TaskState) -> dict:
+    """整份报告生成 + 配额耗尽换 key 重试。
+
+    返回 {"ok": True, "report"} | {"ok": False, "error", "all_exhausted"?}。
+    """
+    attempt = 0
+    while True:
+        attempt += 1
+        state = cs.load_state()
+        cur = state.get("cursor", 0)
+        if cur in state.get("exhausted", []):
+            # 当前凭据已确认耗尽 → 直接换(不浪费一次生成调用)
+            _emit(task, "quota_switching", from_credential=cur, to_credential=cur + 1)
+            nxt, err_msg = _switch_credential(task, cur)
+            if nxt is None:
+                return {"ok": False, "error": err_msg, "all_exhausted": True}
+            state = cs.load_state()
+            state["cursor"] = nxt
+            cs.save_state(state)
+            continue
+
+        result = _call_agent(task.sector_name, task.stocks, attempt)
+        if result.get("ok"):
+            report = (result.get("report") or "").strip()
+            if not report:
+                return {"ok": False, "error": "报告内容为空"}
+            return {"ok": True, "report": report}
+        err = result.get("error") or {}
+        code = err.get("code", "")
+        if code != "MX_QUOTA_EXHAUSTED":
+            detail = err.get("detail") or str(err)
+            return {"ok": False, "error": f"[{code}] {detail}" if code else detail}
+
+        # 配额耗尽 → 标记当前凭据, 换下一套
+        state = cs.load_state()
+        exhausted = state.setdefault("exhausted", [])
+        if cur not in exhausted:
+            exhausted.append(cur)
+        cs.save_state(state)
+        _emit(task, "quota_switching", from_credential=cur, to_credential=cur + 1)
+        nxt, err_msg = _switch_credential(task, cur)
+        if nxt is None:
+            state = cs.load_state()
+            state["cursor"] = -1
+            cs.save_state(state)
+            return {"ok": False, "error": err_msg, "all_exhausted": True}
+        state = cs.load_state()
+        state["cursor"] = nxt
+        cs.save_state(state)
+        _emit(task, "retrying", stock=f"{task.sector_name}（{len(task.stocks)} 只）",
+              credential=nxt, attempt=attempt)
+        _log(f"{task.sector_name}: 已换到凭据{nxt}, 重试(attempt={attempt})")
+
+
+# ---------- 任务主循环 ----------
 
 def _run_task(task_id: str):
     task = TASKS[task_id]
@@ -188,39 +321,42 @@ def _run_task(task_id: str):
     task.started_at = time.time()
     _log(f"任务 {task_id} 开始: {task.sector_name} / {task.stocks}")
     try:
-        # 逐股模拟生成, 收集段落
-        total = len(task.stocks)
-        parts: list[str] = []
-        for i, stock in enumerate(task.stocks):
-            _emit(task, "generating", stock=stock, index=i, total=total)
-            _log(f"{stock}: 开始生成 ({i + 1}/{total})")
-            outcome = _call_agent(task.sector_name, stock)
-            if outcome.get("ok"):
-                parts.append(outcome["markdown"])
-                _emit(task, "stock_done", stock=stock, index=i, total=total)
-                _log(f"{stock}: 段落生成完成 ({i + 1}/{total})")
-            else:
-                err = outcome.get("error", "未知错误")
-                task.failed.append({"stock": stock, "error": err})
-                _emit(task, "stock_failed", stock=stock, index=i, total=total, error=err)
-                _log(f"{stock}: 失败 - {err}")
+        # 1. 每日登录检查
+        ok, err = _daily_login(task)
+        if not ok:
+            task.finished_at = time.time()
+            task.status = "failed"
+            _emit(task, "task_failed", task_id=task_id, error=err)
+            _log(f"任务 {task_id} 失败: {err}")
+            return
 
-        # 合并为整份报告 → 写盘 → 复制到用户目录
-        if parts:
-            md = _build_report(task, parts)
-            path = _save_report(task, md)
+        # 2. 整份报告一次生成(单 worker 串行, 含配额耗尽换 key 重试)
+        count = len(task.stocks)
+        _emit(task, "generating", sector_name=task.sector_name, count=count,
+              index=0, total=1)
+        _log(f"{task.sector_name}: 开始生成 {count} 只股票的合并分析报告")
+        outcome = _generate_with_retry(task)
+        if outcome.get("ok"):
+            path = _save_report(task, outcome["report"])
             task.files.append(path)
             user_path = _copy_to_user(task, path)
             if user_path:
                 _log(f"已复制到用户目录: {user_path}")
+        else:
+            err = outcome["error"]
+            task.failed.append({"sector": task.sector_name, "error": err})
+            if outcome.get("all_exhausted"):
+                _emit(task, "all_quota_exhausted",
+                      used_credentials=cs.load_state().get("exhausted", []))
+                _log("当日全部凭据已耗尽")
 
-        # 终态
+        # 3. 终态
         task.finished_at = time.time()
         task.status = "done"
         _emit(task, "task_done", task_id=task_id, files=list(task.files),
               failed=list(task.failed),
               duration_s=round(task.finished_at - task.started_at, 1))
-        _log(f"任务 {task_id} 完成: {len(task.files)} 份报告 / {len(task.failed)} 只失败")
+        _log(f"任务 {task_id} 完成: {len(task.files)} 份报告 / {len(task.failed)} 失败")
     except Exception as e:
         task.finished_at = time.time()
         task.status = "failed"
@@ -268,6 +404,12 @@ class CompareReportRequest(BaseModel):
 
 @app.post("/api/compare/reports", status_code=202)
 def create_report(req: CompareReportRequest):
+    if not cs.credentials_available():
+        raise HTTPException(503, cs.credentials_error())
+    state = cs.load_state()
+    today = date.today().isoformat()
+    if cs.state_is_today(state, today) and state.get("cursor") == -1:
+        raise HTTPException(409, "今日用户积分已用尽,请明日再试")
     sector = (req.sector_name or "").strip()
     if not sector:
         raise HTTPException(400, "板块名称为空")
@@ -342,10 +484,18 @@ def report_status(task_id: str):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "port": PORT, "user_base": str(USER_BASE)}
+    return {
+        "status": "ok",
+        "port": PORT,
+        "credentials_available": cs.credentials_available(),
+        "today": date.today().isoformat(),
+        "state": cs.load_state(),
+    }
 
 
 if __name__ == "__main__":
-    _log(f"compare_report_server 启动, 端口 {PORT} (占位模式: agent 调用未接入)")
+    if FAKE_EXHAUST:
+        _log("[WARN] MX_COMPARE_FAKE_EXHAUST=1 测试模式: 首次生成将伪造配额耗尽, 演练换 key 流程")
+    _log("compare_report_server 启动 (真实 agent 调用: sector-multi-stock-analysis 技能)")
     threading.Thread(target=_worker_loop, daemon=True).start()
     uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")
