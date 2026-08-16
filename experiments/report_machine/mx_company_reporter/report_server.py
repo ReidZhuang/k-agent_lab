@@ -368,6 +368,34 @@ class ReportRequest(BaseModel):
     username: str | None = None   # 前端登录用户名, 报告复制到 user/{username}/{股票名}/
 
 
+@app.get("/api/reports/history")
+def report_history(username: str, limit: int = 5):
+    """列出 user/{username}/上市公司分析/ 下最近生成的报告(按 mtime 倒序)。
+
+    供前端"历史生成记录"使用: 报告复制到用户目录时 copy2 保留生成时刻的 mtime,
+    因此按 mtime 倒序即按生成时间倒序。limit 默认 5, 上限 50。
+    """
+    if not username:
+        return {"items": []}
+    user_root = USER_BASE / username
+    base = user_root / "上市公司分析"
+    items = []
+    if base.is_dir():
+        for fp in base.rglob("*.md"):
+            try:
+                st = fp.stat()
+            except OSError:
+                continue
+            items.append({
+                "name": fp.stem,                              # 20260817_贵州茅台_公司分析报告
+                "dir": fp.parent.name,                        # 股票名文件夹
+                "rel_path": str(fp.relative_to(user_root)),   # 相对用户目录路径
+                "mtime": int(st.st_mtime),
+            })
+    items.sort(key=lambda it: it["mtime"], reverse=True)
+    return {"items": items[: max(1, min(limit, 50))]}
+
+
 @app.post("/api/reports", status_code=202)
 def create_report(req: ReportRequest):
     if not cs.credentials_available():

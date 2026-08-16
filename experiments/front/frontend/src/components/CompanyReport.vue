@@ -46,17 +46,32 @@
         {{ doneInfo.ok ? '✅ 分析报告已生成，请在文件中浏览' : '❌ ' + doneInfo.error }}
       </div>
     </div>
+
+    <!-- 历史生成记录(固定在页面最底部; 打开页面即显示, 生成完成后自动刷新) -->
+    <div v-if="history.length > 0" class="history-card">
+      <div class="table-header">
+        <span>🕘 历史生成记录</span>
+        <span class="table-info">最近 {{ history.length }} 条</span>
+      </div>
+      <div class="history-list">
+        <div v-for="h in history" :key="h.rel_path" class="history-item">
+          <span class="h-name" :title="h.rel_path">📄 {{ h.name }}</span>
+          <span class="h-time">{{ fmtDateTime(h.mtime) }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { resolveStocks } from '../api/index.js'
 
 const searchInput = ref('')
 const searchResults = ref([])
 const resultText = ref('')
+const history = ref([])
 const taskId = ref('')
 const running = ref(false)
 const events = ref([])
@@ -119,6 +134,28 @@ async function handleGenerate() {
     ElMessage.error(`无法连接报告服务(${REPORT_BASE})，请确认服务已启动`)
   }
 }
+
+// ── 历史生成记录(最近 5 条: 名称 + 生成时间) ──
+function fmtDateTime(ts) {
+  const d = new Date(ts * 1000)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+async function loadHistory() {
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const username = user.name || user.username
+  if (!username) return
+  try {
+    const res = await fetch(`${REPORT_BASE}/api/reports/history?username=${encodeURIComponent(username)}`)
+    if (!res.ok) return
+    const data = await res.json()
+    history.value = (data.items || []).slice(0, 5)
+  } catch {
+    /* 服务未启动时不打扰, 卡片保持隐藏 */
+  }
+}
+onMounted(loadHistory)
 
 // ── 经验进度: 按事件阶段推进(占比依据实测: 登录态复用 12s / 完整登录 70s / 生成 220s 级) ──
 // 阶段分布: 排队 0-3%, 登录 3-12%, 生成 12-90%(多只均分), 收尾 90-100%
@@ -208,6 +245,7 @@ function onSseEvent(type, e) {
   if (type === 'task_done') {
     running.value = false
     doneInfo.value = { ok: true }
+    loadHistory()   // 生成完成 → 刷新历史记录
   }
   if (type === 'task_failed') {
     running.value = false
@@ -351,5 +389,29 @@ onBeforeUnmount(() => {
 .done-box.ok {
   color: var(--green-500);
   background: #eef8ee;
+}
+
+/* 历史生成记录(固定在页面最底部) */
+.history-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(74, 55, 40, 0.06);
+  margin-top: 20px;
+}
+.history-list { padding: 6px 20px 10px; }
+.history-item {
+  display: flex; gap: 12px; align-items: center;
+  padding: 8px 0;
+  font-size: 0.88rem; color: var(--wood-600);
+  border-bottom: 1px dashed var(--wood-50);
+}
+.history-item:last-child { border-bottom: none; }
+.h-name {
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.h-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--wood-400); font-size: 0.8rem; white-space: nowrap;
 }
 </style>

@@ -406,6 +406,34 @@ class CompareReportRequest(BaseModel):
     username: str | None = None   # 前端登录用户名, 报告复制到 user/{username}/板块分析/
 
 
+@app.get("/api/compare/reports/history")
+def compare_report_history(username: str, limit: int = 5):
+    """列出 user/{username}/板块分析/ 下最近生成的报告(按 mtime 倒序)。
+
+    与 8323 的 /api/reports/history 同构, 供前端"历史生成记录"使用:
+    报告复制到用户目录时 copy2 保留生成时刻的 mtime, 按 mtime 倒序即按生成时间倒序。
+    """
+    if not username:
+        return {"items": []}
+    user_root = USER_BASE / username
+    base = user_root / USER_SUBDIR
+    items = []
+    if base.is_dir():
+        for fp in base.rglob("*.md"):
+            try:
+                st = fp.stat()
+            except OSError:
+                continue
+            items.append({
+                "name": fp.stem,                              # 20260817_白酒概念_对比分析报告
+                "dir": fp.parent.name,                        # 板块名文件夹
+                "rel_path": str(fp.relative_to(user_root)),   # 相对用户目录路径
+                "mtime": int(st.st_mtime),
+            })
+    items.sort(key=lambda it: it["mtime"], reverse=True)
+    return {"items": items[: max(1, min(limit, 50))]}
+
+
 @app.post("/api/compare/reports", status_code=202)
 def create_report(req: CompareReportRequest):
     if not cs.credentials_available():
