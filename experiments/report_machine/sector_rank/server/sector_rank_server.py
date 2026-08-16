@@ -28,6 +28,7 @@ from pathlib import Path
 import requests
 import uvicorn
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # ── 路径与复用(与 ETL 脚本同款: sys.path insert) ──────────────────────
@@ -46,6 +47,13 @@ TOKEN_REFRESH_SCRIPT = _RM_DIR / "snowball_token" / "refresh_token.py"
 
 PORT = 8324
 app = FastAPI(title="THS Sector Rank", docs_url="/docs")
+# 前端(8320/5173)跨端口直连必须开 CORS(与 compare_report_server/report_server 一致)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 db = DatabaseManager(db_path=DB_PATH)
 
 _log_lock = threading.Lock()
