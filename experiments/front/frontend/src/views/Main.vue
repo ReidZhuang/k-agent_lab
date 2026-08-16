@@ -95,7 +95,7 @@
           </el-tabs>
         </div>
 
-        <div class="content-area">
+        <div class="content-area" ref="contentEl">
           <!-- 股票池标签 -->
           <StockPool v-if="activeTab === 'pool'" />
 
@@ -129,6 +129,16 @@
           <div class="doc-btn-placeholder"></div>
           <div class="doc-btn-placeholder"></div>
         </div>
+
+        <!-- 回到顶部(长文档下滑到页面底部附近时, 右下角出现半透明大箭头, 点击平滑回顶) -->
+        <transition name="back-top-fade">
+          <button
+            v-if="activeTab === 'doc' && showBackTop"
+            class="back-top-btn"
+            @click="scrollToTop"
+            title="回到顶部"
+          >↑</button>
+        </transition>
       </main>
     </div>
   </div>
@@ -164,8 +174,24 @@ const currentFileContent = ref('')
 const dirExpanded = ref({})
 const sortBy = ref('name')
 
+// ── 回到顶部(文档页: 长文档下滑到页面底部附近时, 右下角显示半透明大箭头) ──
+const contentEl = ref(null)
+const showBackTop = ref(false)
+
+// 距底部 < 300px 视为「下滑到页面底部」, 此时显示回顶箭头
+function onContentScroll() {
+  const el = contentEl.value
+  if (!el) return
+  showBackTop.value = el.scrollHeight - el.scrollTop - el.clientHeight < 300
+}
+
+function scrollToTop() {
+  contentEl.value?.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 // ── 初始化 ──
 onMounted(async () => {
+  contentEl.value?.addEventListener('scroll', onContentScroll)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (!user.id) {
     router.push('/login')
@@ -427,6 +453,7 @@ function startResize(e) {
 onBeforeUnmount(() => {
   document.body.style.cursor = ''
   document.body.style.userSelect = ''
+  contentEl.value?.removeEventListener('scroll', onContentScroll)
 })
 
 // ── 复制文档全部内容 ──
@@ -718,4 +745,41 @@ function printDocument() {
   pointer-events: none;
   flex-shrink: 0;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   回到顶部按钮（文档页：右下角半透明大箭头，下滑到页面底部时出现）
+   ════════════════════════════════════════════════════════════════ */
+.back-top-btn {
+  position: fixed;
+  right: 36px;
+  bottom: 36px;
+  z-index: 30;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--wood-200);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  color: var(--wood-600);
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 6px; /* ↑ 字形重心偏高，下移一点视觉居中 */
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.25s ease, background 0.25s ease, transform 0.15s ease;
+}
+.back-top-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.92);
+  transform: translateY(-2px);
+}
+.back-top-fade-enter-active,
+.back-top-fade-leave-active { transition: opacity 0.25s ease; }
+.back-top-fade-enter-from,
+.back-top-fade-leave-to { opacity: 0; }
 </style>
