@@ -99,11 +99,24 @@ def _safe_filename(name: str) -> str:
 def _call_agent(sector_name: str, stock: str) -> dict:
     """调用 openclaw agent 生成"个股简要分析"段落 —— 占位实现, 不真实调用。
 
-    TODO(替换点): agent 生成功能开发完成后, 替换本函数体为真实 gateway 调用:
+    TODO(替换点): agent 生成功能开发完成后, 替换本函数体为真实 gateway 调用
+    (对接契约已按 mx_company_reporter 2026-08-16 更新版对齐):
+
       POST http://127.0.0.1:18789/v1/chat/completions   (model: openclaw/mx-agent)
-      headers: Authorization: Bearer <token>  +  x-openclaw-session-key: <唯一>
+      headers: Authorization: Bearer <token>
+               x-openclaw-session-key: f"agent:mx-agent:report-{time.time()}-{uuid hex}"
+        ★ session key 必须带 agent:mx-agent: 前缀(2026-08-16 踩坑):
+          裸 key 会 fallback 到默认 agent(main), 加载旧框架 skills,
+          company-analysis / mx-mcp-quota-exhausted-handler 技能不在场。
+          即 company_report_api.py 的 SESSION_AGENT_PREFIX = "agent:mx-agent:"
       query(整份报告一次生成, 含全部股票简要分析+对比分析):
         f"生成{','.join(stocks)}的公司简要分析报告和对比分析报告"
+        (prompt 内应要求 agent 先读 company-analysis 技能框架按固定骨架输出,
+         并遵守 mx-mcp-quota-exhausted-handler 取数守卫)
+      检测积分耗尽: 复用 company_report_api.py 的 _extract_mcp_error()
+        (MX_QUOTA_EXHAUSTED: JSON 错误块→错误码字段行→官方文案→纯错误码,
+         均排除否定语境); 命中 → 返回 ok:false + error{code,stage,detail,type,tool,request}
+      会话清理: finally 中 _delete_session_safe(session_key)(幂等, 成功失败都删)
       参照 mx_company_reporter/company_report_api.py:
         _load_token() / _chat_once() / _extract_mcp_error() / _delete_session_safe()
       成功返回 {"ok": True, "markdown": "<整份报告>"},

@@ -70,13 +70,22 @@ SSE 实时进度（`event: <type>` + `data: json`，data 含 `type/ts/seq`；空
 
 ## 后续替换点（agent 生成开发完成后）
 
-替换 `compare_report_server.py` 中 `_call_agent()` 函数体（已标注 `TODO(替换点)`）：
+替换 `compare_report_server.py` 中 `_call_agent()` 函数体（已标注 `TODO(替换点)`）。
+对接契约已按 mx_company_reporter 2026-08-16 更新版对齐：
 
 ```python
 # 真实调用方式(参照 mx_company_reporter/company_report_api.py):
 #   POST http://127.0.0.1:18789/v1/chat/completions
 #   model: openclaw/mx-agent
 #   query = f"生成{','.join(stocks)}的公司简要分析报告和对比分析报告"
+#   ★ session key 必须带 agent:mx-agent: 前缀(2026-08-16 踩坑, 裸 key
+#     fallback 到默认 agent(main) 加载旧 skills, company-analysis 技能不在场):
+#     session_key = f"agent:mx-agent:report-{int(time.time())}-{uuid.uuid4().hex[:6]}"
+#   积分耗尽守卫: 复用 _extract_mcp_error() 检测 MX_QUOTA_EXHAUSTED 错误块
+#     (JSON 块→错误码字段行→官方完整文案→纯错误码, 均排除否定语境),
+#     命中即返回 ok:false 不落盘; 错误契约详见
+#     mx_company_reporter/MX_MCP_QUOTA_EXHAUSTED_HANDLER.md
+#   finally 中 _delete_session_safe(session_key) 删除临时会话(幂等)
 #   需复用: _load_token() / _chat_once() / _extract_mcp_error() / _delete_session_safe()
 ```
 
