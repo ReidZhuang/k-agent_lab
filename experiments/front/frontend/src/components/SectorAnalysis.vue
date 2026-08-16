@@ -81,7 +81,7 @@
             <span :class="flowClass(row.main_inflow_wan)">{{ fmtWan(row.main_inflow_wan) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="主力金额" width="95" align="right">
+        <el-table-column label="主力金额" width="115" align="right">
           <template #default="{ row }">
             <span :class="flowClass(row.main_inflow_pct)">{{ fmtFlowPct(row.main_inflow_pct) }}</span>
           </template>
