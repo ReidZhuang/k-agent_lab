@@ -1,6 +1,8 @@
 # THS 板块内个股涨幅排名服务 — 接口文档
 
-独立 FastAPI 服务，端口 **8324**。on-demand 按需取数：本地数据库为主，缺的数据（涨停时间、主力资金）按需调接口，不预计算全市场板块。
+独立 FastAPI 服务，端口 **8324**。on-demand 按需取数：本地数据库为主，缺的数据（并列时间、主力资金）按需调接口，不预计算全市场板块。
+
+代码位置：`experiments/report_machine/sector_rank/server/`
 
 ## 启停
 
@@ -56,7 +58,6 @@ curl "http://127.0.0.1:8324/api/sector/rank?ts_code=885525.TI"
       "name": "会稽山",
       "chg_pct": 7.05,
       "is_limit_up": false,
-      "limit_up_time": null,
       "main_inflow_wan": -2639.08,
       "main_inflow_pct": -2.44,
       "amount_wan": 108155.0,
@@ -71,7 +72,7 @@ curl "http://127.0.0.1:8324/api/sector/rank?ts_code=885525.TI"
 ## 排序规则（三级）
 
 1. **涨幅**（`chg_pct`）降序
-2. 涨幅**并列**时：**涨停股**按"谁先涨停"（触板时间）先后排前；非涨停股排后
+2. 涨幅**并列**时：**谁先涨到这个涨幅值，谁排在前面**（内部按"先到达时间"排序，不对外展示）。并列组内有涨停股时触发拉分时计算（涨停 10% 并列最常见）；无涨停股的并列罕见，直接落第 3 级
 3. 仍并列：**成交额**（`amount_wan`）降序
 
 取前 `top` 名（默认 20）。
@@ -82,8 +83,7 @@ curl "http://127.0.0.1:8324/api/sector/rank?ts_code=885525.TI"
 |---|---|---|
 | `chg_pct` | 本地快照 `stg_tencent_snapshot` | 当日涨跌幅 % |
 | `amount_wan` / `turnover_rate` | 本地快照 | 成交额(万元) / 换手率 % |
-| `is_limit_up` | 快照 `price ≈ limit_up` | 是否涨停 |
-| `limit_up_time` | 腾讯分时接口（按需） | 首次触板时间 HHMM；**仅在"并列组内已涨停"的股票上计算**，无并列的涨停股为 null（排序时无并列无需该键） |
+| `is_limit_up` | 快照 `price ≈ limit_up` | 是否涨停（limit_up>0 排除退市股占位） |
 | `main_inflow_wan` | pysnowball `capital_flow`（雪球） | 当日资金净额（主力口径，万元），末条累计值 |
 | `main_inflow_pct` | 自算 | 资金净额 ÷ 当日成交额 × 100（净占比 %） |
 
@@ -96,6 +96,6 @@ curl "http://127.0.0.1:8324/api/sector/rank?ts_code=885525.TI"
 ## 已知行为
 
 - 板块成分股在快照中缺失则跳过（正常全市场覆盖，不会发生）
-- 单只资金流/分时接口失败 → 对应字段为 null，不阻塞整体返回
+- 单只资金流/分时接口失败 → 对应资金/时间字段不影响排名（失败股按成交额兜底），不阻塞整体返回
 - 雪球 token 失效时自动刷新（复用 fetcher 的 `snowball_token/refresh_token.py` 机制）
-- 响应耗时：概念板块（几十只）~1s；全市场超大板块（3000+ 成分）~4s（并列涨停股多时按需拉分时）
+- 响应耗时：概念板块（几十只）~1.5s；全市场超大板块（3000+ 成分）并列涨停组多时 ~5s

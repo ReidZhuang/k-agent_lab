@@ -31,16 +31,18 @@ from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
 # ── 路径与复用(与 ETL 脚本同款: sys.path insert) ──────────────────────
+# 本文件位于 sector_rank/server/, report_machine 根 = _HERE.parent.parent
 # 注意: 只 insert etl 目录; midday 目录有同名 config.py 会冲突, 仅用绝对路径引用
 _HERE = Path(__file__).resolve().parent
-_ETL_DIR = _HERE.parent / "etl"
-_MIDDAY_DIR = _HERE.parent / "data_fetch" / "midday"
+_RM_DIR = _HERE.parent.parent
+_ETL_DIR = _RM_DIR / "etl"
+_MIDDAY_DIR = _RM_DIR / "data_fetch" / "midday"
 sys.path.insert(0, str(_ETL_DIR))
 from config import DB_PATH  # noqa: E402
 from db_manager import DatabaseManager  # noqa: E402
 
 TOKEN_FILE = _MIDDAY_DIR / "config" / "snowball_token.json"
-TOKEN_REFRESH_SCRIPT = _HERE.parent / "snowball_token" / "refresh_token.py"
+TOKEN_REFRESH_SCRIPT = _RM_DIR / "snowball_token" / "refresh_token.py"
 
 PORT = 8324
 app = FastAPI(title="THS Sector Rank", docs_url="/docs")
@@ -147,8 +149,11 @@ def fetch_capital_flow(codes: list[str]) -> dict[str, dict]:
 
 
 # ── 腾讯分时: 触板时间 ────────────────────────────────────────────────
-def fetch_limit_up_time(ts_code: str, limit_up: float) -> str | None:
-    """分时数据首次 price >= limit_up 的时间(HHMM); 失败/未触板返回 None"""
+def fetch_tie_time(ts_code: str, target_price: float) -> str | None:
+    """分时数据首次 price >= target_price 的时间(HHMM); 失败/未到达返回 None
+
+    target_price = 并列涨幅对应的价格(涨停股用交易所涨停价, 其余 prev_close*(1+chg/100))
+    """
     suffix = ts_code.split(".")[-1].upper()
     pref = {"SZ": "sz", "SH": "sh", "BJ": "bj"}.get(suffix)
     if not pref:
@@ -160,7 +165,7 @@ def fetch_limit_up_time(ts_code: str, limit_up: float) -> str | None:
         rows = r.json()["data"][sym]["data"]["data"]
         for line in rows:
             parts = line.split()
-            if len(parts) >= 2 and float(parts[1]) >= limit_up - 0.005:
+            if len(parts) >= 2 and float(parts[1]) >= target_price - 0.005:
                 return parts[0]  # "HHMM"
     except Exception:
         pass
@@ -200,7 +205,7 @@ def get_members_with_snapshot(sector_ts_code: str) -> tuple[list[dict], str, str
     rows = db.execute(
         """SELECT m.con_code, m.con_name,
                   s.price, s.chg_pct, s.amount_wan, s.turnover_rate, s.limit_up,
-                  s.fetch_time, s.time_stamp
+                  s.prev_close, s.fetch_time, s.time_stamp
            FROM stg_ths_member m
            JOIN stg_tencent_snapshot s ON m.con_code = s.ts_code
            WHERE m.ts_code = ?
@@ -210,6 +215,7 @@ def get_members_with_snapshot(sector_ts_code: str) -> tuple[list[dict], str, str
     stocks = [{
         "ts_code": r[0], "name": r[1], "price": r[2], "chg_pct": r[3],
         "amount_wan": r[4] or 0.0, "turnover_rate": r[5], "limit_up": r[6],
+        "prev_close": r[7],
     } for r in rows]
     fetch_time = rows[0][7] if rows else ""
     trade_date = rows[0][8][:8] if rows else ""
@@ -218,8 +224,8 @@ def get_members_with_snapshot(sector_ts_code: str) -> tuple[list[dict], str, str
 
 # ── 排序(三级规则) ────────────────────────────────────────────────────
 def sort_key(st: dict):
-    # 1 涨幅降序; 2 涨停股触板时间升序(无触板时间=非涨停, 排后); 3 成交额降序
-    t = st.get("limit_up_time") or "9999"
+    # 1 涨幅降序; 2 并列组内"先到达该涨幅"的时间升序(未拉分时=None 排后); 3 成交额降序
+    t = st.get("tie_time") or "9999"
     return (-st["chg_pct"], t, -st["amount_wan"])
 
 
@@ -240,26 +246,35 @@ def build_ranked(stocks: list[dict], top: int) -> tuple[list[dict], int]:
         if len(group) <= 1:
             continue
         tie_groups += 1
-        need = [st for st in group if _is_limit_up(st)]
-        if not need:
+        # 并列组内有涨停股才拉分时比"谁先到达该涨幅"(涨停10%并列最常见);
+        # 无涨停股的并列(罕见)直接落成交额兜底
+        if not any(_is_limit_up(st) for st in group):
+            for st in group:
+                st["tie_time"] = None
             continue
+        for st in group:
+            # 目标价: 涨停股用交易所涨停价(精确), 其余用涨幅换算价
+            st["tie_price"] = (st["limit_up"] if _is_limit_up(st)
+                               else round(st["prev_close"] * (1 + chg / 100), 2))
         with ThreadPoolExecutor(max_workers=5) as ex:
             results = ex.map(
-                lambda st: (st["ts_code"], fetch_limit_up_time(st["ts_code"], st["limit_up"])),
-                need,
+                lambda st: (st["ts_code"], fetch_tie_time(st["ts_code"], st["tie_price"])),
+                group,
             )
         times = dict(results)
-        for st in need:
-            st["limit_up_time"] = times.get(st["ts_code"])
         for st in group:
-            st.setdefault("limit_up_time", None)
+            st["tie_time"] = times.get(st["ts_code"])
 
     ranked = sorted(stocks, key=sort_key)[:top]
     for i, st in enumerate(ranked, 1):
         st["rank"] = i
-        st["is_limit_up"] = bool(st.get("limit_up_time")) or _is_limit_up(st)
+        st["is_limit_up"] = _is_limit_up(st)
+        # 内部排序键不输出
+        st.pop("tie_time", None)
+        st.pop("tie_price", None)
         st.pop("price", None)
         st.pop("limit_up", None)
+        st.pop("prev_close", None)
     return ranked, tie_groups
 
 
