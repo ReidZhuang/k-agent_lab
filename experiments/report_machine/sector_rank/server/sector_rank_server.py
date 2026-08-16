@@ -181,34 +181,53 @@ def fetch_tie_time(ts_code: str, target_price: float) -> str | None:
 
 
 # ── 本地查询 ──────────────────────────────────────────────────────────
-# 外盘体系(861/864/865/871/873/875 = 港美股)不提供 A 股快照, 排名无意义, 搜索时排除
-OVERSEAS_PREFIXES = ("861", "864", "865", "871", "873", "875")
+# 只服务 A 股板块: 非 A 股成分占比 > 50% 的板块(港美股体系 861/864/865/871/873/875、
+# 700 系港股通/中概股等)一律剔除; A 股板块含个别非 A 股成分(如三胎概念混 1 只三板)保留。
+# 非 A 股板块集合按成分表预计算并缓存(每日 ETL 更新后重启服务即刷新)。
+_NON_A_SHARE_CACHE: set[str] | None = None
+
+
+def _non_a_share_sectors() -> set[str]:
+    global _NON_A_SHARE_CACHE
+    if _NON_A_SHARE_CACHE is None:
+        rows = db.execute(
+            """SELECT ts_code FROM (
+                 SELECT m.ts_code AS ts_code,
+                        SUM(CASE WHEN substr(m.con_code, instr(m.con_code, '.') + 1)
+                                 NOT IN ('SZ', 'SH', 'BJ') THEN 1 ELSE 0 END) AS non_a,
+                        COUNT(*) AS total
+                 FROM stg_ths_member m GROUP BY m.ts_code)
+               WHERE non_a * 2 > total""")
+        _NON_A_SHARE_CACHE = {r[0] for r in rows}
+        _log(f"[sector] 非A股板块 {len(_NON_A_SHARE_CACHE)} 个(成分判定), 已剔除")
+    return _NON_A_SHARE_CACHE
 
 
 def search_sectors(name: str, limit: int = 20) -> list[dict]:
+    excluded = _non_a_share_sectors()
     rows = db.execute(
         "SELECT ts_code, name, count FROM stg_ths_index "
-        "WHERE name LIKE ? AND substr(ts_code,1,3) NOT IN (?,?,?,?,?,?) "
-        "ORDER BY name LIMIT ?",
-        (f"%{name}%", *OVERSEAS_PREFIXES, limit),
+        "WHERE name LIKE ? ORDER BY name LIMIT ?",
+        (f"%{name}%", limit * 5),
     )
-    return [{"ts_code": r[0], "name": r[1], "member_count": r[2]} for r in rows]
+    items = [r for r in rows if r[0] not in excluded][:limit]
+    return [{"ts_code": r[0], "name": r[1], "member_count": r[2]} for r in items]
 
 
 def get_sector_by_ts_code(ts_code: str) -> dict | None:
     rows = db.execute(
         "SELECT ts_code, name, count FROM stg_ths_index WHERE ts_code=?", (ts_code,))
-    if not rows:
+    if not rows or rows[0][0] in _non_a_share_sectors():
         return None
     return {"ts_code": rows[0][0], "name": rows[0][1], "member_count": rows[0][2]}
 
 
 def get_sectors_by_name(name: str) -> list[dict]:
+    excluded = _non_a_share_sectors()
     rows = db.execute(
-        "SELECT ts_code, name, count FROM stg_ths_index "
-        "WHERE name=? AND substr(ts_code,1,3) NOT IN (?,?,?,?,?,?)",
-        (name, *OVERSEAS_PREFIXES))
-    return [{"ts_code": r[0], "name": r[1], "member_count": r[2]} for r in rows]
+        "SELECT ts_code, name, count FROM stg_ths_index WHERE name=?", (name,))
+    return [{"ts_code": r[0], "name": r[1], "member_count": r[2]}
+            for r in rows if r[0] not in excluded]
 
 
 def get_members_with_snapshot(sector_ts_code: str) -> tuple[list[dict], str, str]:
