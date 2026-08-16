@@ -101,6 +101,10 @@ const messages = ref([])
 const input = ref('')
 const streaming = ref(false)
 const streamingText = ref('')
+// 模板 ref(须在 setup 声明变量, 模板 ref="xxx" 才会绑定; 缺失曾导致引用预填/自动滚动/focus 静默失效)
+const heroInputRef = ref(null)
+const chatInputRef = ref(null)
+const listRef = ref(null)
 let abortCtrl = null
 
 const hints = [
@@ -170,6 +174,7 @@ function newChatWithReference(text) {
     el.focus()
     const len = el.value.length
     el.setSelectionRange(len, len) // 光标落在分隔线下方新行, 等待输入问题
+    el.scrollTop = 0 // 显示引用开头(长引用时框内能看到引用内容, 输入时自动滚到光标)
     autoGrow({ target: el })
   })
 }
