@@ -95,7 +95,7 @@
           </el-tabs>
         </div>
 
-        <div class="content-area" ref="contentEl">
+        <div class="content-area">
           <!-- 股票池标签 -->
           <StockPool v-if="activeTab === 'pool'" />
 
@@ -175,23 +175,22 @@ const dirExpanded = ref({})
 const sortBy = ref('name')
 
 // ── 回到顶部(文档页: 长文档下滑到页面底部附近时, 右下角显示半透明大箭头) ──
-const contentEl = ref(null)
 const showBackTop = ref(false)
 
-// 距底部 < 300px 视为「下滑到页面底部」, 此时显示回顶箭头
-function onContentScroll() {
-  const el = contentEl.value
-  if (!el) return
-  showBackTop.value = el.scrollHeight - el.scrollTop - el.clientHeight < 300
+// 页面滚动发生在 window(.content-area 的 overflow-y:auto 因 flex 子项缺 min-height:0
+// 被内容撑开而无效, 整个页面随 window 滚动); 距底部 < 300px 视为「下滑到页面底部」
+function onWindowScroll() {
+  const doc = document.documentElement
+  showBackTop.value = doc.scrollHeight - window.scrollY - window.innerHeight < 300
 }
 
 function scrollToTop() {
-  contentEl.value?.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 // ── 初始化 ──
 onMounted(async () => {
-  contentEl.value?.addEventListener('scroll', onContentScroll)
+  window.addEventListener('scroll', onWindowScroll)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (!user.id) {
     router.push('/login')
@@ -453,7 +452,7 @@ function startResize(e) {
 onBeforeUnmount(() => {
   document.body.style.cursor = ''
   document.body.style.userSelect = ''
-  contentEl.value?.removeEventListener('scroll', onContentScroll)
+  window.removeEventListener('scroll', onWindowScroll)
 })
 
 // ── 复制文档全部内容 ──
