@@ -113,21 +113,32 @@
           <SectorAnalysis v-show="activeTab === 'sector'" />
 
           <!-- 股小神标签(v-show 保持挂载: 切换标签页流式对话不中断) -->
-          <ChatPanel v-show="activeTab === 'chat'" />
+          <ChatPanel ref="chatPanelRef" v-show="activeTab === 'chat'" />
         </div>
 
-        <!-- 文档页右侧浮动工具栏 -->
-        <div v-if="activeTab === 'doc' && currentFilePath" class="doc-float-bar">
+        <!-- 文档页右侧浮动工具栏(固定在屏幕: 下滑文档时保持可见) -->
+        <div
+          v-if="activeTab === 'doc' && currentFilePath"
+          class="doc-float-bar"
+          :class="{ 'has-selection': hasDocSelection }"
+        >
           <el-tooltip content="打印文档" placement="left">
             <button class="doc-toolbar-btn" @click="printDocument" title="打印文档">🖨️</button>
           </el-tooltip>
           <el-tooltip content="复制全部内容" placement="left">
             <button class="doc-toolbar-btn" @click="copyDocument" title="复制全部内容">📋</button>
           </el-tooltip>
-          <div class="doc-toolbar-sep"></div>
-          <!-- 预留按钮位（暂空） -->
-          <div class="doc-btn-placeholder"></div>
-          <div class="doc-btn-placeholder"></div>
+          <el-tooltip
+            :content="hasDocSelection ? '将选中内容作为引用，到股小神开新会话提问' : '先在文档中选中文字，再点我提问'"
+            placement="left"
+          >
+            <button
+              class="doc-toolbar-btn doc-ask-btn"
+              :class="{ active: hasDocSelection }"
+              @click="askXiaoShen"
+              title="询问股小神"
+            >🤖</button>
+          </el-tooltip>
         </div>
 
         <!-- 回到顶部(长文档下滑到页面底部附近时, 右下角出现半透明大箭头, 点击平滑回顶) -->
@@ -145,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Marked } from 'marked'
@@ -188,9 +199,42 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+// ── 询问股小神(文档页): 选中文档文字后按钮亮起, 点击 → 跳股小神开新会话, 选中内容作为引用预填 ──
+const chatPanelRef = ref(null)
+const hasDocSelection = ref(false)
+
+// 仅当选中内容落在文档预览(.md-preview)内且非空时, 按钮才亮起
+function onSelectionChange() {
+  if (activeTab.value !== 'doc') {
+    hasDocSelection.value = false
+    return
+  }
+  const sel = window.getSelection()
+  let inside = false
+  if (sel && !sel.isCollapsed) {
+    const md = document.querySelector('.md-preview')
+    const node = sel.anchorNode
+    inside = !!(md && node && (md === node || md.contains(node)))
+  }
+  hasDocSelection.value = inside && !!sel.toString().trim()
+}
+
+function askXiaoShen() {
+  const sel = window.getSelection()
+  const text = sel && !sel.isCollapsed ? sel.toString().trim() : ''
+  if (!text) {
+    ElMessage.warning('请先在文档中选中一些文字')
+    return
+  }
+  // 跳转股小神标签并开新会话, 选中内容作为引用预填进输入框(不自动发送)
+  activeTab.value = 'chat'
+  nextTick(() => chatPanelRef.value?.newChatWithReference(text))
+}
+
 // ── 初始化 ──
 onMounted(async () => {
   window.addEventListener('scroll', onWindowScroll)
+  document.addEventListener('selectionchange', onSelectionChange)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (!user.id) {
     router.push('/login')
@@ -453,6 +497,7 @@ onBeforeUnmount(() => {
   document.body.style.cursor = ''
   document.body.style.userSelect = ''
   window.removeEventListener('scroll', onWindowScroll)
+  document.removeEventListener('selectionchange', onSelectionChange)
 })
 
 // ── 复制文档全部内容 ──
@@ -680,21 +725,22 @@ function printDocument() {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   文档页右侧浮动工具栏（竖排）
+   文档页右侧浮动工具栏（竖排, position:fixed 跟随屏幕:
+   下滑长文档时整列按钮固定在屏幕右上区域, 不随文档滚走）
    ════════════════════════════════════════════════════════════════ */
 .doc-float-bar {
-  position: absolute;
-  right: 8px;
-  top: 60px;
+  position: fixed;
+  right: 10px;
+  top: 116px;
   z-index: 20;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 6px;
+  gap: 6px;
+  padding: 10px 8px;
   background: rgba(255, 255, 255, 0.25);
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   opacity: 0.35;
@@ -706,43 +752,36 @@ function printDocument() {
   border-color: var(--wood-200);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
+/* 文档上有选中文字时, 整列亮起让「询问股小神」的高亮状态清晰可读 */
+.doc-float-bar.has-selection { opacity: 0.95; }
 
 .doc-toolbar-btn {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   background: transparent;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   color: var(--wood-600);
-  transition: background 0.15s;
+  transition: background 0.15s, opacity 0.15s, transform 0.15s;
 }
 .doc-toolbar-btn:hover { background: var(--wood-100); }
 
-.doc-toolbar-sep {
-  width: 20px;
-  height: 1px;
-  background: var(--wood-200);
-  margin: 4px 0;
-  flex-shrink: 0;
+/* 询问股小神: 未选中时与工具栏同半透明; 选中文档文字后亮起(实心渐变 + 微放大) */
+.doc-ask-btn.active {
+  background: linear-gradient(135deg, var(--wood-400), var(--wood-500));
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(74, 55, 40, 0.35);
+  transform: scale(1.08);
 }
-
-/* 预留按钮位：虚线空槽，暂不可点 */
-.doc-btn-placeholder {
-  width: 36px;
-  height: 36px;
-  box-sizing: border-box;
-  border: 1px dashed var(--wood-300);
-  border-radius: 6px;
-  opacity: 0.15;
-  pointer-events: none;
-  flex-shrink: 0;
+.doc-ask-btn.active:hover {
+  background: linear-gradient(135deg, var(--wood-500), var(--wood-600));
 }
 
 /* ════════════════════════════════════════════════════════════════
