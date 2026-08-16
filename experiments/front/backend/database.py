@@ -85,6 +85,24 @@ class Database:
                     list_date   TEXT,
                     update_date TEXT
                 );
+
+                CREATE TABLE IF NOT EXISTS chat_session (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id     INTEGER NOT NULL,
+                    conv_id     TEXT NOT NULL,
+                    title       TEXT NOT NULL DEFAULT '新对话',
+                    created_at  TEXT DEFAULT (datetime('now','localtime')),
+                    updated_at  TEXT DEFAULT (datetime('now','localtime')),
+                    UNIQUE(user_id, conv_id)
+                );
+
+                CREATE TABLE IF NOT EXISTS chat_message (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id  INTEGER NOT NULL,
+                    role        TEXT NOT NULL,
+                    content     TEXT NOT NULL,
+                    created_at  TEXT DEFAULT (datetime('now','localtime'))
+                );
             """)
 
     # ── 用户 ──
@@ -207,6 +225,89 @@ class Database:
             (user_id, file_path),
         )
         return r is not None
+
+    # ── 股小神聊天 ──
+
+    def create_chat_session(self, user_id: int, conv_id: str, title: str = "新对话"):
+        """创建会话；已存在则返回现有记录（幂等）"""
+        self.execute(
+            "INSERT OR IGNORE INTO chat_session (user_id, conv_id, title) VALUES (?, ?, ?)",
+            (user_id, conv_id, title),
+        )
+        return self.get_chat_session(user_id, conv_id)
+
+    def get_chat_session(self, user_id: int, conv_id: str):
+        return self.execute_one(
+            "SELECT * FROM chat_session WHERE user_id=? AND conv_id=?",
+            (user_id, conv_id),
+        )
+
+    def list_chat_sessions(self, user_id: int):
+        """按最近更新排序，附消息条数"""
+        return self.execute(
+            """
+            SELECT cs.conv_id, cs.title, cs.created_at, cs.updated_at,
+                   (SELECT COUNT(*) FROM chat_message cm WHERE cm.session_id = cs.id) AS message_count
+            FROM chat_session cs
+            WHERE cs.user_id=?
+            ORDER BY cs.updated_at DESC
+            """,
+            (user_id,),
+        )
+
+    def delete_chat_session(self, user_id: int, conv_id: str):
+        session = self.get_chat_session(user_id, conv_id)
+        if not session:
+            return False
+        with self.get_conn() as conn:
+            conn.execute("DELETE FROM chat_message WHERE session_id=?", (session["id"],))
+            conn.execute(
+                "DELETE FROM chat_session WHERE user_id=? AND conv_id=?",
+                (user_id, conv_id),
+            )
+        return True
+
+    def touch_chat_session(self, user_id: int, conv_id: str):
+        self.execute(
+            "UPDATE chat_session SET updated_at=datetime('now','localtime') WHERE user_id=? AND conv_id=?",
+            (user_id, conv_id),
+        )
+
+    def set_chat_title(self, user_id: int, conv_id: str, title: str):
+        self.execute(
+            "UPDATE chat_session SET title=? WHERE user_id=? AND conv_id=?",
+            (title, user_id, conv_id),
+        )
+
+    def append_chat_message(self, user_id: int, conv_id: str, role: str, content: str):
+        """追加一条消息；首条用户消息自动生成会话标题（前 20 字）"""
+        session = self.get_chat_session(user_id, conv_id)
+        if not session:
+            return None
+        with self.get_conn() as conn:
+            cur = conn.execute(
+                "INSERT INTO chat_message (session_id, role, content) VALUES (?, ?, ?)",
+                (session["id"], role, content),
+            )
+            conn.execute(
+                "UPDATE chat_session SET updated_at=datetime('now','localtime') WHERE id=?",
+                (session["id"],),
+            )
+        if role == "user" and session["title"] == "新对话":
+            title = content.strip()[:20] or "新对话"
+            self.set_chat_title(user_id, conv_id, title)
+        return self.execute_one(
+            "SELECT * FROM chat_message WHERE id=?", (cur.lastrowid,)
+        )
+
+    def list_chat_messages(self, user_id: int, conv_id: str):
+        session = self.get_chat_session(user_id, conv_id)
+        if not session:
+            return []
+        return self.execute(
+            "SELECT role, content, created_at FROM chat_message WHERE session_id=? ORDER BY id",
+            (session["id"],),
+        )
 
 
 db = Database()

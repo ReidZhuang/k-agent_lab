@@ -91,6 +91,7 @@
             <el-tab-pane label="📄 文档" name="doc" />
             <el-tab-pane label="📝 公司分析" name="report" />
             <el-tab-pane label="📊 板块分析" name="sector" />
+            <el-tab-pane label="🤖 股小神" name="chat" />
           </el-tabs>
         </div>
 
@@ -110,6 +111,9 @@
 
           <!-- 板块分析标签(v-show 保持挂载: 切换标签页进度不中断) -->
           <SectorAnalysis v-show="activeTab === 'sector'" />
+
+          <!-- 股小神标签(v-show 保持挂载: 切换标签页流式对话不中断) -->
+          <ChatPanel v-show="activeTab === 'chat'" />
         </div>
 
         <!-- 文档页右侧浮动工具栏 -->
@@ -141,6 +145,7 @@ import StockPool from '../components/StockPool.vue'
 import DocPreview from '../components/DocPreview.vue'
 import CompanyReport from '../components/CompanyReport.vue'
 import SectorAnalysis from '../components/SectorAnalysis.vue'
+import ChatPanel from '../components/ChatPanel.vue'
 import { useDownloadStore } from '../api/downloadStore.js'
 
 const router = useRouter()

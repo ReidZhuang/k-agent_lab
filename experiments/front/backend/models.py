@@ -63,3 +63,25 @@ class DailyDataItem(BaseModel):
     amount: float | None = None
     turnover_rate: float | None = None  # from daily_basic
     amplitude: float | None = None  # from daily_basic
+
+
+# ── 股小神聊天 ──
+
+class ChatCreateRequest(BaseModel):
+    conv_id: str
+    title: str = ""
+
+
+class ChatMessageItem(BaseModel):
+    role: str  # user / assistant
+    content: str
+
+
+class ChatAppendRequest(BaseModel):
+    role: str
+    content: str
+
+
+class ChatCompletionsRequest(BaseModel):
+    conv_id: str
+    messages: list[ChatMessageItem]

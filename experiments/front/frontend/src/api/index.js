@@ -86,3 +86,73 @@ export const removeFavorite = (path) =>
 // ── 文件删除 ──
 export const deleteFile = (path) =>
   request('DELETE', `/explorer/delete?path=${encodeURIComponent(path)}`)
+
+// ── 股小神聊天 ──
+export const listChatSessions = () => request('GET', '/chat/sessions')
+
+export const createChatSession = (convId, title = '') =>
+  request('POST', '/chat/sessions', { conv_id: convId, title })
+
+export const deleteChatSession = (convId) =>
+  request('DELETE', `/chat/sessions/${convId}`)
+
+export const listChatMessages = (convId) =>
+  request('GET', `/chat/sessions/${convId}/messages`)
+
+export const appendChatMessage = (convId, role, content) =>
+  request('POST', `/chat/sessions/${convId}/messages`, { role, content })
+
+/**
+ * 流式对话（走后端代理，token 不进浏览器）
+ * @param {string} convId 会话 ID
+ * @param {Array<{role:string,content:string}>} messages 完整历史
+ * @param {(delta:string)=>void} onDelta 每块内容回调（打字机效果）
+ * @param {AbortSignal} signal 停止生成时 abort
+ */
+export async function chatStream(convId, messages, onDelta, signal) {
+  const token = getToken()
+  const resp = await fetch(`${BASE}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: token },
+    body: JSON.stringify({ conv_id: convId, messages }),
+    signal,
+  })
+  if (resp.status === 401) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.hash = '#/login'
+    throw new Error('未登录')
+  }
+  if (!resp.ok) {
+    let msg = `HTTP ${resp.status}`
+    try {
+      const d = await resp.json()
+      if (d.detail) msg = d.detail
+    } catch { /* 非 JSON 错误体 */ }
+    throw new Error(msg)
+  }
+  const reader = resp.body.getReader()
+  const decoder = new TextDecoder()
+  let buf = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+    const lines = buf.split('\n')
+    buf = lines.pop() // 保留不完整行
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue
+      const data = line.slice(5).trim()
+      if (data === '[DONE]') return
+      try {
+        const json = JSON.parse(data)
+        // 代理透传的 SSE 错误帧
+        if (json.error) throw new Error(json.error.message || '对话服务异常')
+        const delta = json.choices?.[0]?.delta?.content
+        if (delta) onDelta(delta)
+      } catch (e) {
+        if (e.message === '对话服务异常') throw e
+      }
+    }
+  }
+}

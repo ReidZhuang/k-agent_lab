@@ -1,0 +1,4 @@
+# 本地数据库文件（共享库在 /home/stockagent/project_space/database/）
+*.db
+*.db-wal
+*.db-shm

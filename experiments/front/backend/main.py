@@ -13,7 +13,7 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Query, Header, Body, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from config import HOST, PORT, USER_SPACE_BASE
@@ -32,6 +32,10 @@ from explorer import (
 )
 from models import (
     LoginRequest, AddStockRequest, FavoriteItem, DownloadRequest,
+    ChatCreateRequest, ChatAppendRequest, ChatCompletionsRequest,
+)
+from chat_api import (
+    build_session_key, forward_chat_stream, ChatGatewayError,
 )
 
 app = FastAPI(title="股神的秘密 API", version="1.0.0")
@@ -240,6 +244,85 @@ def add_favorite(req: FavoriteItem, user: dict = Depends(_get_user)):
 def remove_favorite(path: str = Query(""), user: dict = Depends(_get_user)):
     db.remove_favorite(user["user_id"], path)
     return {"status": "ok"}
+
+
+# ════════════════════════════════════════════════════════════════
+# 股小神聊天
+# ════════════════════════════════════════════════════════════════
+
+@app.get("/api/chat/sessions")
+def chat_sessions(user: dict = Depends(_get_user)):
+    """会话列表（按最近更新排序）"""
+    return {"sessions": db.list_chat_sessions(user["user_id"])}
+
+
+@app.post("/api/chat/sessions")
+def chat_create_session(req: ChatCreateRequest, user: dict = Depends(_get_user)):
+    """创建会话（幂等：conv_id 已存在则返回现有记录）"""
+    session = db.create_chat_session(user["user_id"], req.conv_id.strip(), req.title or "新对话")
+    return {"session": session}
+
+
+@app.delete("/api/chat/sessions/{conv_id}")
+def chat_delete_session(conv_id: str, user: dict = Depends(_get_user)):
+    """删除会话及其全部消息"""
+    ok = db.delete_chat_session(user["user_id"], conv_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    return {"status": "ok"}
+
+
+@app.get("/api/chat/sessions/{conv_id}/messages")
+def chat_session_messages(conv_id: str, user: dict = Depends(_get_user)):
+    """会话消息历史（按时间正序，用于恢复现场）"""
+    return {"messages": db.list_chat_messages(user["user_id"], conv_id)}
+
+
+@app.post("/api/chat/sessions/{conv_id}/messages")
+def chat_append_message(conv_id: str, req: ChatAppendRequest, user: dict = Depends(_get_user)):
+    """追加一条消息（流结束后前端回存 assistant 回复；abort 时回存已生成部分）"""
+    if req.role not in ("user", "assistant"):
+        raise HTTPException(status_code=400, detail="role 仅支持 user / assistant")
+    message = db.append_chat_message(user["user_id"], conv_id, req.role, req.content)
+    if not message:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    return {"message": message}
+
+
+@app.post("/api/chat/completions")
+async def chat_completions(req: ChatCompletionsRequest, user: dict = Depends(_get_user)):
+    """转发到 OpenClaw Gateway 流式对话（token 只留在后端）。
+
+    前端把完整历史放在 messages 里 → 后端落库最后一条 user 消息 →
+    以 agent:mx-public:<userId>-<convId> 作为 session key 流式透传 SSE。
+    """
+    conv_id = req.conv_id.strip()
+    if not conv_id or not req.messages:
+        raise HTTPException(status_code=400, detail="conv_id 与 messages 不能为空")
+    # 会话不存在则自动创建（前端首页输入框直接发第一条时无需先建会话）
+    db.create_chat_session(user["user_id"], conv_id)
+    # 落库最后一条 user 消息（首条自动生成标题；重复 append 由前端保证时序）
+    last = req.messages[-1]
+    if last.role == "user":
+        db.append_chat_message(user["user_id"], conv_id, "user", last.content)
+
+    session_key = build_session_key(user["user_id"], conv_id)
+    messages = [{"role": m.role, "content": m.content} for m in req.messages]
+
+    async def _proxy():
+        try:
+            async for chunk in forward_chat_stream(messages, session_key):
+                yield chunk
+        except ChatGatewayError as e:
+            # SSE 帧里带错误，前端解析 data: 时看到 error 字段会提示
+            err = json.dumps({"error": {"message": e.detail}}, ensure_ascii=False)
+            yield f"data: {err}\n\n".encode("utf-8")
+
+    return StreamingResponse(
+        _proxy(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ════════════════════════════════════════════════════════════════
