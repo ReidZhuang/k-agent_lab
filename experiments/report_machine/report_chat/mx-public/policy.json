@@ -1,0 +1,37 @@
+{
+  "agent": {
+    "id": "mx-public",
+    "name": "mx-public",
+    "model": "deepseek/deepseek-v4-flash",
+    "workspace": "/home/stockagent/.openclaw/workspace-mx-public",
+    "agentDir": "/home/stockagent/.openclaw/agents/mx-public/agent"
+  },
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 20000,
+    "keepRecentTokens": 20000,
+    "maxActiveTranscriptBytes": "10mb",
+    "truncateAfterCompaction": true,
+    "midTurnPrecheck": true,
+    "memoryFlush": true,
+    "notifyUser": false
+  },
+  "sessionArchive": {
+    "enabled": true,
+    "intervalMinutes": 1440,
+    "archiveAfterMinutes": 720,
+    "keepArchivedDays": 7
+  },
+  "memoryFlush": {
+    "enabled": true,
+    "scheduleCron": "0 2 * * *",
+    "maxMemoryFileBytes": 16384
+  },
+  "tokenBudget": {
+    "enabled": true,
+    "maxTotalTokens": 2000000,
+    "checkIntervalMinutes": 30,
+    "onExceed": "disable",
+    "disabledModel": "disabled/disabled"
+  }
+}
