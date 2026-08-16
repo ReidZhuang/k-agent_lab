@@ -64,7 +64,9 @@ print('1' if is_trading_day(date.today().strftime('%Y%m%d')) else '0')
 
 if [ "$TODAY" != "1" ]; then
     _log "[SKIP] 今日非交易日，跳过 ETL"
-    exit 0
+    # 非交易日以非 0 退出(2026-08-16): 供 cron 行 `wrapper && 后续命令` 短路;
+    # 独立单行调用不读 exit code, 无影响
+    exit 1
 fi
 
 mkdir -p "$ETL_DIR/logs"
