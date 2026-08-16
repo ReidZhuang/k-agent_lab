@@ -26,7 +26,7 @@
               @click="handlePick(c)"
             >
               {{ c.name }}
-              <span class="cand-count">{{ c.member_count }} 只</span>
+              <span class="cand-count">{{ c.ts_code }} · {{ c.member_count }} 只</span>
             </button>
           </div>
         </div>

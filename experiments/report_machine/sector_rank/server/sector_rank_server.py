@@ -181,11 +181,16 @@ def fetch_tie_time(ts_code: str, target_price: float) -> str | None:
 
 
 # ── 本地查询 ──────────────────────────────────────────────────────────
+# 外盘体系(861/864/865/871/873/875 = 港美股)不提供 A 股快照, 排名无意义, 搜索时排除
+OVERSEAS_PREFIXES = ("861", "864", "865", "871", "873", "875")
+
+
 def search_sectors(name: str, limit: int = 20) -> list[dict]:
     rows = db.execute(
-        "SELECT ts_code, name, count FROM stg_ths_index WHERE name LIKE ? "
+        "SELECT ts_code, name, count FROM stg_ths_index "
+        "WHERE name LIKE ? AND substr(ts_code,1,3) NOT IN (?,?,?,?,?,?) "
         "ORDER BY name LIMIT ?",
-        (f"%{name}%", limit),
+        (f"%{name}%", *OVERSEAS_PREFIXES, limit),
     )
     return [{"ts_code": r[0], "name": r[1], "member_count": r[2]} for r in rows]
 
@@ -200,7 +205,9 @@ def get_sector_by_ts_code(ts_code: str) -> dict | None:
 
 def get_sectors_by_name(name: str) -> list[dict]:
     rows = db.execute(
-        "SELECT ts_code, name, count FROM stg_ths_index WHERE name=?", (name,))
+        "SELECT ts_code, name, count FROM stg_ths_index "
+        "WHERE name=? AND substr(ts_code,1,3) NOT IN (?,?,?,?,?,?)",
+        (name, *OVERSEAS_PREFIXES))
     return [{"ts_code": r[0], "name": r[1], "member_count": r[2]} for r in rows]
 
 
