@@ -354,7 +354,10 @@ function onSseEvent(type, e) {
   if (events.value.length > 50) events.value.splice(0, events.value.length - 50)
   if (type === 'task_done') {
     running.value = false
-    doneInfo.value = { ok: true }
+    // 整份报告粒度: failed 非空即整体失败, 展示失败原因(如积分耗尽)
+    doneInfo.value = (data.failed?.length ?? 0) > 0
+      ? { ok: false, error: data.failed[0].error }
+      : { ok: true }
   }
   if (type === 'task_failed') {
     running.value = false
@@ -428,7 +431,9 @@ function evText(ev) {
     case 'quota_switching': return '检测到积分不足，正在切换备用账号…'
     case 'retrying': return `正在使用备用账号重试「${ev.stock}」…`
     case 'all_quota_exhausted': return '今日全部账号积分已用尽'
-    case 'task_done': return `全部完成：${ev.files?.length ?? 0} 份报告`
+    case 'task_done': return (ev.failed?.length ?? 0) > 0
+      ? `生成失败：${ev.failed[0].error}`
+      : `全部完成：${ev.files?.length ?? 0} 份报告`
     case 'task_failed': return `任务失败：${ev.error}`
     default: return ev.type
   }

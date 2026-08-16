@@ -345,6 +345,7 @@ def _run_task(task_id: str):
         else:
             err = outcome["error"]
             task.failed.append({"sector": task.sector_name, "error": err})
+            _log(f"{task.sector_name}: 生成失败 - {err}")
             if outcome.get("all_exhausted"):
                 _emit(task, "all_quota_exhausted",
                       used_credentials=cs.load_state().get("exhausted", []))
