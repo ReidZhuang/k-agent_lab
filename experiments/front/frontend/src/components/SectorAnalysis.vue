@@ -66,7 +66,7 @@
             <el-tag size="small" effect="plain">{{ row.ts_code }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="涨幅" width="80" align="right">
+        <el-table-column label="涨幅" width="95" align="right">
           <template #default="{ row }">
             <span :class="chgClass(row.chg_pct)">{{ fmtPct(row.chg_pct) }}</span>
           </template>
@@ -76,22 +76,22 @@
             <span v-if="row.is_limit_up" class="limit-up-mark">⚡</span>
           </template>
         </el-table-column>
-        <el-table-column label="主力增量" width="100" align="right">
+        <el-table-column label="主力增量" width="115" align="right">
           <template #default="{ row }">
             <span :class="flowClass(row.main_inflow_wan)">{{ fmtWan(row.main_inflow_wan) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="主力金额" width="80" align="right">
+        <el-table-column label="主力金额" width="95" align="right">
           <template #default="{ row }">
             <span :class="flowClass(row.main_inflow_pct)">{{ fmtFlowPct(row.main_inflow_pct) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="成交额" width="100" align="right">
+        <el-table-column label="成交额" width="115" align="right">
           <template #default="{ row }">
             {{ fmtWan(row.amount_wan) }}
           </template>
         </el-table-column>
-        <el-table-column label="换手率" width="80" align="right">
+        <el-table-column label="换手率" width="95" align="right">
           <template #default="{ row }">
             {{ row.turnover_rate != null ? row.turnover_rate.toFixed(2) + '%' : '-' }}
           </template>
@@ -507,6 +507,8 @@ onBeforeUnmount(() => {
 .table-info { font-weight: 400; font-size: 0.85rem; color: var(--wood-400); }
 
 .rank-table { padding: 0 4px 4px; }
+/* 数值列禁换行: 列宽足够时一行显示, 避免数字折行占两行 */
+.rank-table :deep(.cell) { white-space: nowrap; }
 .rank-no { font-weight: 600; color: var(--wood-500); }
 .rank-top3 { color: var(--red-400); }
 
