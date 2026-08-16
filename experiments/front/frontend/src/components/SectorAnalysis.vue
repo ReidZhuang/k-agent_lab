@@ -1,5 +1,5 @@
 <template>
-  <div class="sector-page">
+  <div ref="rootRef" class="sector-page">
     <!-- 板块搜索工具 -->
     <div class="sector-add-tool">
       <div class="row">
@@ -60,7 +60,7 @@
             <span class="rank-no" :class="{ 'rank-top3': row.rank <= 3 }">{{ row.rank }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="股票名称" min-width="100" />
+        <el-table-column prop="name" label="股票名称" width="110" />
         <el-table-column prop="ts_code" label="代码" width="100">
           <template #default="{ row }">
             <el-tag size="small" effect="plain">{{ row.ts_code }}</el-tag>
@@ -141,9 +141,10 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 
+const rootRef = ref(null)
 const searchInput = ref('')
 const candidates = ref([])
 const currentSector = ref(null)     // {ts_code, name, member_count}
@@ -210,6 +211,7 @@ async function handlePick(c) {
     stocks.value.forEach((row, i) => {
       if (i < 11) tableRef.value?.toggleRowSelection(row, true)
     })
+    relayout()
   } catch {
     ElMessage.error(`无法连接板块服务(${SECTOR_BASE})，请确认服务已启动`)
   }
@@ -220,6 +222,26 @@ function resetSector() {
   stocks.value = []
   rankInfo.value = ''
 }
+
+// ── 表格布局重算 ──
+// 本组件在 Main.vue 中 v-show 挂载(保 SSE 进度), 初始挂载时 display:none,
+// el-table 宽度测量为 0 → scrollX/列宽计算错误 → 横向滚动时表头不同步。
+// doLayout() 重算列宽并 rAF 同步一次表头位置, 修复此问题。
+let relayoutTimer = null
+function relayout() {
+  clearTimeout(relayoutTimer)
+  relayoutTimer = setTimeout(() => {
+    tableRef.value?.doLayout?.()
+  }, 60)
+}
+let ro = null
+onMounted(() => {
+  // 切回标签页(v-show 显示)时尺寸从 0 恢复, ResizeObserver 触发 → 强制重算
+  if (typeof ResizeObserver !== 'undefined' && rootRef.value) {
+    ro = new ResizeObserver(() => { relayout() })
+    ro.observe(rootRef.value)
+  }
+})
 
 function onSelectionChange(rows) {
   selectedCount.value = rows.length
@@ -406,6 +428,8 @@ function evText(ev) {
 onBeforeUnmount(() => {
   if (es) es.close()
   stopTicker()
+  ro?.disconnect()
+  clearTimeout(relayoutTimer)
 })
 </script>
 
@@ -468,7 +492,7 @@ onBeforeUnmount(() => {
 }
 .table-info { font-weight: 400; font-size: 0.85rem; color: var(--wood-400); }
 
-.rank-table { padding: 0 12px 4px; }
+.rank-table { padding: 0 4px 4px; }
 .rank-no { font-weight: 600; color: var(--wood-500); }
 .rank-top3 { color: var(--red-400); }
 
