@@ -62,12 +62,19 @@ def fetch_period(period: str) -> int:
 
 
 def latest_quarter_end() -> str:
-    """最近一个已结束的季度末(如 2026-08-06 → 20260630; 2026-05-01 → 20260331)"""
+    """最近一个已结束的季度末(如 2026-08-06 → 20260630; 2026-05-01 → 20260331)
+
+    修复(2026-08-16): 旧实现 q*3 拼 31, 6/9 月会生成 0631/0931 无效日期,
+    导致 9/1、11/1 触发的季度任务永远查不到数据。季度末只有四种:
+    3/31、6/30、9/30、12/31。
+    """
     today = datetime.now()
     q = (today.month - 1) // 3  # 当前季度序号 0-3
     if q == 0:
         return f"{today.year - 1}1231"
-    return f"{today.year}{q * 3:02d}31"
+    m = q * 3  # 季度末月份: 3/6/9/12
+    day = {3: 31, 6: 30, 9: 30, 12: 31}[m]
+    return f"{today.year}{m:02d}{day}"
 
 
 def etl_periods(periods=None):
