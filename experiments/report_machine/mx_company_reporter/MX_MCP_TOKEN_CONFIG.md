@@ -2,6 +2,9 @@
 
 本文档说明 mx-ds-mcp（东方财富数据 MCP 服务）的 API Token 在 OpenClaw 中的配置位置与修改方法。
 
+> 换 key 全流程（手动/自动/备用凭据轮换）、多 agent 共享机制、双服务并发安全见
+> [`MX_MCP_KEY_LIFECYCLE.md`](./MX_MCP_KEY_LIFECYCLE.md)。
+
 ## 配置位置
 
 | 项目 | 值 |

@@ -2,6 +2,9 @@
 
 > 本文档是 mx-public 的全部开发文件与运维说明。**开发文件统一存放于此目录**，运行时数据（会话 transcript、记忆、workspace）仍留在 `~/.openclaw` 下（OpenClaw 运行机制要求，不可迁移）。
 
+> ℹ️ mx-public 与 mx-agent 共用全局 MCP server `mx-ds-mcp`（同一把 `em_api_key`，同一账号额度池）。key 的存储、换 key 流程（含 8323 自动轮换）与共享机制见
+> `mx_company_reporter/MX_MCP_KEY_LIFECYCLE.md`。
+
 ## 1. 是什么
 
 `mx-public` 是与 `mx-agent` **同 skills、零记忆**的独立 Agent，专供前端页面调用：
