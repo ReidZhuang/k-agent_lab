@@ -46,7 +46,7 @@ _reporter_cfg = _cfg.get("reporter", {})
 _middleman_cfg = _cfg.get("middleman", {})
 _ds_cfg = _reporter_cfg.get("deepseek", {})
 
-API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+API_KEY = os.environ.get("OPENCODE_GO_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
 if not API_KEY:
     raise RuntimeError("DEEPSEEK_API_KEY 环境变量未设置")
 

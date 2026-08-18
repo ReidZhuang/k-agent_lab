@@ -37,7 +37,7 @@ reporter:
   deepseek:
     model: deepseek-v4-flash
     max_tokens: 64000
-    api_base: https://api.deepseek.com
+    api_base: https://opencode.ai/zen/go/v1
     timeout: 180          # read(空闲)超时: 两次数据之间的最大间隔, 非总时长
     connect_timeout: 10   # 建立连接超时
     max_retries: 2        # SDK 对超时/429/5xx 的重试次数(最多 3 次尝试), 每次尝试独立请求
