@@ -1,3 +1,8 @@
+<!--
+  妙想MCP 登录滑块人工验证覆盖层(实验功能)。
+  用途: choice_get_api_key.py --challenge-dir 遇滑块时, 配合 login_exp_server(端口 8325)人工拖拼图。
+  注意: 不要全局挂载! 8325 平时不启动, 全局轮询会持续产生 500。仅在需要人工验滑块时按需挂载。
+-->
 <template>
   <Teleport to="body">
     <div v-if="chal" class="cap-overlay">
