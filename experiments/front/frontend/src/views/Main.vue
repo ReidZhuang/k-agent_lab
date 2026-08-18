@@ -263,6 +263,9 @@ async function loadFiles(path = '') {
   try {
     const data = await listFiles(path)
     fileTree.value = buildTree(sortItems(data.items), path)
+    // 重建后的树 children 为空, 但 expanded 状态保留——立即重新加载所有已展开目录,
+    // 避免删除/刷新后出现"展开了却显示为空"的现象
+    await refreshExpandedDirs(fileTree.value)
   } catch { /* ignore */ }
 }
 
@@ -292,21 +295,34 @@ function buildTree(items, parentPath) {
   }))
 }
 
-async function toggleDir(item) {
+async function loadChildren(item) {
   const path = item.path || item.name
+  try {
+    const data = await listFiles(path)
+    item.children = sortItems(data.items).map(child => ({
+      ...child,
+      path: child.path || `${path}/${child.name}`,
+      checked: selectedFiles.value.includes(child.path || `${path}/${child.name}`),
+      expanded: dirExpanded.value[child.path || `${path}/${child.name}`] === true,
+      children: [],
+    }))
+  } catch { /* ignore */ }
+}
+
+async function toggleDir(item) {
   item.expanded = !item.expanded
-  dirExpanded.value[path] = item.expanded
+  dirExpanded.value[item.path || item.name] = item.expanded
   if (item.expanded && item.children.length === 0 && item.type === 'dir') {
-    try {
-      const data = await listFiles(path)
-      item.children = sortItems(data.items).map(child => ({
-        ...child,
-        path: child.path || `${path}/${child.name}`,
-        checked: selectedFiles.value.includes(child.path || `${path}/${child.name}`),
-        expanded: dirExpanded.value[child.path || `${path}/${child.name}`] === true,
-        children: [],
-      }))
-    } catch { /* ignore */ }
+    await loadChildren(item)
+  }
+}
+
+async function refreshExpandedDirs(nodes) {
+  for (const node of nodes) {
+    if (node.type === 'dir' && node.expanded) {
+      if (node.children.length === 0) await loadChildren(node)
+      await refreshExpandedDirs(node.children)
+    }
   }
 }
 
