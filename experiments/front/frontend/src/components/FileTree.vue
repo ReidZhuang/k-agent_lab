@@ -7,6 +7,7 @@
         <span class="arrow" :class="{ open: item.expanded }">▶</span>
         <span class="icon">📂</span>
         <span class="name">{{ item.name }}</span>
+        <button class="del-btn" title="删除文件夹" @click.stop="$emit('delete-file', item)">🗑</button>
       </div>
       <!-- 子项（递归渲染任意深度；点击事件逐层透传给父组件） -->
       <FileTree

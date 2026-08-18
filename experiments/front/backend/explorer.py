@@ -2,6 +2,7 @@
 文件浏览与下载模块
 """
 import os
+import shutil
 import sys
 import zipfile
 import tempfile
@@ -89,17 +90,17 @@ def search_files(q: str, username: str) -> list[dict]:
 
 
 def delete_item(rel_path: str, username: str) -> bool:
-    """删除文件或空目录"""
+    """删除文件或目录（目录递归删除，但禁止删除用户根目录）"""
     full_path = _resolve_path(rel_path, username)
     if not full_path or not full_path.exists():
         return False
+    if full_path == _user_base(username):
+        return False  # 不允许删除用户根目录
     if full_path.is_file():
         full_path.unlink()
         return True
     if full_path.is_dir():
-        if any(full_path.iterdir()):
-            return False  # 非空目录不删
-        full_path.rmdir()
+        shutil.rmtree(full_path)
         return True
     return False
 
