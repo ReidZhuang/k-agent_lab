@@ -131,9 +131,10 @@ const listRef = ref(null)
 let abortCtrl = null
 
 const hints = [
-  '今天哪些板块涨幅靠前？',
-  '帮我分析一下贵州茅台的最新财务数据',
-  '创业板今天有什么值得关注的公告？',
+  '今天中外有哪些重要新闻？对A股市场有没有影响？',
+  '今天有财经和科技有哪些涉及中美博弈的热点新闻？',
+  '今天盘面上同花顺概念板块中涨幅排名前三的板块是谁？',
+  '帮我分析一下宁德时代的资金流向数据',
 ]
 
 // 生成会话 ID（非安全上下文不可用 crypto.randomUUID，手动拼接）
@@ -159,11 +160,16 @@ async function loadMessages(convId) {
   const data = await listChatMessages(convId)
   const raw = data.messages || []
   // 给每条 assistant 消息补上触发它的 user query（保存成文档 / 展示用），保留 id
+  // 并从后端带回的 feedback 恢复「喜欢/不喜欢」点亮状态（反复点击后仍保持）
   let lastUser = ''
   messages.value = raw.map(m => {
     const item = { ...m }
     if (item.role === 'user') lastUser = item.content
-    else if (item.role === 'assistant') item.query = lastUser
+    else if (item.role === 'assistant') {
+      item.query = lastUser
+      item.liked = item.feedback === 'like'
+      item.disliked = item.feedback === 'dislike'
+    }
     return item
   })
 }
@@ -330,9 +336,11 @@ async function copyReply(m) {
 // ── 保存成文档（写入 股小神互动文档/，文件名由后端 TextRank 按 query 生成） ──
 async function saveReply(m) {
   try {
-    const res = await writeDocument('', m.content, '股小神互动文档', m.query || '')
+    const dirPath = '股小神互动文档'
+    const res = await writeDocument('', m.content, dirPath, m.query || '')
     ElMessage.success('已保存：' + res.filename)
-    window.dispatchEvent(new CustomEvent('explorer-refresh'))
+    // 刷新文件树并自动展开写入目录、加载其内容，避免只看到目录/空目录
+    window.dispatchEvent(new CustomEvent('explorer-refresh', { detail: { dirPath } }))
   } catch (e) {
     ElMessage.error('保存失败：' + (e.message || ''))
   }
@@ -359,23 +367,33 @@ async function regenerate(m) {
   await runStream(convId, history, trigger, false)
 }
 
-// ── 喜欢 / 不喜欢（互斥；落库由后端处理，dislike 抓 skill 快照） ──
+// ── 喜欢 / 不喜欢（互斥）。点亮→落库；再点一次取消→落 'none' 清空。
+// 多次点击由后端按 (user,message) 去重为一行、只留当前状态，不会堆重复记录。
 async function onLike(m) {
-  if (m.disliked) m.disliked = false
-  m.liked = !m.liked
   if (m.liked) {
-    try { await sendFeedback(currentConvId.value, m.id || 0, 'like') }
-    catch (e) { ElMessage.error('反馈失败：' + (e.message || '')) }
+    m.liked = false
+    await sendFeedbackSafe('none', m)
+    return
   }
+  m.disliked = false
+  m.liked = true
+  await sendFeedbackSafe('like', m)
 }
 
 async function onDislike(m) {
-  if (m.liked) m.liked = false
-  m.disliked = !m.disliked
   if (m.disliked) {
-    try { await sendFeedback(currentConvId.value, m.id || 0, 'dislike') }
-    catch (e) { ElMessage.error('反馈失败：' + (e.message || '')) }
+    m.disliked = false
+    await sendFeedbackSafe('none', m)
+    return
   }
+  m.liked = false
+  m.disliked = true
+  await sendFeedbackSafe('dislike', m)
+}
+
+async function sendFeedbackSafe(feedback, m) {
+  try { await sendFeedback(currentConvId.value, m.id || 0, feedback) }
+  catch (e) { ElMessage.error('反馈失败：' + (e.message || '')) }
 }
 
 function stopGenerate(silent = false) {

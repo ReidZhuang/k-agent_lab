@@ -314,9 +314,14 @@ class Database:
         session = self.get_chat_session(user_id, conv_id)
         if not session:
             return []
+        # 带上每条消息当前的反馈状态（like/dislike/null），供前端恢复「点亮」状态。
+        # 一条消息最多一行 feedback（upsert 去重），LEFT JOIN 取最新即可。
         return self.execute(
-            "SELECT id, role, content, created_at FROM chat_message WHERE session_id=? ORDER BY id",
-            (session["id"],),
+            "SELECT m.id, m.role, m.content, m.created_at, f.feedback "
+            "FROM chat_message m "
+            "LEFT JOIN chat_feedback f ON f.message_id = m.id AND f.user_id = ? "
+            "WHERE m.session_id=? ORDER BY m.id",
+            (user_id, session["id"]),
         )
 
     def delete_last_assistant_message(self, user_id: int, conv_id: str) -> bool:
@@ -342,14 +347,40 @@ class Database:
             )
         return True
 
-    def add_feedback(self, user_id: int, conv_id: str, message_id: int,
-                     feedback: str, skills: str = None) -> None:
-        """记录一条 喜欢/不喜欢 反馈。skills 为 JSON 字符串，仅 dislike 时带（skill 快照）。"""
-        self.execute(
-            "INSERT INTO chat_feedback (user_id, conv_id, message_id, feedback, skills)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (user_id, conv_id, message_id, feedback, skills),
-        )
+    def upsert_feedback(self, user_id: int, conv_id: str, message_id: int,
+                        feedback: str, skills: str = None) -> None:
+        """保存「喜欢/不喜欢」反馈，按 (user_id, message_id) 去重为一行。
+
+        策略：多次点击只保留当前状态——
+          - feedback 为 like/dislike → 存在则更新，不存在则插入（dislike 首次带 skill 快照后保留）；
+          - feedback 为 none（取消）→ 删除该行（无行 = 无反馈，回到未点亮）。
+        这样反复点击不会在库里堆积重复/冗余记录。
+        """
+        with self.get_conn() as conn:
+            row = conn.execute(
+                "SELECT id, skills FROM chat_feedback "
+                "WHERE user_id=? AND message_id=?",
+                (user_id, message_id),
+            ).fetchone()
+            if row is None:
+                conn.execute(
+                    "INSERT INTO chat_feedback (user_id, conv_id, message_id, feedback, skills)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (user_id, conv_id, message_id, feedback, skills),
+                )
+                return
+            if feedback == "none":
+                conn.execute("DELETE FROM chat_feedback WHERE id=?", (row["id"],))
+                return
+            # 更新 feedback；skills 保留首次快照（已有则不动，避免重复抓取覆盖）
+            if not row["skills"] and skills:
+                row_skills = skills
+            else:
+                row_skills = row["skills"]
+            conn.execute(
+                "UPDATE chat_feedback SET feedback=?, conv_id=?, skills=? WHERE id=?",
+                (feedback, conv_id, row_skills, row["id"]),
+            )
 
 
 db = Database()

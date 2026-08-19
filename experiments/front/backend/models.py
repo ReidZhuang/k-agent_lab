@@ -92,7 +92,7 @@ class ChatCompletionsRequest(BaseModel):
 class FeedbackRequest(BaseModel):
     conv_id: str
     message_id: int = 0
-    feedback: str  # like / dislike
+    feedback: str  # like / dislike / none(=取消)
 
 
 class ExplorerWriteRequest(BaseModel):

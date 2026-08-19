@@ -389,15 +389,19 @@ def _extract_dislike_skills(user_id: int, conv_id: str) -> list[str]:
 
 @app.post("/api/chat/feedback")
 def chat_feedback(req: "FeedbackRequest", user: dict = Depends(_get_user)):
-    """记录一条 喜欢/不喜欢 反馈。dislike 时抓取该会话 skill 快照落库。"""
-    if req.feedback not in ("like", "dislike"):
-        raise HTTPException(status_code=400, detail="feedback 仅支持 like / dislike")
+    """记录 喜欢/不喜欢 反馈（反复点击只保留当前状态，不堆积重复行）。
+
+    like/dislike → upsert 为一行；none（取消点亮）→ 删除该行。
+    dislike 首次点击时抓取该会话 skill 快照落库，后续保留首次快照。
+    """
+    if req.feedback not in ("like", "dislike", "none"):
+        raise HTTPException(status_code=400, detail="feedback 仅支持 like / dislike / none")
     skills = None
     if req.feedback == "dislike":
         sk = _extract_dislike_skills(user["user_id"], req.conv_id)
         if sk:
             skills = json.dumps(sk, ensure_ascii=False)
-    db.add_feedback(user["user_id"], req.conv_id, req.message_id, req.feedback, skills)
+    db.upsert_feedback(user["user_id"], req.conv_id, req.message_id, req.feedback, skills)
     return {"status": "ok"}
 
 

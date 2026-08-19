@@ -236,8 +236,8 @@ function askXiaoShen() {
 onMounted(async () => {
   window.addEventListener('scroll', onWindowScroll)
   document.addEventListener('selectionchange', onSelectionChange)
-  // 股小神「保存成文档」后刷新文件树（保留展开状态）
-  window.addEventListener('explorer-refresh', loadFiles)
+  // 股小神「保存成文档」后刷新文件树（保留展开状态）；若带了 dirPath 则自动展开该目录并加载其内容
+  window.addEventListener('explorer-refresh', refreshExplorer)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (!user.id) {
     router.push('/login')
@@ -269,6 +269,29 @@ async function loadFiles(path = '') {
     // 避免删除/刷新后出现"展开了却显示为空"的现象
     await refreshExpandedDirs(fileTree.value)
   } catch { /* ignore */ }
+}
+
+// 股小神「保存成文档」后刷新；并可自动展开并加载指定目录（保存目录），
+// 让刚保存的文档立即可见，而不是停在空目录/未展开状态。
+async function refreshExplorer(ev) {
+  const dirPath = ev?.detail?.dirPath || ''
+  await loadFiles()
+  if (dirPath) {
+    dirExpanded.value[dirPath] = true
+    // 在重建后的树里定位到该目录节点并加载其子项
+    const find = nodes => {
+      for (const n of nodes) {
+        if (n.path === dirPath) return n
+        if (n.children?.length) { const hit = find(n.children); if (hit) return hit }
+      }
+      return null
+    }
+    const node = find(fileTree.value)
+    if (node) {
+      node.expanded = true
+      await loadChildren(node)
+    }
+  }
 }
 
 function sortItems(items) {
@@ -517,7 +540,7 @@ onBeforeUnmount(() => {
   document.body.style.userSelect = ''
   window.removeEventListener('scroll', onWindowScroll)
   document.removeEventListener('selectionchange', onSelectionChange)
-  window.removeEventListener('explorer-refresh', loadFiles)
+  window.removeEventListener('explorer-refresh', refreshExplorer)
 })
 
 // ── 复制文档全部内容 ──
