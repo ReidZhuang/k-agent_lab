@@ -236,6 +236,8 @@ function askXiaoShen() {
 onMounted(async () => {
   window.addEventListener('scroll', onWindowScroll)
   document.addEventListener('selectionchange', onSelectionChange)
+  // 股小神「保存成文档」后刷新文件树（保留展开状态）
+  window.addEventListener('explorer-refresh', loadFiles)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   if (!user.id) {
     router.push('/login')
@@ -515,6 +517,7 @@ onBeforeUnmount(() => {
   document.body.style.userSelect = ''
   window.removeEventListener('scroll', onWindowScroll)
   document.removeEventListener('selectionchange', onSelectionChange)
+  window.removeEventListener('explorer-refresh', loadFiles)
 })
 
 // ── 复制文档全部内容 ──

@@ -102,19 +102,32 @@ export const listChatMessages = (convId) =>
 export const appendChatMessage = (convId, role, content) =>
   request('POST', `/chat/sessions/${convId}/messages`, { role, content })
 
+// 重新生成：删除会话最后一条 assistant 回复（保留触发它的 user 问句）
+export const deleteLastAssistant = (convId) =>
+  request('DELETE', `/chat/sessions/${convId}/assistant`)
+
+// 记录 喜欢/不喜欢 反馈（dislike 时后端抓 skill 快照）
+export const sendFeedback = (convId, messageId, feedback) =>
+  request('POST', '/chat/feedback', { conv_id: convId, message_id: messageId, feedback })
+
+// 保存成文档（写 .md 到用户空间；query 用于 TextRank 生成文件名）
+export const writeDocument = (filename, content, dirPath, query) =>
+  request('POST', '/explorer/write', { filename, content: content || '', dir_path: dirPath || '', query: query || '' })
+
 /**
  * 流式对话（走后端代理，token 不进浏览器）
  * @param {string} convId 会话 ID
  * @param {Array<{role:string,content:string}>} messages 完整历史
  * @param {(delta:string)=>void} onDelta 每块内容回调（打字机效果）
  * @param {AbortSignal} signal 停止生成时 abort
+ * @param {boolean} persistLastUser 重新生成重放历史时传 false，避免末条 user query 重复落库
  */
-export async function chatStream(convId, messages, onDelta, signal) {
+export async function chatStream(convId, messages, onDelta, signal, persistLastUser = true) {
   const token = getToken()
   const resp = await fetch(`${BASE}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: token },
-    body: JSON.stringify({ conv_id: convId, messages }),
+    body: JSON.stringify({ conv_id: convId, messages, persist_last_user: persistLastUser }),
     signal,
   })
   if (resp.status === 401) {

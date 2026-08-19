@@ -5,8 +5,10 @@
     conda run -n stock_agent python main.py
 """
 import os
+import re
 import sys
 import json
+import glob
 import zipfile
 from pathlib import Path
 from datetime import datetime
@@ -30,9 +32,11 @@ from explorer import (
     list_dir, get_file_content, convert_single_to_docx, convert_batch_to_docx,
     delete_item, search_files,
 )
+from title import build_document_title
 from models import (
     LoginRequest, AddStockRequest, FavoriteItem, DownloadRequest,
     ChatCreateRequest, ChatAppendRequest, ChatCompletionsRequest,
+    FeedbackRequest, ExplorerWriteRequest,
 )
 from chat_api import (
     build_session_key, forward_chat_stream, ChatGatewayError,
@@ -301,9 +305,10 @@ async def chat_completions(req: ChatCompletionsRequest, user: dict = Depends(_ge
         raise HTTPException(status_code=400, detail="conv_id 与 messages 不能为空")
     # 会话不存在则自动创建（前端首页输入框直接发第一条时无需先建会话）
     db.create_chat_session(user["user_id"], conv_id)
-    # 落库最后一条 user 消息（首条自动生成标题；重复 append 由前端保证时序）
+    # 落库最后一条 user 消息（首条自动生成标题；重复 append 由前端保证时序）。
+    # 「重新生成」重放历史时 persist_last_user=false，末条 user query 已在库中不再重复落库。
     last = req.messages[-1]
-    if last.role == "user":
+    if last.role == "user" and req.persist_last_user:
         db.append_chat_message(user["user_id"], conv_id, "user", last.content)
 
     session_key = build_session_key(user["user_id"], conv_id)
@@ -323,6 +328,111 @@ async def chat_completions(req: ChatCompletionsRequest, user: dict = Depends(_ge
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.delete("/api/chat/sessions/{conv_id}/assistant")
+def chat_delete_last_assistant(conv_id: str, user: dict = Depends(_get_user)):
+    """「重新生成」：删除会话最后一条 assistant 回复（保留触发它的 user 问句）。"""
+    ok = db.delete_last_assistant_message(user["user_id"], conv_id)
+    if not ok:
+        raise HTTPException(status_code=400, detail="无可删除的 assistant 回复")
+    return {"status": "ok"}
+
+
+# ── 反馈 skill 快照：按 sessionKey 定位 transcript，从 trajectory 提取 skill 清单 ──
+_MX_SESSIONS_DIR = Path.home() / ".openclaw" / "agents" / "mx-public" / "sessions"
+_SKILL_PATTERN = re.compile(
+    r"(mx-ds-mcp__[A-Za-z0-9_]+|hithink-[A-Za-z0-9-]+|"
+    r"tushare[_-][A-Za-z0-9_-]+|company-analysis|news-aggregator-skill|"
+    r"sector-multi-stock-analysis|data-source-priority|rd-leaders-[a-z-]+)"
+)
+
+
+def _extract_dislike_skills(user_id: int, conv_id: str) -> list[str]:
+    """dislike 时在场抓取该会话用过的 skill/tool 清单。
+
+    通过 sessionKey `agent:mx-public:<user_id>-<conv_id>` 反查 transcript →
+    同名 trajectory → 用正则提取 skill/tool 名。transcript 仅保留约 7 天，
+    所以「当场抓取」保证可关联。抓不到时返回空列表（不阻断反馈落库）。
+    """
+    sess_dir = _MX_SESSIONS_DIR
+    if not sess_dir.exists():
+        return []
+    session_key = f"agent:mx-public:{user_id}-{conv_id}"
+    transcript = None
+    for f in glob.glob(str(sess_dir / "*.jsonl")):
+        if ".trajectory" in f:
+            continue
+        try:
+            if session_key in open(f, encoding="utf-8", errors="replace").read():
+                transcript = f
+                break
+        except OSError:
+            continue
+    if not transcript:
+        return []
+    traj = transcript.replace(".jsonl", "") + ".trajectory.jsonl"
+    if not os.path.exists(traj):
+        return []
+    skills = set()
+    try:
+        with open(traj, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                for m in _SKILL_PATTERN.findall(line):
+                    if m == "mx-ds-mcp__mx_":
+                        continue  # 截断的裸前缀, 非真实工具名
+                    skills.add(m)
+    except OSError:
+        return []
+    return sorted(skills)
+
+
+@app.post("/api/chat/feedback")
+def chat_feedback(req: "FeedbackRequest", user: dict = Depends(_get_user)):
+    """记录一条 喜欢/不喜欢 反馈。dislike 时抓取该会话 skill 快照落库。"""
+    if req.feedback not in ("like", "dislike"):
+        raise HTTPException(status_code=400, detail="feedback 仅支持 like / dislike")
+    skills = None
+    if req.feedback == "dislike":
+        sk = _extract_dislike_skills(user["user_id"], req.conv_id)
+        if sk:
+            skills = json.dumps(sk, ensure_ascii=False)
+    db.add_feedback(user["user_id"], req.conv_id, req.message_id, req.feedback, skills)
+    return {"status": "ok"}
+
+
+@app.post("/api/explorer/write")
+def explorer_write(req: "ExplorerWriteRequest", user: dict = Depends(_get_user)):
+    """保存 markdown 到用户空间（「保存成文档」）。文件路径在用户根目录内，防穿越。"""
+    base = USER_SPACE_BASE / user["username"]
+    rel = (req.dir_path or "").replace("\\", "/").strip().strip("/")
+    target_dir = (base / rel).resolve()
+    if not str(target_dir).startswith(str(base.resolve())):
+        raise HTTPException(status_code=400, detail="目录不在用户空间内")
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    # 文件名：未显式给 filename 时，用 query 经 TextRank 生成「日期_主题」名
+    filename = req.filename.strip()
+    if not filename and req.query.strip():
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        filename = f"{date_str}_{build_document_title(req.query)}.md"
+    # 文件名清洗：去掉路径分隔符与非法字符，避免被当作路径
+    safe_name = re.sub(r"[\\/:*?\"<>|\n\r\t]+", "", filename).strip()
+    if not safe_name or Path(safe_name).suffix not in (".md",):
+        raise HTTPException(status_code=400, detail="文件名不合法，仅支持 .md")
+    target = (target_dir / safe_name).resolve()
+    if not str(target).startswith(str(base.resolve())):
+        raise HTTPException(status_code=400, detail="保存路径越界")
+
+    # 重名自动追加序号，避免覆盖已有文档
+    i = 1
+    stem = target.stem
+    while target.exists():
+        target = target_dir / f"{stem}_{i}{target.suffix}"
+        i += 1
+    target.write_text(req.content or "", encoding="utf-8")
+    rel_path = str(target.relative_to(base)).replace(os.sep, "/")
+    return {"status": "ok", "path": rel_path, "filename": target.name}
 
 
 # ════════════════════════════════════════════════════════════════

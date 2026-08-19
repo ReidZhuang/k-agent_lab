@@ -55,11 +55,33 @@
         <div ref="listRef" class="chat-list">
           <div v-for="(m, i) in messages" :key="i" class="msg-row" :class="m.role">
             <div class="avatar">{{ m.role === 'user' ? '🧑' : '🤖' }}</div>
-            <div class="bubble" v-html="renderMd(m.content)"></div>
+            <div class="msg-body">
+              <div class="bubble" v-html="renderMd(m.content)"></div>
+              <!-- 回复操作按钮：仅 assistant，输出完整后显示（游标态无按钮） -->
+              <div v-if="m.role === 'assistant'" class="msg-actions">
+                <button class="act-btn" title="复制" @click="copyReply(m)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+                <button class="act-btn" title="保存成文档" @click="saveReply(m)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button v-if="isLastAssistant(i)" class="act-btn" title="重新生成" @click="regenerate(m)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                </button>
+                <button class="act-btn" :class="{ on: m.liked }" title="喜欢" @click="onLike(m)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+                </button>
+                <button class="act-btn" :class="{ on: m.disliked }" title="不喜欢" @click="onDislike(m)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V2"/><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22h0a3.13 3.13 0 0 1-3-3.88Z"/></svg>
+                </button>
+              </div>
+            </div>
           </div>
           <div v-if="streaming" class="msg-row assistant">
             <div class="avatar">🤖</div>
-            <div class="bubble streaming" v-html="renderMd(streamingText)"></div>
+            <div class="msg-body">
+              <div class="bubble streaming" v-html="renderMd(streamingText)"></div>
+            </div>
           </div>
         </div>
 
@@ -90,6 +112,7 @@ import { Marked } from 'marked'
 import {
   listChatSessions, createChatSession, deleteChatSession,
   listChatMessages, appendChatMessage, chatStream,
+  deleteLastAssistant, sendFeedback, writeDocument,
 } from '../api/index.js'
 
 const marked = new Marked({ gfm: true, breaks: true })
@@ -134,7 +157,15 @@ async function loadSessions() {
 
 async function loadMessages(convId) {
   const data = await listChatMessages(convId)
-  messages.value = data.messages || []
+  const raw = data.messages || []
+  // 给每条 assistant 消息补上触发它的 user query（保存成文档 / 展示用），保留 id
+  let lastUser = ''
+  messages.value = raw.map(m => {
+    const item = { ...m }
+    if (item.role === 'user') lastUser = item.content
+    else if (item.role === 'assistant') item.query = lastUser
+    return item
+  })
 }
 
 function newChat() {
@@ -200,6 +231,68 @@ async function removeSession(convId) {
   }
 }
 
+// 找到 index 之前最近的 user 消息内容（作为该条回复的触发 query）
+function queryOf(msgIndex) {
+  for (let i = msgIndex - 1; i >= 0; i--) {
+    if (messages.value[i].role === 'user') return messages.value[i].content
+  }
+  return ''
+}
+
+// 该 assistant 消息是否为列表中的最后一条 assistant（只有它显示「重新生成」）
+function isLastAssistant(i) {
+  for (let j = messages.value.length - 1; j >= 0; j--) {
+    if (messages.value[j].role === 'assistant') return j === i
+  }
+  return false
+}
+
+// 流式生成 + 回存 + 渲染。persistUser=false 用于「重新生成」重放（末条 user 已在库）
+async function runStream(convId, msgsForRequest, triggerContent, persistUser = true) {
+  streaming.value = true
+  streamingText.value = ''
+  abortCtrl = new AbortController()
+  scrollToBottom()
+
+  let replyId = null
+  try {
+    await chatStream(convId, msgsForRequest, delta => {
+      streamingText.value += delta
+      scrollToBottom()
+    }, abortCtrl.signal, persistUser)
+    // 完整回复 → 回存（拿到 DB message_id 供反馈关联）
+    if (streamingText.value.trim()) {
+      const m = await appendChatMessage(convId, 'assistant', streamingText.value)
+      replyId = m?.id ?? null
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      ElMessage.error('对话失败：' + (e.message || ''))
+    }
+    // 中断/失败时保留已生成部分到历史，下次继续可接上
+    if (streamingText.value.trim()) {
+      try {
+        const m = await appendChatMessage(convId, 'assistant', streamingText.value)
+        replyId = m?.id ?? null
+      } catch { /* 忽略 */ }
+    }
+  } finally {
+    streaming.value = false
+    // 仅在仍停留在本会话时把回复渲染进列表（切换会话后 abort 的收尾不污染新会话）
+    if (currentConvId.value === convId && streamingText.value.trim()) {
+      messages.value.push({
+        role: 'assistant',
+        content: streamingText.value,
+        id: replyId,
+        query: triggerContent || '',
+      })
+    }
+    // 刷新会话列表（标题由后端自动生成、updated_at 更新）
+    loadSessions()
+    scrollToBottom()
+  }
+}
+
 // ── 发送 / 流式 ──
 async function send() {
   const text = input.value.trim()
@@ -220,38 +313,68 @@ async function send() {
   }
 
   messages.value.push({ role: 'user', content: text })
-  streaming.value = true
-  streamingText.value = ''
-  abortCtrl = new AbortController()
-  scrollToBottom()
-
   const history = messages.value.map(m => ({ role: m.role, content: m.content }))
+  await runStream(convId, history, text, true)
+}
+
+// ── 复制 ──
+async function copyReply(m) {
   try {
-    await chatStream(convId, history, delta => {
-      streamingText.value += delta
-      scrollToBottom()
-    }, abortCtrl.signal)
-    // 完整回复 → 回存
-    if (streamingText.value.trim()) {
-      await appendChatMessage(convId, 'assistant', streamingText.value)
-    }
+    await navigator.clipboard.writeText(m.content || '')
+    ElMessage.success('已复制')
+  } catch {
+    ElMessage.error('复制失败')
+  }
+}
+
+// ── 保存成文档（写入 股小神互动文档/，文件名由后端 TextRank 按 query 生成） ──
+async function saveReply(m) {
+  try {
+    const res = await writeDocument('', m.content, '股小神互动文档', m.query || '')
+    ElMessage.success('已保存：' + res.filename)
+    window.dispatchEvent(new CustomEvent('explorer-refresh'))
   } catch (e) {
-    if (e.name !== 'AbortError') {
-      ElMessage.error('对话失败：' + (e.message || ''))
-    }
-    // 中断/失败时保留已生成部分到历史，下次继续可接上
-    if (streamingText.value.trim()) {
-      try { await appendChatMessage(convId, 'assistant', streamingText.value) } catch { /* 忽略 */ }
-    }
-  } finally {
-    streaming.value = false
-    // 仅在仍停留在本会话时把回复渲染进列表（切换会话后 abort 的收尾不污染新会话）
-    if (currentConvId.value === convId && streamingText.value.trim()) {
-      messages.value.push({ role: 'assistant', content: streamingText.value })
-    }
-    // 刷新会话列表（标题由后端自动生成、updated_at 更新）
-    loadSessions()
-    scrollToBottom()
+    ElMessage.error('保存失败：' + (e.message || ''))
+  }
+}
+
+// ── 重新生成：移除该条 assistant 回复，用同一条 user query 重新作答 ──
+async function regenerate(m) {
+  if (streaming.value) return
+  const idx = messages.value.indexOf(m)
+  if (idx < 0) return
+  const convId = currentConvId.value
+  if (!convId) return
+  const trigger = queryOf(idx)
+
+  stopGenerate(true)
+  messages.value.splice(idx, 1)            // 本地移除旧回复
+  try {
+    await deleteLastAssistant(convId)      // DB 移除旧回复（保留 user query）
+  } catch (e) {
+    ElMessage.error('重新生成失败：' + (e.message || ''))
+    return
+  }
+  const history = messages.value.map(x => ({ role: x.role, content: x.content }))
+  await runStream(convId, history, trigger, false)
+}
+
+// ── 喜欢 / 不喜欢（互斥；落库由后端处理，dislike 抓 skill 快照） ──
+async function onLike(m) {
+  if (m.disliked) m.disliked = false
+  m.liked = !m.liked
+  if (m.liked) {
+    try { await sendFeedback(currentConvId.value, m.id || 0, 'like') }
+    catch (e) { ElMessage.error('反馈失败：' + (e.message || '')) }
+  }
+}
+
+async function onDislike(m) {
+  if (m.liked) m.liked = false
+  m.disliked = !m.disliked
+  if (m.disliked) {
+    try { await sendFeedback(currentConvId.value, m.id || 0, 'dislike') }
+    catch (e) { ElMessage.error('反馈失败：' + (e.message || '')) }
   }
 }
 
@@ -538,6 +661,39 @@ watch([messages, streamingText], () => scrollToBottom())
   background: var(--wood-100);
 }
 .msg-row.user .avatar { background: var(--wood-200); }
+
+/* 回复主体：bubble 下方接操作按钮组 */
+.msg-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.msg-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+  padding-left: 2px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.msg-actions:hover { opacity: 1; }
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--wood-500);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.act-btn:hover { background: var(--wood-100); color: var(--wood-700); }
+.act-btn.on { color: #e0a63c; }
 .bubble {
   padding: 10px 14px;
   border-radius: 12px;

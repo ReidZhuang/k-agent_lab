@@ -103,6 +103,16 @@ class Database:
                     content     TEXT NOT NULL,
                     created_at  TEXT DEFAULT (datetime('now','localtime'))
                 );
+
+                CREATE TABLE IF NOT EXISTS chat_feedback (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id     INTEGER NOT NULL,
+                    conv_id     TEXT,
+                    message_id  INTEGER,
+                    feedback    TEXT NOT NULL,
+                    skills      TEXT,
+                    created_at  TEXT DEFAULT (datetime('now','localtime'))
+                );
             """)
 
     # ── 用户 ──
@@ -305,8 +315,40 @@ class Database:
         if not session:
             return []
         return self.execute(
-            "SELECT role, content, created_at FROM chat_message WHERE session_id=? ORDER BY id",
+            "SELECT id, role, content, created_at FROM chat_message WHERE session_id=? ORDER BY id",
             (session["id"],),
+        )
+
+    def delete_last_assistant_message(self, user_id: int, conv_id: str) -> bool:
+        """删除会话最后一条 assistant 消息（「重新生成」时移除旧回复，避免历史重复）。
+
+        返回是否删除了消息；没有任何消息或最后一条不是 assistant 时不删。
+        """
+        session = self.get_chat_session(user_id, conv_id)
+        if not session:
+            return False
+        last = self.execute_one(
+            "SELECT id, role FROM chat_message WHERE session_id=? ORDER BY id DESC LIMIT 1",
+            (session["id"],),
+        )
+        if not last or last["role"] != "assistant":
+            return False
+        with self.get_conn() as conn:
+            conn.execute("DELETE FROM chat_message WHERE id=?", (last["id"],))
+            # 更新会话时间戳；若删空了标题也重置（重新生成后首条 user 会再生成标题）
+            conn.execute(
+                "UPDATE chat_session SET updated_at=datetime('now','localtime') WHERE id=?",
+                (session["id"],),
+            )
+        return True
+
+    def add_feedback(self, user_id: int, conv_id: str, message_id: int,
+                     feedback: str, skills: str = None) -> None:
+        """记录一条 喜欢/不喜欢 反馈。skills 为 JSON 字符串，仅 dislike 时带（skill 快照）。"""
+        self.execute(
+            "INSERT INTO chat_feedback (user_id, conv_id, message_id, feedback, skills)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (user_id, conv_id, message_id, feedback, skills),
         )
 
 

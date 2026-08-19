@@ -85,3 +85,18 @@ class ChatAppendRequest(BaseModel):
 class ChatCompletionsRequest(BaseModel):
     conv_id: str
     messages: list[ChatMessageItem]
+    # 「重新生成」重放历史时置 false：最后一条 user query 已在库中，无需重复落库
+    persist_last_user: bool = True
+
+
+class FeedbackRequest(BaseModel):
+    conv_id: str
+    message_id: int = 0
+    feedback: str  # like / dislike
+
+
+class ExplorerWriteRequest(BaseModel):
+    filename: str = ""
+    content: str = ""
+    dir_path: str = ""  # 相对用户空间的目录，默认用户根目录
+    query: str = ""  # 用户发出的 query; 未显式给 filename 时用 TextRank 生成文件名
