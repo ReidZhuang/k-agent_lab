@@ -222,7 +222,7 @@ def explorer_download_batch(req: DownloadRequest, user: dict = Depends(_get_user
 @app.delete("/api/explorer/delete")
 def explorer_delete(path: str = Query(""), user: dict = Depends(_get_user)):
     """删除文件或目录（目录递归删除，用户根目录受保护）"""
-    ok = delete_item(path, user["username"])
+    ok = delete_item(path, user["username"], user["user_id"])
     if not ok:
         raise HTTPException(status_code=400, detail="删除失败：文件不存在，或该目录为根目录不可删除")
     return {"status": "ok"}

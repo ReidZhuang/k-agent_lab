@@ -236,6 +236,19 @@ class Database:
         )
         return r is not None
 
+    def remove_favorites_by_path(self, user_id: int, file_path: str):
+        """删除收藏中指向指定文件/目录的记录。
+
+        覆盖两种情形：
+          - 精确路径（单文件被删）；
+          - 以 `file_path/` 开头的后代路径（目录被递归删除时，其下所有文件
+            的收藏一并清除），避免收藏夹残留已不存在的文档。
+        """
+        self.execute(
+            "DELETE FROM user_favorite WHERE user_id=? AND (file_path=? OR file_path LIKE ?)",
+            (user_id, file_path, file_path + "/%"),
+        )
+
     # ── 股小神聊天 ──
 
     def create_chat_session(self, user_id: int, conv_id: str, title: str = "新对话"):

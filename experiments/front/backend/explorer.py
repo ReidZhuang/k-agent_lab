@@ -89,8 +89,12 @@ def search_files(q: str, username: str) -> list[dict]:
     return results
 
 
-def delete_item(rel_path: str, username: str) -> bool:
-    """删除文件或目录（目录递归删除，但禁止删除用户根目录）"""
+def delete_item(rel_path: str, username: str, user_id: int = 0) -> bool:
+    """删除文件或目录（目录递归删除，但禁止删除用户根目录）
+
+    删除的同时清理该用户的收藏记录：被删文件/目录（含其子孙）若在收藏夹中，
+    一并移除，避免收藏夹残留已不存在的文档。
+    """
     full_path = _resolve_path(rel_path, username)
     if not full_path or not full_path.exists():
         return False
@@ -98,9 +102,13 @@ def delete_item(rel_path: str, username: str) -> bool:
         return False  # 不允许删除用户根目录
     if full_path.is_file():
         full_path.unlink()
+        if user_id:
+            db.remove_favorites_by_path(user_id, rel_path)
         return True
     if full_path.is_dir():
         shutil.rmtree(full_path)
+        if user_id:
+            db.remove_favorites_by_path(user_id, rel_path)
         return True
     return False
 
