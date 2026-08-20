@@ -56,7 +56,10 @@ def list_dir(rel_path: str = "", username: str = "", user_id: int = 0) -> list[d
         rel = str(entry.relative_to(base))
         is_fav = False
         if user_id and entry.is_file():
-            is_fav = db.is_favorite(user_id, str(entry))
+            # 收藏表存的是相对路径(如 上市公司分析/比亚迪/xxx.md), 必须用相对路径查询,
+            # 否则 str(entry) 的绝对路径永远匹配不上, 导致收藏状态在文件树中不显示,
+            # 也无法正常 undo 收藏。
+            is_fav = db.is_favorite(user_id, rel)
         items.append({
             "name": entry.name,
             "path": rel,
