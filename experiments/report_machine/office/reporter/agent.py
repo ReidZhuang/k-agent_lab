@@ -46,9 +46,42 @@ _reporter_cfg = _cfg.get("reporter", {})
 _middleman_cfg = _cfg.get("middleman", {})
 _ds_cfg = _reporter_cfg.get("deepseek", {})
 
-API_KEY = os.environ.get("OPENCODE_GO_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
+def _load_provider_key() -> str:
+    """系统兜底: 从 systemd user drop-in 读取 opencode provider key
+
+    场景: 健康检查经 cron 用 nohup 拉起 reporter, 继承的是 cron 最小环境,
+    不含 shell rc 里的 export, 导致 env 取不到 key 直接 raise、8312 起不来
+    (8/21 起定时任务全线失败的根因)。provider key 的唯一事实来源是
+    ~/.config/systemd/user/*.service.d/*.conf 里的 [Service] Environment= 行,
+    这里按名扫描两个已知 drop-in(oc-cc-proxy / openclaw-gateway)。
+    """
+    cands = [
+        "~/.config/systemd/user/oc-cc-proxy.service.d/env.conf",
+        "~/.config/systemd/user/openclaw-gateway.service.d/opencode-env.conf",
+    ]
+    for p in map(os.path.expanduser, cands):
+        try:
+            with open(p, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    for var in ("OPENCODE_GO_API_KEY", "OPENCODE_API_KEY"):
+                        prefix = f"Environment={var}="
+                        if line.startswith(prefix):
+                            v = line[len(prefix):].strip().strip('"')
+                            if v:
+                                return v
+        except OSError:
+            continue
+    return ""
+
+
+API_KEY = (
+    os.environ.get("OPENCODE_GO_API_KEY")
+    or os.environ.get("DEEPSEEK_API_KEY", "")
+    or _load_provider_key()
+)
 if not API_KEY:
-    raise RuntimeError("DEEPSEEK_API_KEY 环境变量未设置")
+    raise RuntimeError("OPENCODE_GO_API_KEY/DEEPSEEK_API_KEY 环境变量未设置")
 
 DEFAULT_MODEL = _ds_cfg.get("model", "deepseek-v4-flash")
 DEFAULT_MAX_TOKENS = _ds_cfg.get("max_tokens", 4000)
