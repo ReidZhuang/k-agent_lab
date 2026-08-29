@@ -222,8 +222,27 @@ def run_summary_from_trace_dir(d: Path, group: str) -> dict:
             report = rp.read_text(encoding="utf-8", errors="replace")
             break
 
-    # saved：以 token_round.saved 为准；无任何 token_round 记录时以 view_after.saved 兜底
-    saved_total = sum(saved_list) if saved_list else sum(saved_from_view)
+    # saved：同轮在 token_round 与 view_after 各写一次（防重复计）。
+    # 仅当 token_round.saved 存在非 0 值时才采信 token_round；
+    # 全为 0（logger 未记录节省）时以 view_after.saved 兜底 —— 与驾驶舱口径一致，
+    # 真实节省落在 view_after.saved（本实验 6 个 plugin run 的 token_round.saved 均为 0）。
+    if any(s > 0 for s in saved_list):
+        saved_total = sum(saved_list)
+    else:
+        saved_total = sum(saved_from_view)
+
+    # tokens：优先 run 级 usage.json（agent 真实总 usage）；缺失时回退 token_round 汇总。
+    # token_round 事件常只记录中间某轮（本实验 6 个 plugin run 均仅 1 条，
+    # input=27077/output=150 远低于真实 usage 37851/4559），不可作 run 级 token 来源。
+    uj = load_json(d / "usage.json") or {}
+    uo = uj.get("usage") or {}
+    pt, ct = uo.get("prompt_tokens"), uo.get("completion_tokens")
+    if pt is not None or ct is not None:
+        input_total, output_total = pt or 0, ct or 0
+        use_run_usage = True
+    else:
+        input_total, output_total = sum(inputs), sum(outputs)
+        use_run_usage = False
 
     return {
         "run_id": stats.get("runId") or d.name,
@@ -232,11 +251,12 @@ def run_summary_from_trace_dir(d: Path, group: str) -> dict:
         "stock": None,
         "rounds": len(inputs),
         "tokens": {
-            "input_total": sum(inputs),
-            "output_total": sum(outputs),
-            "total": sum(inputs) + sum(outputs),
-            "usage_rounds": sum(usage_flags),
-            "usage_unavailable": (not usage_flags) or not any(usage_flags),
+            "input_total": input_total,
+            "output_total": output_total,
+            "total": input_total + output_total,
+            "usage_rounds": 1 if use_run_usage else sum(usage_flags),
+            "usage_unavailable": (not use_run_usage) and
+                                 ((not usage_flags) or not any(usage_flags)),
         },
         "saved_total": saved_total,
         "compression": {
