@@ -20,42 +20,57 @@
     border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font: inherit; }
   #conn { font-size: 12px; color: var(--dim); }
   #conn.live { color: var(--good); } #conn.err { color: var(--bad); }
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; padding: 14px 20px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 14px; padding: 14px 20px; }
   @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
   .card h2 { font-size: 13px; margin: 0 0 10px; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
   /* timeline */
   #timeline { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: calc(100vh - 120px); }
-  .ev { border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; padding: 8px 10px; background: var(--panel2); }
-  .ev .h { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; margin-bottom: 4px; }
-  .ev .tag { font-weight: 700; }
-  .ev .meta { color: var(--dim); }
-  .ev code { background: #0d131b; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; font-size: 12px; }
+  .ev { border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; background: var(--panel2); overflow: hidden; }
+  .ev-h { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 8px 10px; font-size: 12px; cursor: pointer; user-select: none; }
+  .ev-h:hover { background: #141b26; }
+  .ev-tag { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .ev-tag .key { color: var(--dim); font-weight: 400; font-size: 11px; }
+  .ev-tag .badge { background: var(--bad); color: #fff; border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 700; }
+  .ev-tag .badge.ok { background: var(--good); }
+  .ev-desc { color: var(--dim); font-size: 11px; padding: 0 10px 6px; }
+  .ev-body { border-top: 1px dashed var(--line); padding: 8px 10px; font-size: 12px; overflow-x: auto; }
+  .ev-meta { color: var(--dim); white-space: nowrap; }
+  code { background: #0d131b; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; font-size: 12px; }
   .ev.c-tool_call { border-left-color: var(--acc); }
-  .ev.c-discard_applied { border-left-color: var(--good); }
-  .ev.c-assistant_discard { border-left-color: var(--acc); }
-  .ev.c-tagger_doc { border-left-color: var(--u); }
+  .ev.c-discard_applied { border-left-color: var(--bad); }
+  .ev.c-assistant_discard { border-left-color: var(--warn); }
+  .ev.c-tagger_doc, .ev.c-tagger_skip, .ev.c-payload_doc { border-left-color: var(--u); }
   .ev.c-view_before, .ev.c-view_after { border-left-color: var(--warn); }
   .ev.c-token_round { border-left-color: var(--good); }
-  .ev.c-tool_result_error, .ev.c-discard_empty, .ev.c-compress_skip { border-left-color: var(--bad); }
+  .ev.c-tool_result_error, .ev.c-discard_empty, .ev.c-compress_skip, .ev.c-plugin_error { border-left-color: var(--bad); }
   .del { color: var(--bad); text-decoration: line-through; }
-  table { border-collapse: collapse; width: 100%; font-size: 12px; }
-  th, td { border: 1px solid var(--line); padding: 3px 6px; text-align: left; }
-  th { color: var(--dim); background: var(--panel2); }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin: 4px 0; }
+  th, td { border: 1px solid var(--line); padding: 3px 6px; text-align: left; vertical-align: top; }
+  th { color: var(--dim); background: var(--panel2); position: sticky; top: 0; }
   .n-del { color: var(--bad); }
+  pre.raw { background: #0b1119; border: 1px solid var(--line); border-radius: 6px; padding: 8px;
+    font-size: 11px; overflow: auto; max-height: 320px; white-space: pre-wrap; word-break: break-all; }
+  details.pkt { margin-top: 6px; }
+  details.pkt > summary { color: var(--acc); cursor: pointer; font-size: 12px; }
   /* token panel */
   .tokens { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .tokens .big { font-size: 26px; font-weight: 700; }
+  .tokens .big { font-size: 24px; font-weight: 700; }
   .tokens .lbl { color: var(--dim); font-size: 12px; }
   .tokens .cell { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
-  .tok-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px dotted var(--line); }
+  .tok-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 3px 0; border-bottom: 1px dotted var(--line); }
   .saved { color: var(--good); }
   #runSelWrap { margin-left: auto; display: flex; align-items: center; gap: 8px; }
   .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--dim); margin-top: 10px; }
   .legend span::before { content: "■"; margin-right: 4px; }
-  .lg-tool { color: var(--acc); } .lg-del { color: var(--good); } .lg-u { color: var(--u); }
-  .lg-tok { color: var(--warn); } .lg-err { color: var(--bad); }
+  .lg-tool { color: var(--acc); } .lg-del { color: var(--warn); } .lg-u { color: var(--u); }
+  .lg-tok { color: var(--warn); } .lg-err { color: var(--bad); } .lg-del2 { color: var(--bad); }
   .quiet { color: var(--dim); font-size: 12px; }
+  .msg { border: 1px solid var(--line); border-radius: 6px; margin: 4px 0; background: #0d131b; }
+  .msg-h { display: flex; gap: 8px; padding: 4px 8px; font-size: 11px; cursor: pointer; user-select: none; }
+  .msg-h:hover { background: #121a26; }
+  .msg-b { border-top: 1px dashed var(--line); padding: 6px 8px; }
 </style>
 </head>
 <body>
@@ -71,13 +86,14 @@
 <main>
   <section>
     <div class="card">
-      <h2>事件时间线（每格 = loop 的一步）</h2>
+      <h2>事件时间线（每格 = loop 的一步，点击展开详情）</h2>
       <div id="timeline"><div class="quiet">等待事件…（选择 run 后自动回放历史 + 实时尾随）</div></div>
     </div>
     <div class="legend">
-      <span class="lg-tool">工具调用 / discard 申报</span>
-      <span class="lg-del">插件删除生效</span>
-      <span class="lg-u">tagger 行集</span>
+      <span class="lg-tool">工具调用 / 取数命令</span>
+      <span class="lg-del">删行申报(模型)</span>
+      <span class="lg-del2">删行已执行</span>
+      <span class="lg-u">打标 行集</span>
       <span class="lg-tok">压缩前/后视图</span>
       <span class="lg-err">跳过 / 错误</span>
     </div>
@@ -113,6 +129,28 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 
+// ---------- 事件字典：每种事件的中文名 + 一句话说明 ----------
+const EV_META = {
+  run_start:        { cn: '任务开始',      desc: '一次 AI 任务开始执行（从这往后是本 run 的事件）' },
+  run_finalized:    { cn: '任务结束',      desc: '本次任务收尾，统计落盘' },
+  tool_call:        { cn: '工具调用',      desc: 'AI 发起一个工具调用，参数已剥离 keeper 辅助字段（doc_id/discard_lines）' },
+  exec_tool_match:  { cn: '取数命令命中',  desc: '识别到数据查询命令（命令文本含 hithink/cli.py 等取数特征），其结果将要被打标成行集' },
+  tagger_doc:       { cn: '打标 · 行集',   desc: '该取数结果已被转成带行号的卡片（行集），模型由此才能按行号申报删行' },
+  payload_doc:      { cn: '打标 · 外联行集', desc: '行集内容较大，已外联到独立文件（点击详情可读）' },
+  tagger_skip:      { cn: '打标跳过',      desc: '该工具结果不产行集（无信息或判定为无需压缩），并记录原因' },
+  assistant_discard:{ cn: '删行申报（模型）', desc: '模型在此工具调用的参数里申报：删除上一份行集中这些行' },
+  discard_applied:  { cn: '删行已执行',    desc: '插件已从模型视图里删除这些行（行号不重排），展开可见被删行内容' },
+  discard_empty:    { cn: '删行为空',      desc: '申报了空数组 → 本轮没有实际删除' },
+  compress_skip:    { cn: '压缩跳过',      desc: '本次删行未执行，为何原因见详情' },
+  doc_already_pruned:{ cn: '已剪跳过',     desc: '该行集上一轮已剪过（_pruned），不再重复处理' },
+  tool_result_error:{ cn: '工具结果出错',  desc: '工具返回错误，该结果不参与压缩' },
+  view_before:      { cn: '视图 A · 压缩前', desc: '这一轮将要发给模型的完整内容（压缩前组装）。展开可逐条阅读报文' },
+  view_after:       { cn: '视图 B · 压缩后', desc: '插件压缩后的模型视图。与 A 的差价即本轮节省' },
+  token_round:      { cn: 'Token 轮次',    desc: '该轮输入/输出 token 计数（usage 实测或本地估算）' },
+  run_stats:        { cn: '汇总统计',      desc: '任务级统计数字' },
+  plugin_error:     { cn: '插件错误',      desc: '插件内部异常（失败隔离，不影响主流程）' },
+};
+
 // ---------- run 列表 ----------
 async function loadRuns() {
   try {
@@ -130,19 +168,21 @@ async function loadRuns() {
 
 // ---------- SSE 事件流 ----------
 let es = null, curRun = null, first = true;
+const allEvents = [];
 function startStream(run) {
   if (es) { es.close(); es = null; }
   curRun = run; first = true;
-  if (!run) { timeline.innerHTML = '<div class="quiet">选择 run</div>'; resetTokens(); return; }
+  allEvents.length = 0;
+  docRowsCache.clear(); payloadCache.clear();
+  if (!run) { $('timeline').innerHTML = '<div class="quiet">选择 run</div>'; resetTokens(); return; }
   resetTokens();
-  timeline.innerHTML = '<div class="quiet">回放中…</div>';
+  $('timeline').innerHTML = '<div class="quiet">回放中…</div>';
   setConn('live', `连接 run=${run}`);
   es = new EventSource(`/api/events?run=${encodeURIComponent(run)}`);
-  es.onopen = () => setConn('live', `已连接 run=${run}`);
+  es.onopen = () => { setConn('live', `已连接 run=${run}`); first = true; };
   es.onmessage = (e) => {
     let ev; try { ev = JSON.parse(e.data); } catch { return; }
-    if (first && ev.type === 'run_start') { first = false; }
-    if (first) { timeline.innerHTML = ''; first = false; }
+    if (first) { $('timeline').innerHTML = ''; first = false; }
     appendEvent(ev);
   };
   es.onerror = () => setConn('err', '断线，自动重连中…');
@@ -159,8 +199,8 @@ function resetTokens() {
   $('viewDiff').innerHTML = '<span class="quiet">尚未产生对比</span>';
 }
 function onTokenRound(ev) {
-  const input = ev.input ?? 0, output = ev.output ?? 0, saved = ev.saved ?? 0;
-  acc.input += input; acc.output += output; acc.saved += saved;
+  const input = ev.input ?? 0, output = ev.output ?? 0;
+  acc.input += input; acc.output += output;
   acc.rounds.push(ev);
   $('tokIn').textContent = acc.input.toLocaleString();
   $('tokOut').textContent = acc.output.toLocaleString();
@@ -178,98 +218,276 @@ function onTokenRound(ev) {
     ? '—'
     : `${last.input - prev.input >= 0 ? '+' : ''}${(last.input - prev.input).toLocaleString()} tokens`;
 }
-function onView(ev) {
-  const v = ev.type === 'view_before' ? 'A（压缩前组装）' : 'B（插件压缩后）';
-  const saved = ev.saved;
-  $('viewDiff').innerHTML =
-    `<div class="tok-row"><span>${v} tokens</span><span>${(ev.tokens ?? 0).toLocaleString()}</span></div>` +
-    `<div class="tok-row"><span>字符数</span><span>${(ev.n_chars ?? 0).toLocaleString()}</span></div>` +
-    `<div class="tok-row"><span>消息条数</span><span>${ev.n_messages ?? '-'}</span></div>` +
-    (saved !== undefined ? `<div class="tok-row saved"><span>本轮节省</span><span>${saved.toLocaleString()} tok</span></div>` : '');
+
+// ---------- payload 加载（view 事件的报文 / 行集内容） ----------
+const payloadCache = new Map();
+const docRowsCache = new Map(); // doc_id → [{n,k,t}, ...]（从 view 行集提取）
+const KEEP = '__keeper1__';
+
+async function loadPayload(ev) {
+  if (ev.payload !== undefined) return ev.payload;
+  if (!ev.payload_ref) return null;
+  const key = `${curRun}:${ev.payload_ref}`;
+  if (payloadCache.has(key)) return payloadCache.get(key);
+  try {
+    const r = await fetch(`/api/payload?run=${encodeURIComponent(curRun)}&file=${encodeURIComponent(ev.payload_ref)}`);
+    if (!r.ok) return null;
+    const txt = await r.text();
+    payloadCache.set(key, txt);
+    return txt;
+  } catch { return null; }
 }
 
-// ---------- Tag/index ----------
+// 解析 __keeper1__ 行集文本 -> doc 对象
+function parseKeeperDoc(text) {
+  if (typeof text !== 'string' || !text.startsWith(KEEP)) return null;
+  try { return JSON.parse(text.slice(KEEP.length)); } catch { return null; }
+}
+// 把消息里的行集 doc 提取进 docRowsCache
+function indexDocsFromMessages(messages) {
+  if (!Array.isArray(messages)) return;
+  for (const m of messages) {
+    const content = Array.isArray(m.content) ? m.content : [];
+    for (const b of content) {
+      if (b && typeof b.text === 'string') {
+        const doc = parseKeeperDoc(b.text);
+        if (doc && doc.doc_id) {
+          const rows = (doc.sections || []).flatMap((s) => (s.rows || []));
+          if (rows.length) docRowsCache.set(doc.doc_id, rows);
+        }
+      }
+    }
+  }
+}
+
+// view 事件：渲染可读报文（消息列表，每条可展开）
+function renderMessages(ev) {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = '<span class="quiet">（报文加载中…）</span>';
+  loadPayload(ev).then((txt) => {
+    if (!txt) { wrap.innerHTML = '<span class="quiet">无报文（本事件未带 payload）</span>'; return; }
+    let messages;
+    try { messages = JSON.parse(txt); } catch { wrap.innerHTML = '<span class="quiet">报文解析失败</span>'; return; }
+    indexDocsFromMessages(messages);
+    const frag = document.createElement('div');
+    messages.forEach((m, i) => frag.appendChild(renderMessage(m, i)));
+    wrap.replaceChildren(frag);
+  });
+  return wrap;
+}
+
+function renderMessage(m, i) {
+  const d = document.createElement('div');
+  d.className = 'msg';
+  const role = m.role || '?';
+  const isTool = role === 'tool' || role === 'toolResult';
+  const content = Array.isArray(m.content) ? m.content : [];
+  const textParts = content.filter((b) => typeof b.text === 'string').map((b) => b.text).join('\n');
+  const doc = textParts ? parseKeeperDoc(textParts) : null;
+  const brief = doc
+    ? `行集 ${doc.doc_id} · ${(doc.sections || []).reduce((s, x) => s + x.rows.length, 0)} 行`
+    : (textParts ? textParts.slice(0, 120) + (textParts.length > 120 ? ' …' : '') : '(无文本)');
+  const h = document.createElement('div');
+  h.className = 'msg-h';
+  h.innerHTML = `<span style="color:var(--${isTool ? 'warn' : 'acc'})">[${i}] ${role}</span><span class="quiet">${esc(brief)}</span>`;
+  const body = document.createElement('div');
+  body.className = 'msg-b';
+  body.style.display = 'none';
+  if (doc) {
+    body.appendChild(rowsetTable(doc.sections));
+  } else {
+    const pre = document.createElement('pre');
+    pre.className = 'raw';
+    const preview = content.map((b) => b.type === 'text' ? b.text : `[${b.type}] ${JSON.stringify(b).slice(0, 200)}`).join('\n');
+    pre.textContent = preview.length > 4000 ? preview.slice(0, 4000) + '\n…（截断，共 ' + preview.length + ' 字符）' : preview;
+    body.appendChild(pre);
+  }
+  h.onclick = () => { body.style.display = body.style.display === 'none' ? 'block' : 'none'; };
+  d.append(h, body);
+  return d;
+}
+
+// 行集 -> 表格
+function rowsetTable(sections) {
+  const t = document.createElement('table');
+  t.innerHTML = '<thead><tr><th>n</th><th>k</th><th>内容</th></tr></thead>';
+  const tb = document.createElement('tbody');
+  for (const sec of sections) {
+    for (const r of sec.rows || []) {
+      const tr = document.createElement('tr');
+      const kc = { h: 'h', v: 'v', t: 't', u: 'u' };
+      tr.innerHTML = `<td>${r.n}</td><td style="color:var(--u)">${r.k}</td><td>${esc(r.t)}</td>`;
+      tb.appendChild(tr);
+    }
+  }
+  t.appendChild(tb);
+  return t;
+}
+// 行号 -> 行内容表格(用于删行展开)
+async function deletedRowsTable(ev, needLines) {
+  const wrap = document.createElement('div');
+  const lines = needLines || (ev.lines || []);
+  let rows = docRowsCache.get(ev.doc_id);
+  if (!rows || !rows.length) {
+    // 缓存未命中：懒加载已回放过的 view 报文，从里面重新索引行集
+    wrap.innerHTML = '<span class="quiet">行内容索引中…</span>';
+    for (const vev of allEvents) {
+      if (vev === ev) continue;
+      if ((vev.type !== 'view_before' && vev.type !== 'view_after') || (vev.payload === undefined && !vev.payload_ref)) continue;
+      await loadPayload(vev);
+      rows = docRowsCache.get(ev.doc_id);
+      if (rows && rows.length) break;
+    }
+    if (!rows || !rows.length) {
+      wrap.innerHTML = '<span class="quiet">该 run 未含行集报文，无法回显被删行内容</span>';
+      return wrap;
+    }
+  }
+  const tb = document.createElement('table');
+  tb.innerHTML = '<thead><tr><th>已删行号</th><th>内容</th></tr></thead>';
+  const body = document.createElement('tbody');
+  for (const ln of lines) {
+    const r = rows.find((x) => x.n === ln);
+    body.insertAdjacentHTML('beforeend',
+      `<tr><td class="n-del">${ln}</td><td>${r ? esc(r.t) : '<span class="quiet">（该行号在本视图行集中未找到）</span>'}</td></tr>`);
+  }
+  tb.appendChild(body);
+  wrap.replaceChildren(tb);
+  return wrap;
+}
+
+// ---------- 通用渲染工具 ----------
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-function card(tag, cls, meta, body) {
-  const el = document.createElement('div');
-  el.className = `ev c-${cls}`;
-  el.innerHTML = `<div class="h"><span class="tag">${tag}</span><span class="meta">${meta}</span></div>${body || ''}`;
-  return el;
+function fmtTs(ts) { try { return new Date(ts).toLocaleString('zh-CN', { hour12: false }).slice(0, 19); } catch { return ts || ''; } }
+function num(x) { return (typeof x === 'number' ? x.toLocaleString() : '—'); }
+
+function evCard(ev) {
+  const meta = EV_META[ev.type] || { cn: ev.type || 'event', desc: '' };
+  const wrap = document.createElement('div');
+  const cls = ev.type || '';
+  wrap.className = `ev c-${cls}`;
+  const head = document.createElement('div');
+  head.className = 'ev-h';
+  let tagHTML = `${esc(meta.cn)} <span class="key">${esc(ev.type)}</span>`;
+  if (ev.type === 'discard_applied') tagHTML += ` <span class="badge">已删 ${ev.n_del ?? '?'} 行</span>`;
+  if (ev.type === 'assistant_discard') tagHTML += ` <span class="badge">申报 ${(ev.discard_lines || []).length} 行</span>`;
+  if (ev.type === 'tagger_doc') tagHTML += ` <span class="badge ok">${ev.n_rows ?? '?'} 行</span>`;
+  head.innerHTML = `<span class="ev-tag">${tagHTML}</span><span class="ev-meta">${fmtTs(ev.ts)}</span>`;
+  const desc = document.createElement('div');
+  desc.className = 'ev-desc';
+  desc.textContent = meta.desc || '';
+  const body = document.createElement('div');
+  body.className = 'ev-body';
+  body.style.display = 'none';
+  body.appendChild(summarize(ev));
+  head.onclick = () => {
+    const open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+  };
+  wrap.append(head, desc, body);
+  return wrap;
 }
 
-function appendEvent(ev) {
-  const tl = $('timeline');
-  if (ev.type === 'run_start') { tl.innerHTML = ''; }
-  let el = null;
-  switch (ev.type) {
+// 按类型定制"可读摘要"
+function summarize(ev) {
+  const box = document.createElement('div');
+  const key = ev.type;
+  switch (key) {
     case 'run_start':
-      el = card('🚀 run_start', 'tool_call', ev.ts, `<div>version ${ev.version ?? '-'} · run ${esc(ev.run)}</div>`);
-      break;
-    case 'tool_call':
-      el = card('🔧 tool_call', 'tool_call', ev.ts,
-        `<div>工具 <code>${esc(ev.tool)}</code> 参数：<code>${esc(JSON.stringify(ev.args))}</code> <span class="quiet">(经 ${esc(ev.via)} 剥离辅助字段)</span></div>`);
-      break;
-    case 'tagger_doc':
-      el = card('🏷 tagger_doc', 'tagger_doc', ev.ts,
-        `<div>doc <code>${esc(ev.doc_id)}</code> · ${ev.n_rows ?? '?'} 行 · ${ev.n_sections ?? '?'} section · 原文 ${ev.n_chars ?? '?'} 字符</div>` +
-        rowsetPreview(ev));
-      break;
-    case 'assistant_discard':
-      el = card('🧠 assistant_discard（LLM 申报）', 'assistant_discard', ev.ts,
-        `<div>doc <code>${esc(ev.doc_id ?? '-')}</code> 申报删除行：${(ev.discard_lines || []).map((x) => `<code class="n-del">${x}</code>`).join(' ')}</div>`);
-      break;
-    case 'discard_applied':
-      el = card('✂ discard_applied（插件生效）', 'discard_applied', ev.ts,
-        `<div>doc <code>${esc(ev.doc_id)}</code> 删 <span class="n-del">${ev.n_del}</span> 行 → 剩 <b>${ev.n_left}</b> 行（n 不变号）</div>`);
-      break;
-    case 'view_before':
-    case 'view_after':
-      el = card(ev.type === 'view_before' ? '📦 view A · 压缩前' : '📦 view B · 压缩后', 'view_before', ev.ts,
-        `<div>tokens <b>${(ev.tokens ?? 0).toLocaleString()}</b> · 字符 ${(ev.n_chars ?? 0).toLocaleString()} · 消息 ${ev.n_messages ?? '-'}${ev.saved !== undefined ? ` · <span class="saved">本轮节省 ${ev.saved.toLocaleString()}</span>` : ''}</div>`);
-      break;
-    case 'token_round':
-      el = card('💰 token_round', 'token_round', ev.ts, '');
-      onTokenRound(ev);
-      break;
-    case 'tool_result_error':
-      el = card('⚠ tool_result_error（不计入候选）', 'tool_result_error', ev.ts, `<div>工具 <code>${esc(ev.tool)}</code> 出错：${esc(ev.note || '')}</div>`);
-      break;
-    case 'discard_empty':
-      el = card('⚠ discard_empty', 'discard_empty', ev.ts, '<div>discard_lines 为空数组 → 本轮无删除</div>');
-      break;
-    case 'compress_skip':
-      el = card('⏭ compress_skip', 'compress_skip', ev.ts, `<div>原因：${esc(ev.reason)} ${ev.doc_id ? `doc=${esc(ev.doc_id)}` : ''}</div>`);
-      break;
-    case 'doc_already_pruned':
-      el = card('♻ doc_already_pruned', 'compress_skip', ev.ts, `<div>doc <code>${esc(ev.doc_id)}</code> 已是上轮产物，跳过</div>`);
-      break;
-    case 'payload_doc':
-      el = card('🗄 payload_doc（外联）', 'tagger_doc', ev.ts,
-        `<div>doc <code>${esc(ev.doc_id)}</code> 大内容已外联 <code>${esc(ev.payload_ref)}</code>（${ev.n_rows ?? '?'} 行）</div>`);
+      box.innerHTML = `<div>插件 version <code>${esc(ev.version ?? '-')}</code> · run <code>${esc(ev.run ?? ev.runId ?? '-')}</code></div>`;
       break;
     case 'run_finalized':
-      el = card('🏁 run_finalized', 'tool_call', ev.ts,
-        `<div>共 ${ev.events_total ?? '?'} 事件 · 降级 ${ev.warn_fallbacks ?? 0} 次</div>`);
+      box.innerHTML = `<div>共 ${num(ev.events_total)} 事件 · 降级 ${ev.warn_fallbacks ?? 0} 次</div>`;
+      break;
+    case 'tool_call':
+      box.innerHTML = `<div>工具 <code>${esc(ev.tool)}</code></div>` +
+        `<div class="quiet">参数（已剥离辅助字段）<pre class="raw">${esc(JSON.stringify(ev.args ?? {}, null, 2))}</pre></div>`;
+      break;
+    case 'exec_tool_match':
+      box.innerHTML = `<div>工具 <code>${esc(ev.tool)}</code> · 调用 <code>${esc(ev.toolCallId ?? '')}</code></div>` +
+        `<pre class="raw">${esc(ev.cmd_preview ?? '')}</pre>`;
+      break;
+    case 'tagger_doc':
+      box.innerHTML = `<div>doc <code>${esc(ev.doc_id)}</code> · ${num(ev.n_rows)} 行 · ${num(ev.n_sections)} 段 · 原文 ${num(ev.n_chars)} 字符 <span class="quiet">(${esc(ev.source ?? '')})</span></div>`;
+      if (ev.sections || ev.doc) box.appendChild(rowsetTable(ev.sections || (ev.doc && ev.doc.sections) || []));
+      break;
+    case 'payload_doc':
+      box.innerHTML = `<div>doc <code>${esc(ev.doc_id)}</code> 大内容已外联 <code>${esc(ev.payload_ref)}</code>（${num(ev.n_rows)} 行）</div>`;
+      break;
+    case 'tagger_skip':
+      box.innerHTML = `<div>工具 <code>${esc(ev.tool)}</code> · 原因：${esc(ev.reason ?? '')} · 原文 ${num(ev.n_chars)} 字符</div>`;
+      break;
+    case 'assistant_discard':
+      box.innerHTML = `<div>目标行集 <code>${esc(ev.doc_id ?? '-')}</code> 申报删除行：${(ev.discard_lines || []).map((x) => `<code class="n-del">${x}</code>`).join(' ')}</div>` +
+        `<div style="margin-top:6px" class="quiet">被申报行的内容见实际执行条目（discard_applied）</div>`;
+      break;
+    case 'discard_applied': {
+      box.innerHTML = `<div>行集 <code>${esc(ev.doc_id)}</code> 删 <span class="n-del">${num(ev.n_del)}</span> 行 → 剩 <b>${num(ev.n_left)}</b> 行（行号不重排）</div>`;
+      const tbl = document.createElement('div');
+      box.appendChild(tbl);
+      if (ev.lines && ev.lines.length) {
+        deletedRowsTable(ev, ev.lines).then((el) => tbl.replaceChildren(el));
+      }
+      break;
+    }
+    case 'discard_empty':
+      box.innerHTML = '<div>discard_lines 为空数组 → 本轮无删除</div>';
+      break;
+    case 'compress_skip':
+      box.innerHTML = `<div>原因：<code>${esc(ev.reason)}</code>${ev.doc_id ? ` · doc=<code>${esc(ev.doc_id)}</code>` : ''}${ev.at !== undefined ? ` · 消息位 ${ev.at}` : ''}</div>`;
+      break;
+    case 'doc_already_pruned':
+      box.innerHTML = `<div>doc <code>${esc(ev.doc_id)}</code> 已是上轮产物（_pruned），跳过</div>`;
+      break;
+    case 'tool_result_error':
+      box.innerHTML = `<div>工具 <code>${esc(ev.tool)}</code> 出错：${esc(ev.note || '')}</div>`;
+      break;
+    case 'view_before':
+    case 'view_after': {
+      const isB = ev.type === 'view_after';
+      box.innerHTML = `<div>tokens <b>${num(ev.tokens)}</b> · 字符 ${num(ev.n_chars)} · 消息 ${ev.n_messages ?? '-'}` +
+        `${isB && ev.saved !== undefined ? ` · <span class="saved">本轮节省 ${num(ev.saved)}</span>` : ''}` +
+        (ev.hit !== undefined ? ` · 命中压缩 ${ev.hit ? '是' : '否'}` : '') + `</div>`;
+      box.appendChild(renderMessages(ev));
+      if (isB && ev.saved > 0) acc.saved += ev.saved ?? 0;
+      if (isB) updateSaved();
+      break;
+    }
+    case 'token_round':
+      onTokenRound(ev);
+      box.innerHTML = `<div>轮次 R${ev.round ?? '-'} · 入 ${num(ev.input)} · 出 ${num(ev.output)} · 省 <span class="${(ev.saved ?? 0) > 0 ? 'saved' : 'quiet'}">${num(ev.saved)}</span>` +
+        (ev.usage ? ` · usage ${ev.usage.prompt_tokens ?? '?'}/${ev.usage.completion_tokens ?? '?'}` : '') + `</div>`;
       break;
     case 'run_stats':
-      el = card('📊 run_stats', 'tool_call', ev.ts, `<pre>${esc(JSON.stringify(ev.stats ?? {}, null, 1))}</pre>`);
+      box.appendChild(Object.assign(document.createElement('pre'), { className: 'raw', textContent: JSON.stringify(ev.stats ?? {}, null, 2) }));
+      break;
+    case 'plugin_error':
+      box.innerHTML = `<div>hook <code>${esc(ev.hook)}</code> · ${esc(ev.error)}</div>`;
       break;
     default:
-      el = card(ev.type ?? 'event', 'tool_call', ev.ts, `<pre>${esc(JSON.stringify(ev, null, 1))}</pre>`);
+      box.appendChild(Object.assign(document.createElement('pre'), { className: 'raw', textContent: JSON.stringify(ev, null, 2) }));
   }
-  if (el) { tl.appendChild(el); scrolldown(tl); }
+  // 原始报文（折叠）：所有事件都能看
+  const raw = document.createElement('details');
+  raw.className = 'pkt';
+  const summary = document.createElement('summary');
+  summary.textContent = '原始报文 (JSON)';
+  const pre = document.createElement('pre');
+  pre.className = 'raw';
+  pre.textContent = JSON.stringify(ev, null, 2);
+  raw.append(summary, pre);
+  box.appendChild(raw);
+  return box;
 }
 
-function rowsetPreview(ev) {
-  if (!ev.sections && !ev.doc) return '';
-  const secs = ev.sections || (ev.doc ? ev.doc.sections : []);
-  const rows = (secs[0] || {}).rows || [];
-  if (rows.length === 0) return '';
-  const kc = { h: 'h', v: 'v', t: 't', u: 'u' };
-  const head = (secs[0].source && secs[0].source.name) || '';
-  return `<table><thead><tr><th>n</th><th>k</th><th>内容</th></tr></thead><tbody>` +
-    rows.map((r) => `<tr><td>${r.n}</td><td class="lg-${kc[r.k] || 't'}">${r.k}</td><td>${esc(r.t)}</td></tr>`).join('') +
-    `</tbody></table><div class="quiet">来源：${esc(head)}</div>`;
+function updateSaved() { $('tokSaved').textContent = acc.saved.toLocaleString(); }
+
+function appendEvent(ev) {
+  allEvents.push(ev);
+  const tl = $('timeline');
+  if (ev.type === 'run_start') { tl.innerHTML = ''; resetTokens(); }
+  tl.appendChild(evCard(ev));
+  scrolldown(tl);
 }
 
 function scrolldown(tl) { if (tl.scrollHeight - tl.scrollTop - tl.clientHeight < 400) { tl.scrollTop = tl.scrollHeight; } }

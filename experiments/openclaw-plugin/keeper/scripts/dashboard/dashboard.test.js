@@ -151,3 +151,18 @@ test('T-U8-5：run 切换 → 加载对应 trace（两个 run 内容不同）', 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('T-U8-7（U9）：/api/payload 外联报文读取（ref 不带 .json 也能取到）', async () => {
+  const srv = createDashboardServer({ logsDir: SAMPLE_LOGS });
+  const port = await listen(srv);
+  try {
+    const r = await fetch(`http://127.0.0.1:${port}/api/payload?run=sample&file=pay_sample_0`);
+    assert.equal(r.status, 200, 'ref 不带 .json → 应自动补全后缀命中');
+    const txt = await r.text();
+    assert.ok(txt.includes('doc_id') && txt.includes('rows'), '应返回行集报文');
+    const bad = await fetch(`http://127.0.0.1:${port}/api/payload?run=sample&file=../%2e%2e%2fetc/passwd`);
+    assert.ok([400, 404].includes(bad.status), `路径穿越应被拒，实际 ${bad.status}`);
+  } finally {
+    await close(srv);
+  }
+});

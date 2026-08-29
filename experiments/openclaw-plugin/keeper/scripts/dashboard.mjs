@@ -131,6 +131,23 @@ export function createDashboardServer({ logsDir, indexPath = INDEX_PATH } = {}) 
         if (!run || /[^A-Za-z0-9_.-]/.test(run)) return json(res, 400, { error: 'bad run id' });
         return sse(req, res, logsDir, run);
       }
+      // 事件的大 payload 外联读取（trace_payloads/<file>.json）：先按 run 目录找，再回退共享目录
+      if (url.pathname === '/api/payload') {
+        const run = url.searchParams.get('run') ?? '';
+        const file = url.searchParams.get('file') ?? '';
+        if (/[^A-Za-z0-9_.-]/.test(run) || /[^A-Za-z0-9_.-]/.test(file)) return json(res, 400, { error: 'bad run/file' });
+        // payload 文件统一写为 <id>.json；ref 只存 id，两侧都试
+        for (const f of [file, file + '.json']) {
+          for (const p of [path.join(logsDir, run, 'trace_payloads', f), path.join(logsDir, 'trace_payloads', f)]) {
+            try {
+              const content = await readFile(p, 'utf8');
+              res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
+              return res.end(content);
+            } catch { /* try next 位置 */ }
+          }
+        }
+        return json(res, 404, { error: 'payload not found' });
+      }
       if (url.pathname === '/' || url.pathname === '/index.html') {
         try {
           const html = await readFile(indexPath, 'utf8');
