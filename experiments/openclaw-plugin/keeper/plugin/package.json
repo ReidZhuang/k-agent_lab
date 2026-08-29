@@ -1,0 +1,13 @@
+{
+  "name": "keeper-corpus-compress",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "keeper 档位2插件：语料语义压缩（discard_lines / JSON 行集）。零依赖，JS ESM，node --test 跑单测。",
+  "scripts": {
+    "test": "node --test"
+  },
+  "openclaw": {
+    "extensions": ["./src/index.js"]
+  }
+}

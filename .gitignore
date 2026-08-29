@@ -29,3 +29,10 @@ experiments/report_machine/office/context_samples/
 # 端到端测试产物(本地保留, 不推送, 勿轻易删除)
 experiments/report_machine/office/test_drive/new_e2e/
 experiments/report_machine/data_fetch/test_drive/
+
+# keeper 插件运行时产物/敏感配置（config 含 gateway auth token, 绝不入库）
+experiments/openclaw-plugin/keeper/config/
+experiments/openclaw-plugin/keeper/logs/
+experiments/openclaw-plugin/keeper/artifacts/
+experiments/openclaw-plugin/keeper/data/reports/
+keeper-logs/

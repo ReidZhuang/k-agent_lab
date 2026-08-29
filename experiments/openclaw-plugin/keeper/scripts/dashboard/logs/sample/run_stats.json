@@ -1,0 +1,22 @@
+{
+  "runId": "sample",
+  "started_at": "2026-08-26T15:04:00.000Z",
+  "ended_at": "2026-08-26T15:04:18.000Z",
+  "events_total": 13,
+  "events_by_type": {
+    "run_start": 1,
+    "tool_call": 1,
+    "tagger_doc": 1,
+    "view_before": 1,
+    "token_round": 2,
+    "assistant_discard": 1,
+    "discard_applied": 1,
+    "view_after": 1,
+    "tool_result_error": 1,
+    "discard_empty": 1,
+    "payload_doc": 1,
+    "run_finalized": 1
+  },
+  "warn_fallbacks": 0,
+  "degraded": false
+}

@@ -1,0 +1,23 @@
+{
+  "id": "keeper-corpus-compress",
+  "name": "keeper 语料语义压缩",
+  "description": "语义级语料压缩：取数结果 tag 为 JSON 行集(doc_id+行号)，模型按 discard_lines 申报删除，context 钩子只删发给模型的内存视图，省 token 不减可用信息。",
+  "activation": {
+    "onStartup": true
+  },
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "enabled": { "type": "boolean", "default": true },
+      "tagTools": { "type": "array", "items": { "type": "string" }, "description": "接管打标的取数工具白名单（子串匹配），默认 [hithink-market-query]" },
+      "execTools": { "type": "array", "items": { "type": "string" }, "description": "通用执行工具名单（keeper 环境取数常走 exec 跑 hithink cli.py），默认 [exec,bash,run_shell,shell]" },
+      "execCommandPatterns": { "type": "array", "items": { "type": "string" }, "description": "exec 命令文本命中取数模式即登记打标，默认 [hithink, cli.py]" },
+      "traceDir": { "type": "string", "description": "trace 事件落盘目录（U6），默认 keeper-logs" },
+      "trace": { "type": "boolean", "default": true, "description": "是否写 trace 日志" },
+      "persistViewPayloads": { "type": "boolean", "default": true, "description": "每轮把压缩前/后 messages 持久化到 trace（方案 A/B 数据基础，§6 验收）；超 payloadMax 自动外联 trace_payloads/" },
+      "payloadMax": { "type": "integer", "description": "payload 外联阈值（字符），默认 50000" },
+      "maxRowChars": { "type": "integer", "description": "超长单行截断阈值（传给 tagger）" }
+    },
+    "additionalProperties": true
+  }
+}
