@@ -26,7 +26,9 @@
   .card h2 { font-size: 13px; margin: 0 0 10px; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
   /* timeline */
   #timeline { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: calc(100vh - 120px); }
-  .ev { border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; background: var(--panel2); overflow: hidden; }
+  /* overflow:hidden 会把 flex 子的隐含最小高度压到 0 → 时间线溢出时事件卡全塌成 2px。
+     flex-shrink:0 让卡片只由外层滚动容器裁切, 不参与 flex 压缩。 */
+  .ev { border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; background: var(--panel2); overflow: hidden; flex-shrink: 0; }
   .ev-h { display: flex; justify-content: space-between; align-items: center; gap: 8px;
     padding: 8px 10px; font-size: 12px; cursor: pointer; user-select: none; }
   .ev-h:hover { background: #141b26; }
@@ -327,6 +329,19 @@ function rowsetTable(sections) {
 async function deletedRowsTable(ev, needLines) {
   const wrap = document.createElement('div');
   const lines = needLines || (ev.lines || []);
+  // 首选插件直带的被删行原文(discard_applied.removed_rows,新 trace 有;旧 trace 没有该字段)
+  const rr = ev.removed_rows;
+  if (Array.isArray(rr) && rr.length) {
+    const tb = document.createElement('table');
+    tb.innerHTML = '<thead><tr><th>已删行号</th><th>类型</th><th>内容(原文)</th></tr></thead>';
+    const body = document.createElement('tbody');
+    for (const r of rr) {
+      body.insertAdjacentHTML('beforeend', `<tr><td class="n-del">${r.n}</td><td style="color:var(--u)">${esc(r.k)}</td><td>${esc(r.t)}</td></tr>`);
+    }
+    tb.appendChild(body);
+    wrap.replaceChildren(tb);
+    return wrap;
+  }
   let rows = docRowsCache.get(ev.doc_id);
   if (!rows || !rows.length) {
     // 缓存未命中：懒加载已回放过的 view 报文，从里面重新索引行集
@@ -346,10 +361,11 @@ async function deletedRowsTable(ev, needLines) {
   const tb = document.createElement('table');
   tb.innerHTML = '<thead><tr><th>已删行号</th><th>内容</th></tr></thead>';
   const body = document.createElement('tbody');
+  const MISS_REASON = '原文未随 trace 持久化（压缩产物只保留剩余行；新版插件已在 discard_applied 中记录被删行原文）';
   for (const ln of lines) {
     const r = rows.find((x) => x.n === ln);
     body.insertAdjacentHTML('beforeend',
-      `<tr><td class="n-del">${ln}</td><td>${r ? esc(r.t) : '<span class="quiet">（该行号在本视图行集中未找到）</span>'}</td></tr>`);
+      `<tr><td class="n-del">${ln}</td><td>${r ? esc(r.t) : `<span class="quiet">${MISS_REASON}</span>`}</td></tr>`);
   }
   tb.appendChild(body);
   wrap.replaceChildren(tb);

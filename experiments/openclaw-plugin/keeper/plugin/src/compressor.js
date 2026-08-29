@@ -16,16 +16,17 @@
  * 不改原 doc（返回深拷贝）。
  * @param {object} doc 合法行集（∅ 或已过 U1 校验）
  * @param {number[]} lines 要删的行号
- * @returns {{doc: object|null, removed: number[], left: number}}
+ * @returns {{doc: object|null, removed: number[], removedRows: Array<{n,k,t}>, left: number}}
  */
 export function pruneDoc(doc, lines) {
   const del = new Set(Array.isArray(lines) ? lines.filter((x) => Number.isInteger(x) && x >= 0) : []);
   const pruned = structuredClone(doc);
   const removed = [];
+  const removedRows = []; // 被删行原文,供 trace/驾驶舱回显(旧 trace 未持久化该内容)
   for (const sec of pruned.sections) {
     const kept = [];
     for (const row of sec.rows) {
-      if (del.has(row.n)) { removed.push(row.n); continue; }
+      if (del.has(row.n)) { removed.push(row.n); removedRows.push({ n: row.n, k: row.k, t: row.t }); continue; }
       kept.push(row);
     }
     sec.rows = kept;
@@ -37,7 +38,7 @@ export function pruneDoc(doc, lines) {
     n_rows,
     _pruned: { n_del: removed.length, n_left: n_rows, discarded: removed },
   };
-  return { doc: pruned, removed, left: n_rows };
+  return { doc: pruned, removed, removedRows, left: n_rows };
 }
 
 /**
@@ -87,10 +88,10 @@ export function applyCompression(messages) {
         idx = pending.length - 1; // 最新一份未消费文档
       }
       const target = out[pending[idx]];
-      const { doc: pruned, removed, left } = pruneDoc(target.doc, dl.lines);
+      const { doc: pruned, removed, removedRows, left } = pruneDoc(target.doc, dl.lines);
       out[pending[idx]].doc = pruned;
       pending.splice(idx, 1);
-      events.push({ type: 'discard_applied', doc_id: target.doc.doc_id, n_del: removed.length, n_left: left, lines: removed, at: i });
+      events.push({ type: 'discard_applied', doc_id: target.doc.doc_id, n_del: removed.length, n_left: left, lines: removed, removed_rows: removedRows, at: i });
     }
   }
   return { messages: out, events };

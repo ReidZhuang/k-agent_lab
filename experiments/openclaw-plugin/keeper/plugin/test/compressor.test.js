@@ -34,6 +34,20 @@ test('T-U4-1 冒烟：单 doc + assistant(discard) → 删行、_pruned、原输
   assert.equal(events.length, 1);
 });
 
+test('T-U4-14：discard_applied 携带被删行原文 removed_rows（驾驶舱回显数据源）', () => {
+  const d0 = doc('doc_0', 3); // 行0(h)/行1(v)/行2(v)
+  const { events } = applyCompression([tool(d0), assistant([0, 2])]);
+  const ev = events[0];
+  assert.equal(ev.type, 'discard_applied');
+  assert.deepEqual(ev.lines, [0, 2], '行号数组不变');
+  assert.equal(ev.removed_rows.length, 2, '被删行原文数量=删除行数');
+  assert.deepEqual(ev.removed_rows[0], { n: 0, k: 'h', t: '行0' }, '原文含 n/k/t 全字段');
+  assert.deepEqual(ev.removed_rows[1], { n: 2, k: 'v', t: '行2' });
+  // 不影响删除结果
+  const pruned = applyCompression([tool(d0), assistant([0, 2])]).messages[0].doc;
+  assert.deepEqual(pruned.sections[0].rows.map((x) => x.n), [1]);
+});
+
 // ---------- 常规 ----------
 
 test('T-U4-2：无 discard → 视图与输入一致、无事件', () => {
