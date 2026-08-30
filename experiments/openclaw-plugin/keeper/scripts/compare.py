@@ -234,14 +234,18 @@ def run_summary_from_trace_dir(d: Path, group: str) -> dict:
     # tokens：优先 run 级 usage.json（agent 真实总 usage）；缺失时回退 token_round 汇总。
     # token_round 事件常只记录中间某轮（本实验 6 个 plugin run 均仅 1 条，
     # input=27077/output=150 远低于真实 usage 37851/4559），不可作 run 级 token 来源。
+    # total 口径与 run 布局一致：优先 total_tokens（含 provider 缓存读取；baseline 同源）。
     uj = load_json(d / "usage.json") or {}
     uo = uj.get("usage") or {}
-    pt, ct = uo.get("prompt_tokens"), uo.get("completion_tokens")
-    if pt is not None or ct is not None:
+    pt, ct, tt = uo.get("prompt_tokens"), uo.get("completion_tokens"), uo.get("total_tokens")
+    if pt is not None or ct is not None or tt is not None:
         input_total, output_total = pt or 0, ct or 0
+        if tt is None:
+            tt = input_total + output_total
         use_run_usage = True
     else:
         input_total, output_total = sum(inputs), sum(outputs)
+        tt = input_total + output_total
         use_run_usage = False
 
     return {
@@ -253,7 +257,7 @@ def run_summary_from_trace_dir(d: Path, group: str) -> dict:
         "tokens": {
             "input_total": input_total,
             "output_total": output_total,
-            "total": input_total + output_total,
+            "total": tt,
             "usage_rounds": 1 if use_run_usage else sum(usage_flags),
             "usage_unavailable": (not use_run_usage) and
                                  ((not usage_flags) or not any(usage_flags)),
